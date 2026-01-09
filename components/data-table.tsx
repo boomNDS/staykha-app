@@ -292,8 +292,15 @@ export function DataTable<T>({
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
+                  onClick={(e) => {
+                    if (currentPage === 1) {
+                      e.preventDefault();
+                      return;
+                    }
+                    setCurrentPage((p) => Math.max(1, p - 1));
+                  }}
+                  aria-disabled={currentPage === 1}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
               {Array.from({ length: totalPages }, (_, index) => index + 1).map(
@@ -326,10 +333,15 @@ export function DataTable<T>({
               )}
               <PaginationItem>
                 <PaginationNext
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
+                  onClick={(e) => {
+                    if (currentPage === totalPages) {
+                      e.preventDefault();
+                      return;
+                    }
+                    setCurrentPage((p) => Math.min(totalPages, p + 1));
+                  }}
+                  aria-disabled={currentPage === totalPages}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
                 />
               </PaginationItem>
             </PaginationContent>
