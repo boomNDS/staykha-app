@@ -5,10 +5,14 @@ import { motion } from "framer-motion";
 import {
   ArrowRight,
   Building2,
+  Camera,
   Clock,
   FileText,
   Gauge,
+  Settings,
   Sparkles,
+  Users,
+  UserPlus,
 } from "lucide-react";
 import { StayKhaLogo } from "@/components/staykha-logo";
 import { Button } from "@/components/ui/button";
@@ -28,14 +32,14 @@ const fadeUp = {
 export default function HomePage() {
   usePageTitle(
     "Home",
-    "StayKha helps property owners manage buildings, rooms, tenants, and utility billing. Track meter readings, generate invoices, and streamline your property management workflow.",
+    "StayKha is a comprehensive property management system for dormitories and rental properties. Manage buildings, rooms, tenants, meter readings, and automated billing with multi-admin support, configurable settings, and Thai language invoice support.",
   );
 
   return (
     <>
       <SEO
         title="Home"
-        description="StayKha helps property owners manage buildings, rooms, tenants, and utility billing. Track meter readings, generate invoices, and streamline your property management workflow."
+        description="StayKha is a comprehensive property management system for dormitories and rental properties. Manage buildings, rooms, tenants, meter readings, and automated billing with multi-admin support, configurable settings, and Thai language invoice support."
         keywords={[
           "property management",
           "utility billing",
@@ -43,6 +47,11 @@ export default function HomePage() {
           "water billing",
           "electricity billing",
           "tenant management",
+          "dormitory management",
+          "room management",
+          "automated invoicing",
+          "multi-admin",
+          "Thai invoice",
         ]}
         url={typeof window !== "undefined" ? window.location.origin : ""}
       />
@@ -98,15 +107,16 @@ export default function HomePage() {
                 variants={fadeUp}
                 className="font-heading text-balance text-4xl font-semibold leading-tight text-foreground sm:text-5xl"
               >
-                Manage rooms, meters, and invoices with clarity.
+                Complete property management for dormitories and rentals.
               </motion.h1>
               <motion.p
                 variants={fadeUp}
                 className="text-pretty text-base text-muted-foreground sm:text-lg"
               >
-                StayKha helps property owners capture monthly readings, track
-                occupancy, and issue utility bills without switching between
-                spreadsheets and chat apps.
+                StayKha helps property owners manage buildings, rooms, tenants,
+                and utility billing. Track meter readings with photo uploads,
+                generate automated invoices, and collaborate with your team—all
+                in one streamlined workflow.
               </motion.p>
               <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
                 <Button asChild size="lg">
@@ -128,12 +138,24 @@ export default function HomePage() {
                   Buildings & rooms organized by floor
                 </div>
                 <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  Complete tenant profiles & contracts
+                </div>
+                <div className="flex items-center gap-2">
                   <Gauge className="h-4 w-4 text-primary" />
-                  Water + electric readings grouped by month
+                  Water + electric readings with photos
                 </div>
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-primary" />
-                  Export-ready invoices and reminders
+                  Automated invoices & PDF export
+                </div>
+                <div className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4 text-primary" />
+                  Multi-admin with role-based access
+                </div>
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-primary" />
+                  Configurable rates & Thai labels
                 </div>
               </motion.div>
               <motion.div
@@ -145,12 +167,12 @@ export default function HomePage() {
                   10-minute monthly closeout
                 </div>
                 <div className="flex items-center gap-2">
-                  <Gauge className="h-4 w-4 text-primary" />
-                  Dual meter readings per room
+                  <Camera className="h-4 w-4 text-primary" />
+                  Photo uploads for readings
                 </div>
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-primary" />
-                  1-click PDF or print batch
+                  Bulk room creation & batch print
                 </div>
               </motion.div>
             </motion.div>
@@ -216,11 +238,12 @@ export default function HomePage() {
                   Get started fast
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold text-foreground sm:text-3xl">
-                  Ready to close your month in one pass?
+                  Ready to streamline your property operations?
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-                  Add rooms, collect readings, and send invoices in a single
-                  workflow built for busy owners.
+                  Manage buildings, tenants, meter readings, and billing with
+                  automated workflows, multi-admin support, and customizable
+                  settings—all designed for property owners.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -261,49 +284,10 @@ export default function HomePage() {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Manage rooms, meters, and invoices with clarity. Built for
-                  property owners.
+                  Complete property management for dormitories and rentals.
+                  Manage buildings, tenants, meter readings, and billing with
+                  multi-admin support and automated workflows.
                 </p>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-foreground">
-                  Product
-                </h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>
-                    <Link
-                      to="/overview"
-                      className="hover:text-foreground transition-colors"
-                    >
-                      Overview
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/overview/buildings"
-                      className="hover:text-foreground transition-colors"
-                    >
-                      Buildings
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/overview/rooms"
-                      className="hover:text-foreground transition-colors"
-                    >
-                      Rooms
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/overview/billing"
-                      className="hover:text-foreground transition-colors"
-                    >
-                      Billing
-                    </Link>
-                  </li>
-                </ul>
               </div>
 
               <div className="space-y-4">
