@@ -1,5 +1,6 @@
 "use client";
 
+import { createWorker } from "tesseract.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, Droplets, Keyboard, Loader2, Zap } from "lucide-react";
 import * as React from "react";
@@ -123,11 +124,40 @@ export default function NewReadingPage() {
     },
   });
 
-  const simulateOCR = async (_file: File): Promise<string> => {
-    // Simulate OCR processing delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    // Mock OCR result - in production, this would call your OCR API
-    return (Math.random() * 1000 + 1000).toFixed(2);
+  const performOCR = async (file: File): Promise<string> => {
+    const worker = await createWorker("eng");
+    
+    try {
+      // Perform OCR on the image
+      const { data: { text } } = await worker.recognize(file);
+      
+      // Extract numbers from the OCR text
+      // Look for patterns like: 1234.56, 1234, or just numbers
+      const numbers = text.match(/\d+\.?\d*/g);
+      
+      if (numbers && numbers.length > 0) {
+        // Use the first/largest number found (likely the meter reading)
+        const readings = numbers.map(Number).filter((n) => !Number.isNaN(n));
+        if (readings.length > 0) {
+          // Return the largest number found (most likely to be the meter reading)
+          const maxReading = Math.max(...readings);
+          return maxReading.toFixed(2);
+        }
+      }
+      
+      // If no numbers found, try to extract any numeric value
+      const fallbackNumber = text.match(/[\d,]+\.?\d*/);
+      if (fallbackNumber) {
+        const value = Number.parseFloat(fallbackNumber[0].replace(/,/g, ""));
+        if (!Number.isNaN(value)) {
+          return value.toFixed(2);
+        }
+      }
+      
+      throw new Error("No numbers found in image");
+    } finally {
+      await worker.terminate();
+    }
   };
 
   const handlePhotoUpload = async (
@@ -140,17 +170,20 @@ export default function NewReadingPage() {
     if (file && inputMode === "ocr") {
       setIsProcessingOCR(true);
       try {
-        const ocrResult = await simulateOCR(file);
+        const ocrResult = await performOCR(file);
         setFormData((prev) => ({ ...prev, [readingField]: ocrResult }));
         toast({
           title: "OCR Complete",
           description: `Extracted reading: ${ocrResult}`,
         });
-      } catch (_error) {
+      } catch (error) {
+        console.error("OCR error:", error);
         toast({
           title: "OCR Failed",
           description:
-            "Could not extract reading from image. Please enter manually.",
+            error instanceof Error 
+              ? `Could not extract reading: ${error.message}. Please enter manually.`
+              : "Could not extract reading from image. Please enter manually.",
           variant: "destructive",
         });
       } finally {
@@ -174,7 +207,7 @@ export default function NewReadingPage() {
 
     photoFields.forEach((field) => {
       const file = formData[field];
-      if (file) {
+      if (file instanceof File) {
         const photoError = validateImageFile(file);
         if (photoError && !newErrors[field]) {
           newErrors[field] = photoError.message;
