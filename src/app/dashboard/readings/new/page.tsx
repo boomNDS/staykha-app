@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, Droplets, Keyboard, Loader2, Zap } from "lucide-react";
 import * as React from "react";
 import { PageHeader } from "@/components/page-header";
+import { SettingsRequired } from "@/components/settings-required";
 import { ConsumptionSummary } from "@/components/readings/consumption-summary";
 import { MeterReadingSection } from "@/components/readings/meter-reading-section";
 import { Button } from "@/components/ui/button";
@@ -64,8 +65,17 @@ export default function NewReadingPage() {
     searchParams.get("date") ?? new Date().toISOString().split("T")[0];
   const initialRoomId = searchParams.get("roomId") ?? "";
   const [meterScope, setMeterScope] = React.useState<MeterScope>(initialScope);
-  const isWaterFixed =
-    settingsQuery.data?.settings.waterBillingMode === "fixed";
+  const settings = settingsQuery.data?.settings;
+  
+  // Show settings required message if settings don't exist
+  if (settingsQuery.isSuccess && !settings) {
+    return <SettingsRequired 
+      title="Settings Required"
+      description="You need to create settings for your team before you can create meter readings."
+    />;
+  }
+  
+  const isWaterFixed = settings?.waterBillingMode === "fixed";
 
   React.useEffect(() => {
     if (isWaterFixed && meterScope !== "electric") {

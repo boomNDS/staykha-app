@@ -530,20 +530,29 @@ export default function BillingPage() {
         </CardContent>
       </Card>
 
+      {/* Print Area - Hidden on screen, visible when printing */}
       <div className="print-only print-area">
-        {chunkedInvoices.map((chunk, index) => (
-          <div key={`print-page-${index}`} className="print-page">
+        {chunkedInvoices.length > 0 ? (
+          chunkedInvoices.map((chunk, index) => (
+            <div key={`print-page-${index}`} className="print-page">
+              <div className="print-grid">
+                {chunk.map((invoice) => (
+                  <PrintInvoiceCard
+                    key={invoice.id}
+                    invoice={invoice}
+                    className="print-card"
+                  />
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="print-page">
             <div className="print-grid">
-              {chunk.map((invoice) => (
-                <PrintInvoiceCard
-                  key={invoice.id}
-                  invoice={invoice}
-                  className="print-card"
-                />
-              ))}
+              <p>No invoices selected for printing</p>
             </div>
           </div>
-        ))}
+        )}
       </div>
 
       <div className="pointer-events-none absolute -left-[9999px] -top-[9999px] opacity-0">

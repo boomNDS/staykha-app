@@ -12,6 +12,7 @@ import {
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@/lib/router";
 
 interface OnboardingChecklistProps {
@@ -30,6 +31,7 @@ export function OnboardingChecklist({
   readingsCount,
 }: OnboardingChecklistProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [hidden, setHidden] = React.useState(false);
 
   React.useEffect(() => {
@@ -46,6 +48,7 @@ export function OnboardingChecklist({
       action: () => router.push("/overview/buildings/new"),
       actionLabel: "Create building",
       icon: Building2,
+      ownerOnly: true, // Only owners can create buildings
     },
     {
       key: "rooms",
@@ -76,10 +79,18 @@ export function OnboardingChecklist({
     },
   ];
 
-  const completed = steps.filter((step) => step.done).length;
-  const progress = Math.round((completed / steps.length) * 100);
+  // Filter steps based on user role - admins can't see owner-only steps
+  const visibleSteps = steps.filter((step) => {
+    if (step.ownerOnly && user?.role !== "owner") {
+      return false;
+    }
+    return true;
+  });
 
-  if (hidden || completed === steps.length) {
+  const completed = visibleSteps.filter((step) => step.done).length;
+  const progress = Math.round((completed / visibleSteps.length) * 100);
+
+  if (hidden || completed === visibleSteps.length) {
     return null;
   }
 
@@ -87,7 +98,9 @@ export function OnboardingChecklist({
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <div>
-          <CardTitle className="text-lg">Owner Setup Checklist</CardTitle>
+          <CardTitle className="text-lg">
+            {user?.role === "owner" ? "Owner Setup Checklist" : "Setup Checklist"}
+          </CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             Complete the basics to start billing faster. {progress}% done.
           </p>
@@ -111,7 +124,7 @@ export function OnboardingChecklist({
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          {steps.map((step) => {
+          {visibleSteps.map((step) => {
             const Icon = step.icon;
             return (
               <div

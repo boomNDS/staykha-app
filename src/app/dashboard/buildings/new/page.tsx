@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import * as React from "react";
+import { AdminRestrictionBanner } from "@/components/admin-restriction-banner";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,24 @@ export default function NewBuildingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Show restriction banner for admins
+  if (user?.role !== "owner") {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="New Building"
+          description="Create a new building property."
+          showBack
+        />
+        <AdminRestrictionBanner
+          title="Owner Action Required"
+          message="Only owners can create buildings. Please contact your team owner to create a building first."
+          action="Once a building is created, you can create rooms and manage tenants."
+        />
+      </div>
+    );
+  }
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = React.useState(false);
   const [formData, setFormData] = React.useState({

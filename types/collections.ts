@@ -5,6 +5,7 @@
 import type {
   AdminInvitation,
   Invoice,
+  InvoiceReading,
   MeterReadingGroup,
   Room,
   Tenant,
@@ -96,6 +97,8 @@ export type InvoiceRecord = RecordMeta & {
   waterBillingMode?: "metered" | "fixed";
   waterFixedFee?: number;
   teamId: string;
+  readingGroupId?: string; // Link to reading group - ensures one invoice per reading group
+  readings?: InvoiceReading[]; // JSON field storing meter reading details
 };
 
 // User collection record type (for admin management)

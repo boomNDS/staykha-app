@@ -1,0 +1,29 @@
+"use client";
+
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+interface AdminRestrictionBannerProps {
+  title?: string;
+  message?: string;
+  action?: string;
+}
+
+export function AdminRestrictionBanner({
+  title = "Owner Action Required",
+  message = "Only owners can perform this action. Please contact your team owner to complete this setup.",
+  action,
+}: AdminRestrictionBannerProps) {
+  return (
+    <Alert variant="default" className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+      <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+      <AlertTitle className="text-amber-900 dark:text-amber-100">{title}</AlertTitle>
+      <AlertDescription className="text-amber-800 dark:text-amber-200">
+        {message}
+        {action && (
+          <span className="mt-1 block font-medium">{action}</span>
+        )}
+      </AlertDescription>
+    </Alert>
+  );
+}

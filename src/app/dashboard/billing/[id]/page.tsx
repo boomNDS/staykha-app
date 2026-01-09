@@ -1,7 +1,9 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Droplets, Loader2, Printer, Zap } from "lucide-react";
+import { toPng } from "html-to-image";
+import { jsPDF } from "jspdf";
+import { Download, Droplets, Loader2, Zap } from "lucide-react";
 import * as React from "react";
 import { PrintInvoiceCard } from "@/components/billing/print-invoice-card";
 import { LoadingState } from "@/components/loading-state";
@@ -10,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 import { invoicesApi } from "@/lib/api-client";
 import { useParams, useRouter } from "@/lib/router";
 import type { Invoice } from "@/lib/types";
@@ -22,8 +25,10 @@ export default function InvoiceDetailPage() {
   usePageTitle(`Invoice ${invoiceId}`);
 
   const router = useRouter();
+  const { toast } = useToast();
 
   const [isDownloading, setIsDownloading] = React.useState(false);
+  const printCardRef = React.useRef<HTMLDivElement>(null);
 
   const invoiceQuery = useQuery({
     queryKey: ["invoice", invoiceId],
@@ -42,19 +47,58 @@ export default function InvoiceDetailPage() {
   });
 
   const handleDownloadPdf = async () => {
+    if (!invoice) {
+      toast({
+        title: "Error",
+        description: "Invoice data not available for PDF generation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsDownloading(true);
     try {
-      const blob = await invoicesApi.downloadPdf(invoiceId);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `invoice-${invoice?.invoiceNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Wait a bit to ensure the component is fully rendered
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      
+      const node = printCardRef.current;
+      if (!node) {
+        throw new Error("Invoice card element not found");
+      }
+
+      const dataUrl = await toPng(node, {
+        cacheBust: true,
+        pixelRatio: 2,
+        quality: 1,
+        backgroundColor: "#ffffff",
+      });
+      
+      const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      const imgProps = pdf.getImageProperties(dataUrl);
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const ratio = Math.min(
+        pageWidth / imgProps.width,
+        pageHeight / imgProps.height,
+      );
+      const imgWidth = imgProps.width * ratio;
+      const imgHeight = imgProps.height * ratio;
+      const x = (pageWidth - imgWidth) / 2;
+      const y = 24;
+      pdf.addImage(dataUrl, "PNG", x, y, imgWidth, imgHeight);
+      pdf.save(`invoice-${invoice.invoiceNumber || invoiceId}.pdf`);
+      
+      toast({
+        title: "PDF downloaded",
+        description: "Invoice PDF has been downloaded successfully.",
+      });
     } catch (error) {
       console.error("Error downloading PDF:", error);
+      toast({
+        title: "PDF download failed",
+        description: error instanceof Error ? error.message : "Could not generate PDF. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsDownloading(false);
     }
@@ -106,13 +150,6 @@ export default function InvoiceDetailPage() {
         showBack
         actions={
           <>
-            <Button
-              variant="outline"
-              onClick={() => window.print()}
-            >
-              <Printer className="mr-2 h-4 w-4" />
-              Print
-            </Button>
             <Button
               variant="outline"
               onClick={() =>
@@ -243,12 +280,16 @@ export default function InvoiceDetailPage() {
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       {isWaterFixed
                         ? "—"
-                        : (waterReading?.previousReading ?? "—")}
+                        : (waterReading?.previousReading != null
+                            ? waterReading.previousReading.toLocaleString()
+                            : "—")}
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       {isWaterFixed
                         ? "—"
-                        : (waterReading?.currentReading ?? "—")}
+                        : (waterReading?.currentReading != null
+                            ? waterReading.currentReading.toLocaleString()
+                            : "—")}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-foreground">
                       {formatCurrency(waterSubtotal)}
@@ -262,10 +303,14 @@ export default function InvoiceDetailPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
-                      {electricReading?.previousReading ?? "—"}
+                      {electricReading?.previousReading != null
+                        ? electricReading.previousReading.toLocaleString()
+                        : "—"}
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
-                      {electricReading?.currentReading ?? "—"}
+                      {electricReading?.currentReading != null
+                        ? electricReading.currentReading.toLocaleString()
+                        : "—"}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-foreground">
                       {formatCurrency(electricSubtotal)}
@@ -381,18 +426,20 @@ export default function InvoiceDetailPage() {
       </Card>
 
       {/* Thai Format Invoice (Print View) */}
-      <div className="hidden print:block">
+      <div className="print-only print-area">
         <PrintInvoiceCard invoice={invoice} />
       </div>
 
-      {/* Thai Format Invoice (Screen View) */}
-      <Card className="print:hidden">
+      {/* Thai Format Invoice (Screen View) - Used for PDF generation */}
+      <Card className="screen-only print:hidden">
         <CardHeader>
           <CardTitle>Invoice (Thai Format)</CardTitle>
           <CardDescription>Printable format matching Thai billing style</CardDescription>
         </CardHeader>
         <CardContent>
-          <PrintInvoiceCard invoice={invoice} />
+          <div ref={printCardRef} className="bg-white w-full max-w-full overflow-visible">
+            <PrintInvoiceCard invoice={invoice} />
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Droplets, Zap } from "lucide-react";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
+import { SettingsRequired } from "@/components/settings-required";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,8 +54,17 @@ export default function ReadingDetailPage() {
       : reading.status === "pending"
         ? "secondary"
         : "default";
-  const isWaterFixed =
-    settingsQuery.data?.settings.waterBillingMode === "fixed";
+  const settings = settingsQuery.data?.settings;
+  
+  // Show settings required message if settings don't exist
+  if (settingsQuery.isSuccess && !settings) {
+    return <SettingsRequired 
+      title="Settings Required"
+      description="You need to create settings for your team before you can view reading details."
+    />;
+  }
+  
+  const isWaterFixed = settings?.waterBillingMode === "fixed";
 
   return (
     <div className="space-y-6 pb-8">

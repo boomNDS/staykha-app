@@ -28,7 +28,7 @@ export function useSettings() {
 
   // Sync React Query data to Jotai atom
   useMemo(() => {
-    if (settingsQuery.data?.settings) {
+    if (settingsQuery.data) {
       setSettings(settingsQuery.data.settings);
     }
     setLoading(settingsQuery.isLoading);

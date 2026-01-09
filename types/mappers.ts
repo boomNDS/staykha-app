@@ -6,6 +6,7 @@ import type {
   AdminInvitation,
   AdminSettings,
   Invoice,
+  InvoiceReading,
   MeterReadingGroup,
   Room,
   Tenant,
@@ -91,6 +92,8 @@ export type InvoiceMapperInput = RecordMeta & {
   electricSubtotal?: number;
   waterBillingMode?: "metered" | "fixed";
   waterFixedFee?: number;
+  readingGroupId?: string;
+  readings?: InvoiceReading[];
   teamId: string;
 };
 

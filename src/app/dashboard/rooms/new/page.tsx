@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
 import { PageHeader } from "@/components/page-header";
+import { SettingsRequired } from "@/components/settings-required";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -59,19 +60,29 @@ export default function NewRoomPage() {
   });
   const [errors, setErrors] = React.useState<Record<string, string>>({});
 
+  const settings = settingsQuery.data?.settings;
+  
+  // Show settings required message if settings don't exist
+  if (settingsQuery.isSuccess && !settings) {
+    return <SettingsRequired 
+      title="Settings Required"
+      description="You need to create settings for your team before you can create rooms."
+    />;
+  }
+  
   React.useEffect(() => {
-    if (settingsQuery.data?.settings) {
+    if (settings) {
       setFormData((prev) => ({
         ...prev,
         monthlyRent:
           prev.monthlyRent ||
-          String(settingsQuery.data?.settings.defaultRoomRent ?? ""),
+          String(settings.defaultRoomRent ?? ""),
         size:
           prev.size ||
-          String(settingsQuery.data?.settings.defaultRoomSize ?? ""),
+          String(settings.defaultRoomSize ?? ""),
       }));
     }
-  }, [settingsQuery.data]);
+  }, [settings]);
 
   const createRoomMutation = useMutation({
     mutationFn: (payload: {

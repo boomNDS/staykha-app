@@ -288,6 +288,8 @@ Create the following collections in the PocketBase admin panel. For each collect
 - `electricSubtotal` (Number, Nullable)
 - `waterBillingMode` (Select, Options: `metered`, `fixed`, Nullable)
 - `waterFixedFee` (Number, Nullable)
+- `readingGroupId` (Relation, Collection: `reading_groups`, Nullable) - **IMPORTANT**: Links invoice to its source reading group. Ensures one invoice per reading group (enforced by application logic).
+- `readings` (JSON, Nullable) - Stores meter reading details as JSON array. Each reading object contains: `meterType` ("water" or "electric"), `previousReading`, `currentReading`, `consumption`, `previousPhotoUrl`, `currentPhotoUrl`. Used to display meter readings in the invoice.
 - `teamId` (Relation, Collection: `teams`, Required) - **IMPORTANT**: Add this field to enforce team isolation
 
 **Access Rules:**
@@ -298,6 +300,10 @@ Create the following collections in the PocketBase admin panel. For each collect
 - **Delete**: `@request.auth.id != "" && @request.auth.role = "owner" && teamId = @request.auth.teamId`
 
 **Note**: Owners and admins can view, create, and update invoices within their own team. Only owners can delete invoices. **CRITICAL**: The `teamId` field is required to prevent admins from accessing invoices belonging to other teams. Without this field, admins from different teams could access each other's data.
+
+**Important Constraints:**
+- Each reading group can only have one invoice (enforced by application logic via `readingGroupId`). Attempting to create a second invoice for the same reading group will result in an error.
+- The `readings` JSON field stores the actual meter reading values (previous/current readings, consumption, photo URLs) used to generate the invoice. This allows the invoice to display the meter readings in addition to the calculated amounts.
 
 ---
 

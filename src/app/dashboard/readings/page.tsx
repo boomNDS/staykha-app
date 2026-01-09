@@ -7,6 +7,7 @@ import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
+import { SettingsRequired } from "@/components/settings-required";
 import { TableRowActions } from "@/components/table-row-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,10 +26,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { readingsApi, roomsApi, settingsApi } from "@/lib/api-client";
+import { invoicesApi, readingsApi, roomsApi, settingsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@/lib/router";
-import type { MeterReadingGroup, Room } from "@/lib/types";
+import type { Invoice, MeterReadingGroup, Room } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function ReadingsPage() {
@@ -36,6 +37,7 @@ export default function ReadingsPage() {
 
   const router = useRouter();
   const { user } = useAuth();
+  const { toast } = useToast();
   const readingsQuery = useQuery({
     queryKey: ["readings"],
     queryFn: () => readingsApi.getAll(),
@@ -54,12 +56,10 @@ export default function ReadingsPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  const readings = readingsQuery.data?.readings ?? [];
-  const rooms = roomsQuery.data?.rooms ?? [];
-  const waterBillingMode =
-    settingsQuery.data?.settings.waterBillingMode ?? "metered";
-  const isWaterFixed = waterBillingMode === "fixed";
-  const { toast } = useToast();
+  const invoicesQuery = useQuery({
+    queryKey: ["invoices"],
+    queryFn: () => invoicesApi.getAll(),
+  });
   const [reminderHistory, setReminderHistory] = React.useState<
     Record<string, string>
   >(() => {
@@ -71,7 +71,6 @@ export default function ReadingsPage() {
       return {};
     }
   });
-  const isLoading = readingsQuery.isLoading;
   const [selectedGroupId, setSelectedGroupId] = React.useState<string | null>(
     null,
   );
@@ -88,6 +87,58 @@ export default function ReadingsPage() {
     },
   );
 
+  // All hooks must be called before any conditional returns
+  const readings = readingsQuery.data?.readings ?? [];
+  const rooms = roomsQuery.data?.rooms ?? [];
+  const settings = settingsQuery.data?.settings;
+  const isLoading = readingsQuery.isLoading;
+  const waterBillingMode = settings?.waterBillingMode ?? "metered";
+  const isWaterFixed = waterBillingMode === "fixed";
+  const groupedReadings = readings as MeterReadingGroup[];
+
+  // All useEffect and useMemo hooks must be called before any early returns
+  React.useEffect(() => {
+    if (!groupedReadings.length) {
+      setSelectedGroupId(null);
+      return;
+    }
+    if (
+      !selectedGroupId ||
+      !groupedReadings.some((group) => group.id === selectedGroupId)
+    ) {
+      setSelectedGroupId(groupedReadings[0].id);
+    }
+  }, [groupedReadings, selectedGroupId]);
+
+  const selectedGroup = React.useMemo(() => {
+    if (!groupedReadings.length) return null;
+    return (
+      groupedReadings.find((group) => group.id === selectedGroupId) ??
+      groupedReadings[0]
+    );
+  }, [groupedReadings, selectedGroupId]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      "staykha:readingReminders",
+      JSON.stringify(reminderHistory),
+    );
+  }, [reminderHistory]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(followUpStorageKey, JSON.stringify(followUps));
+  }, [followUps]);
+
+  // Show settings required message if settings don't exist (AFTER all hooks)
+  if (settingsQuery.isSuccess && !settings) {
+    return <SettingsRequired 
+      title="Settings Required"
+      description="You need to create settings for your team before you can view meter readings."
+    />;
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "billed":
@@ -103,21 +154,6 @@ export default function ReadingsPage() {
     }
   };
 
-  const groupedReadings = readings as MeterReadingGroup[];
-
-  React.useEffect(() => {
-    if (!groupedReadings.length) {
-      setSelectedGroupId(null);
-      return;
-    }
-    if (
-      !selectedGroupId ||
-      !groupedReadings.some((group) => group.id === selectedGroupId)
-    ) {
-      setSelectedGroupId(groupedReadings[0].id);
-    }
-  }, [groupedReadings, selectedGroupId]);
-
   const monthLabel = new Date().toLocaleString("default", {
     month: "long",
     year: "numeric",
@@ -131,14 +167,6 @@ export default function ReadingsPage() {
     readingsByRoom.get(group.roomId)?.push(group);
   });
 
-  const selectedGroup = React.useMemo(() => {
-    if (!groupedReadings.length) return null;
-    return (
-      groupedReadings.find((group) => group.id === selectedGroupId) ??
-      groupedReadings[0]
-    );
-  }, [groupedReadings, selectedGroupId]);
-
   const selectedGroupMonthLabel = selectedGroup
     ? new Date(selectedGroup.readingDate).toLocaleString("default", {
         month: "long",
@@ -147,9 +175,14 @@ export default function ReadingsPage() {
     : "";
   const selectedGroupRoomLabel = selectedGroup?.roomNumber ?? "—";
   const selectedGroupStatus = selectedGroup?.status ?? "pending";
+  const invoices = invoicesQuery.data?.invoices ?? [];
+  const hasExistingInvoice = selectedGroup
+    ? invoices.some((invoice: Invoice) => invoice.readingGroupId === selectedGroup.id)
+    : false;
   const isInvoiceReady =
     Boolean(selectedGroup?.electric) &&
-    (isWaterFixed || Boolean(selectedGroup?.water));
+    (isWaterFixed || Boolean(selectedGroup?.water)) &&
+    !hasExistingInvoice;
 
   const _handleReminder = (roomId: string, type: "water" | "electric") => {
     const key = `${roomId}-${type}`;
@@ -199,19 +232,6 @@ export default function ReadingsPage() {
       };
     })
     .filter((item) => item.hasMissing);
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(
-      "staykha:readingReminders",
-      JSON.stringify(reminderHistory),
-    );
-  }, [reminderHistory]);
-
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(followUpStorageKey, JSON.stringify(followUps));
-  }, [followUps]);
 
   const columns = [
     {
@@ -579,9 +599,16 @@ export default function ReadingsPage() {
                           `/overview/billing?readingId=${selectedGroup.id}`,
                         )
                       }
-                      disabled={!isInvoiceReady}
+                      disabled={!isInvoiceReady || hasExistingInvoice}
+                      title={
+                        hasExistingInvoice
+                          ? "An invoice already exists for this reading group"
+                          : !isInvoiceReady
+                            ? "Complete all required readings first"
+                            : undefined
+                      }
                     >
-                      Generate invoice
+                      {hasExistingInvoice ? "Invoice exists" : "Generate invoice"}
                     </Button>
                   </div>
                 </div>

@@ -237,16 +237,17 @@
   }
 
   .print-only {
-    display: block;
+    display: block !important;
+    visibility: visible !important;
   }
 
   .screen-only {
-    display: none;
+    display: none !important;
   }
 
   .print-area,
   .print-area * {
-    visibility: visible;
+    visibility: visible !important;
   }
 
   .print-area {
@@ -255,6 +256,7 @@
     top: 0;
     width: 100%;
     padding: 12px;
+    display: block !important;
   }
 
   .print-page {
@@ -262,7 +264,7 @@
   }
 
   .print-grid {
-    display: grid;
+    display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }

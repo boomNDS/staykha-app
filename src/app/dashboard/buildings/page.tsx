@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit, Home, LayoutGrid, MapPin, Plus, Trash2 } from "lucide-react";
 import * as React from "react";
+import { AdminRestrictionBanner } from "@/components/admin-restriction-banner";
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/loading-state";
@@ -158,13 +159,19 @@ export default function BuildingsPage() {
     },
   ];
 
-  // Check if user is owner
+  // Check if user is owner - show banner for admins
   if (user?.role !== "owner") {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">
-          You do not have permission to access this page.
-        </p>
+      <div className="space-y-6">
+        <PageHeader
+          title="Buildings"
+          description="Manage your building properties."
+        />
+        <AdminRestrictionBanner
+          title="Owner Action Required"
+          message="Only owners can create and manage buildings. Please contact your team owner to create buildings."
+          action="Once buildings are created, you can create rooms and manage tenants within those buildings."
+        />
       </div>
     );
   }

@@ -236,6 +236,16 @@ erDiagram
         number tax
         number total
         date paidDate "nullable"
+        number waterConsumption "nullable"
+        number electricConsumption "nullable"
+        number waterRatePerUnit "nullable"
+        number electricRatePerUnit "nullable"
+        number waterSubtotal "nullable"
+        number electricSubtotal "nullable"
+        string waterBillingMode "metered|fixed" "nullable"
+        number waterFixedFee "nullable"
+        string readingGroupId FK "nullable"
+        json readings "nullable"
         string teamId FK
     }
 

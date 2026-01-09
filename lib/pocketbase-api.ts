@@ -292,9 +292,9 @@ export const buildingsApi = {
       {
         name: data.name,
         address: data.address,
-        totalFloors: data.totalFloors,
-        totalRooms: data.totalRooms,
-        occupiedRooms: data.occupiedRooms,
+        totalFloors: data.totalFloors ?? 1,
+        totalRooms: data.totalRooms ?? 0,
+        occupiedRooms: data.occupiedRooms ?? 0,
         ownerId: data.ownerId,
         teamId,
       },
@@ -540,12 +540,30 @@ export const invoicesApi = {
     return { invoice: mapInvoiceRecord(record) };
   },
   downloadPdf: async (_id: string): Promise<Blob> => {
-    throw new Error("Pocketbase PDF download not implemented");
+    // PDF generation is handled client-side using jsPDF and html-to-image
+    // This function is kept for API compatibility but should not be called directly
+    // Use client-side PDF generation in components instead
+    throw new Error(
+      "PDF download should be handled client-side. Use jsPDF and html-to-image in the component.",
+    );
   },
   generateFromReadingGroup: async (
     readingGroupId: string,
   ): Promise<{ invoice: Invoice }> => {
     const teamId = getCurrentUserTeamId();
+
+    // Check if an invoice already exists for this reading group
+    const existingInvoicesForGroup = await listRecords<
+      Omit<InvoiceRecord, keyof RecordMeta>
+    >("invoices", {
+      filter: `readingGroupId = "${readingGroupId}"`,
+    });
+    
+    if (existingInvoicesForGroup.length > 0) {
+      throw new Error(
+        "An invoice already exists for this reading group. Each reading group can only have one invoice.",
+      );
+    }
 
     // Get the reading group
     const readingGroup = await getRecord<
@@ -605,12 +623,25 @@ export const invoicesApi = {
       dueDate.setDate(dueDate.getDate() + settings.paymentTermsDays);
     }
 
+    // Extract reading values from reading group
+    const waterReading = readingGroup.water as {
+      previousReading?: number;
+      currentReading?: number;
+      consumption?: number;
+      previousPhotoUrl?: string;
+      currentPhotoUrl?: string;
+    } | undefined;
+    const electricReading = readingGroup.electric as {
+      previousReading?: number;
+      currentReading?: number;
+      consumption?: number;
+      previousPhotoUrl?: string;
+      currentPhotoUrl?: string;
+    } | undefined;
+
     // Calculate amounts
-    const waterConsumption = readingGroup.water
-      ? ((readingGroup.water as { consumption?: number }).consumption ?? 0)
-      : 0;
-    const electricConsumption =
-      (readingGroup.electric as { consumption?: number }).consumption ?? 0;
+    const waterConsumption = waterReading?.consumption ?? 0;
+    const electricConsumption = electricReading?.consumption ?? 0;
 
     const waterAmount =
       settings.waterBillingMode === "fixed"
@@ -628,6 +659,29 @@ export const invoicesApi = {
       filter: `teamId = "${teamId}"`,
     });
     const invoiceNumber = `${settings.invoicePrefix}-${issueDate.getFullYear()}-${String(existingInvoices.length + 1).padStart(3, "0")}`;
+
+    // Prepare readings data for invoice
+    const invoiceReadings = [];
+    if (waterReading && settings.waterBillingMode !== "fixed") {
+      invoiceReadings.push({
+        meterType: "water",
+        previousReading: waterReading.previousReading ?? 0,
+        currentReading: waterReading.currentReading ?? 0,
+        consumption: waterReading.consumption ?? 0,
+        previousPhotoUrl: waterReading.previousPhotoUrl ?? "",
+        currentPhotoUrl: waterReading.currentPhotoUrl ?? "",
+      });
+    }
+    if (electricReading) {
+      invoiceReadings.push({
+        meterType: "electric",
+        previousReading: electricReading.previousReading ?? 0,
+        currentReading: electricReading.currentReading ?? 0,
+        consumption: electricReading.consumption ?? 0,
+        previousPhotoUrl: electricReading.previousPhotoUrl ?? "",
+        currentPhotoUrl: electricReading.currentPhotoUrl ?? "",
+      });
+    }
 
     // Create invoice
     const invoiceRecord = await createRecord<
@@ -664,8 +718,19 @@ export const invoicesApi = {
       electricSubtotal: electricAmount,
       waterBillingMode: settings.waterBillingMode,
       waterFixedFee: settings.waterFixedFee,
+      readingGroupId,
+      readings: invoiceReadings.length > 0 ? invoiceReadings : undefined,
       teamId,
-    });
+    } as Omit<InvoiceRecord, keyof RecordMeta>);
+
+    // Update reading group status to "billed"
+    await updateRecord<Partial<Omit<ReadingGroupRecord, keyof RecordMeta>>>(
+      "reading_groups",
+      readingGroupId,
+      {
+        status: "billed" as MeterReadingGroup["status"],
+      },
+    );
 
     return { invoice: mapInvoiceRecord(invoiceRecord) };
   },
@@ -674,15 +739,16 @@ export const invoicesApi = {
 export const settingsApi = {
   get: async (
     teamId: string,
-  ): Promise<{ settings: AdminSettings & RecordMeta }> => {
+  ): Promise<{ settings: AdminSettings & RecordMeta | null }> => {
     const items = await listRecords<Omit<SettingsRecord, keyof RecordMeta>>(
       "settings",
       {
         filter: `teamId = "${teamId}"`,
       },
     );
+    // Return null if settings don't exist (instead of creating automatically)
     if (items.length === 0) {
-      throw new Error(`Settings not found for team ${teamId}`);
+      return { settings: null };
     }
     return { settings: mapSettingsRecord(items[0] as SettingsMapperInput) };
   },
@@ -690,17 +756,75 @@ export const settingsApi = {
     teamId: string,
     updates: Partial<AdminSettings>,
   ): Promise<{ settings: AdminSettings & RecordMeta }> => {
+    // Check if settings exist
     const items = await listRecords<Omit<SettingsRecord, keyof RecordMeta>>(
       "settings",
       {
         filter: `teamId = "${teamId}"`,
       },
     );
-    const target = items[0];
-    if (!target) {
-      throw new Error(`Settings not found for team ${teamId}`);
+    
+    // If settings don't exist, create them with the provided updates
+    if (items.length === 0) {
+      // Filter out fields that shouldn't be created (team relation, etc.)
+      const {
+        team,
+        teamId: _teamId,
+        ...createPayload
+      } = updates;
+      
+      // Remove undefined values
+      const cleanPayload = Object.fromEntries(
+        Object.entries(createPayload).filter(([_, value]) => value !== undefined)
+      ) as Partial<Omit<SettingsRecord, keyof RecordMeta>>;
+      
+      // Create with defaults for required fields if not provided
+      const newRecord = await createRecord<Omit<SettingsRecord, keyof RecordMeta>>(
+        "settings",
+        {
+          teamId,
+          waterRatePerUnit: cleanPayload.waterRatePerUnit ?? 25,
+          waterBillingMode: cleanPayload.waterBillingMode ?? "metered",
+          waterFixedFee: cleanPayload.waterFixedFee ?? 0,
+          electricRatePerUnit: cleanPayload.electricRatePerUnit ?? 4.5,
+          taxRate: cleanPayload.taxRate ?? 7,
+          currency: cleanPayload.currency ?? "THB",
+          companyName: cleanPayload.companyName ?? "StayKha",
+          companyAddress: cleanPayload.companyAddress ?? "",
+          companyPhone: cleanPayload.companyPhone ?? "",
+          companyEmail: cleanPayload.companyEmail ?? "",
+          invoicePrefix: cleanPayload.invoicePrefix ?? "INV",
+          paymentTermsDays: cleanPayload.paymentTermsDays ?? 15,
+          defaultRoomRent: cleanPayload.defaultRoomRent ?? 4500,
+          defaultRoomSize: cleanPayload.defaultRoomSize ?? 28,
+          latePaymentPenaltyPerDay: cleanPayload.latePaymentPenaltyPerDay ?? 0,
+          dueDateDayOfMonth: cleanPayload.dueDateDayOfMonth ?? 5,
+          labelInvoice: cleanPayload.labelInvoice ?? "ใบแจ้งหนี้",
+          labelRoomRent: cleanPayload.labelRoomRent ?? "ค่าเช่าห้อง",
+          labelWater: cleanPayload.labelWater ?? "ค่าน้ำประปา",
+          labelElectricity: cleanPayload.labelElectricity ?? "ค่าไฟฟ้า",
+          ...cleanPayload,
+        },
+      );
+      return { settings: mapSettingsRecord(newRecord as SettingsMapperInput) };
     }
-    const updated = await updateRecord("settings", target.id, updates);
+    
+    // Settings exist, update them
+    const target = items[0];
+    
+    // Filter out fields that shouldn't be updated (team relation, etc.)
+    const {
+      team,
+      teamId: _teamId,
+      ...updatePayload
+    } = updates;
+    
+    // Remove undefined values to avoid sending them to PocketBase
+    const cleanPayload = Object.fromEntries(
+      Object.entries(updatePayload).filter(([_, value]) => value !== undefined)
+    ) as Partial<Omit<SettingsRecord, keyof RecordMeta>>;
+    
+    const updated = await updateRecord("settings", target.id, cleanPayload);
     return { settings: mapSettingsRecord(updated as SettingsMapperInput) };
   },
   create: async (

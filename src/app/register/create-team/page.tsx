@@ -89,10 +89,11 @@ export default function CreateTeamPage() {
 
       toast({
         title: "Team created successfully",
-        description: `Welcome to ${team.name}! You can now create buildings.`,
+        description: `Welcome to ${team.name}! Next, create your settings.`,
       });
 
-      router.push("/overview");
+      // Redirect to settings to complete setup
+      router.push("/overview/settings");
     } catch (error: any) {
       console.error("[Create Team] Error:", error);
       setError(error.message || "Failed to create team. Please try again.");

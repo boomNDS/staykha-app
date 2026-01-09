@@ -87,37 +87,58 @@ export const mapReadingRecord = (
   teamId: record.teamId,
 });
 
-export const mapInvoiceRecord = (record: InvoiceMapperInput): Invoice => ({
-  id: record.id,
-  invoiceNumber: record.invoiceNumber,
-  tenantId: record.tenantId,
-  roomId: record.roomId ?? "",
-  tenantName: record.tenantName,
-  roomNumber: record.roomNumber,
-  billingPeriod: record.billingPeriod ?? "",
-  issueDate: record.issueDate ?? record.created,
-  dueDate: record.dueDate ?? record.created,
-  status: record.status ?? "draft",
-  waterUsage: record.waterUsage ?? 0,
-  waterRate: record.waterRate ?? 0,
-  waterAmount: record.waterAmount ?? 0,
-  electricUsage: record.electricUsage ?? 0,
-  electricRate: record.electricRate ?? 0,
-  electricAmount: record.electricAmount ?? 0,
-  subtotal: record.subtotal ?? 0,
-  tax: record.tax ?? 0,
-  total: record.total ?? 0,
-  paidDate: record.paidDate ?? null,
-  waterConsumption: record.waterConsumption,
-  electricConsumption: record.electricConsumption,
-  waterRatePerUnit: record.waterRatePerUnit,
-  electricRatePerUnit: record.electricRatePerUnit,
-  waterSubtotal: record.waterSubtotal,
-  electricSubtotal: record.electricSubtotal,
-  waterBillingMode: record.waterBillingMode,
-  waterFixedFee: record.waterFixedFee,
-  teamId: record.teamId,
-});
+export const mapInvoiceRecord = (record: InvoiceMapperInput): Invoice => {
+  // Parse readings from JSON if it's stored as a string
+  let readings: Invoice["readings"];
+  if (record.readings) {
+    if (typeof record.readings === "string") {
+      try {
+        readings = JSON.parse(record.readings) as Invoice["readings"];
+      } catch {
+        readings = undefined;
+      }
+    } else if (Array.isArray(record.readings)) {
+      readings = record.readings as Invoice["readings"];
+    } else {
+      // Single object, wrap in array
+      readings = [record.readings] as Invoice["readings"];
+    }
+  }
+
+  return {
+    id: record.id,
+    invoiceNumber: record.invoiceNumber,
+    tenantId: record.tenantId,
+    roomId: record.roomId ?? "",
+    tenantName: record.tenantName,
+    roomNumber: record.roomNumber,
+    billingPeriod: record.billingPeriod ?? "",
+    issueDate: record.issueDate ?? record.created,
+    dueDate: record.dueDate ?? record.created,
+    status: record.status ?? "draft",
+    waterUsage: record.waterUsage ?? 0,
+    waterRate: record.waterRate ?? 0,
+    waterAmount: record.waterAmount ?? 0,
+    electricUsage: record.electricUsage ?? 0,
+    electricRate: record.electricRate ?? 0,
+    electricAmount: record.electricAmount ?? 0,
+    subtotal: record.subtotal ?? 0,
+    tax: record.tax ?? 0,
+    total: record.total ?? 0,
+    paidDate: record.paidDate ?? null,
+    waterConsumption: record.waterConsumption,
+    electricConsumption: record.electricConsumption,
+    waterRatePerUnit: record.waterRatePerUnit,
+    electricRatePerUnit: record.electricRatePerUnit,
+    waterSubtotal: record.waterSubtotal,
+    electricSubtotal: record.electricSubtotal,
+    waterBillingMode: record.waterBillingMode,
+    waterFixedFee: record.waterFixedFee,
+    readingGroupId: record.readingGroupId,
+    readings,
+    teamId: record.teamId,
+  };
+};
 
 export const mapSettingsRecord = (
   record: SettingsMapperInput,

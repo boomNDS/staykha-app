@@ -128,6 +128,16 @@ erDiagram
         number tax
         number total
         date paidDate "nullable"
+        number waterConsumption "nullable"
+        number electricConsumption "nullable"
+        number waterRatePerUnit "nullable"
+        number electricRatePerUnit "nullable"
+        number waterSubtotal "nullable"
+        number electricSubtotal "nullable"
+        string waterBillingMode "metered|fixed" "nullable"
+        number waterFixedFee "nullable"
+        string readingGroupId FK "nullable"
+        json readings "nullable"
         string teamId FK
     }
 
@@ -187,7 +197,7 @@ erDiagram
 - **Building ↔ Room:** `rooms.buildingId` points to the owning building. The UI uses this to show occupancy counts.
 - **Room ↔ Tenant:** `tenants.roomId` links to a room. A room can have 0 or 1 tenant. Assigning/removing a tenant updates this field via `tenantsApi`.
 - **Room ↔ ReadingGroup:** `reading_groups.roomId` links to a room. Each monthly group record stores both water and electric meter values so billing can summarize a single row.
-- **ReadingGroup → Invoice:** Invoices are generated from grouped readings. PocketBase doesn't run this logic automatically; the client computes totals and stores results in `invoices`.
+- **ReadingGroup → Invoice:** Invoices are generated from grouped readings via `invoices.readingGroupId`. Each reading group can only have one invoice (enforced by application logic). The `readings` JSON field stores the meter reading details (previous/current readings, consumption, photo URLs) for display in the invoice. PocketBase doesn't run this logic automatically; the client computes totals and stores results in `invoices`.
 - **Tenant ↔ Invoice:** `invoices.tenantId` optionally links to a tenant. Invoices can exist without a tenant record (using `tenantName` instead).
 
 ## Collection Field Details

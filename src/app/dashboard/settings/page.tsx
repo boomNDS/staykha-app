@@ -1,7 +1,8 @@
 "use client";
 
-import { Loader2, Save } from "lucide-react";
+import { Info, Loader2, Save } from "lucide-react";
 import * as React from "react";
+import { AdminRestrictionBanner } from "@/components/admin-restriction-banner";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { useSettings } from "@/lib/hooks/use-settings";
@@ -28,6 +35,43 @@ import { useTeam } from "@/lib/hooks/use-team";
 import type { AdminSettings } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatCurrency } from "@/lib/utils";
+
+// Helper component for labels with info tooltips
+function LabelWithInfo({
+  htmlFor,
+  children,
+  tooltip,
+}: {
+  htmlFor?: string;
+  children: React.ReactNode;
+  tooltip?: string;
+}) {
+  if (!tooltip) {
+    return <Label htmlFor={htmlFor}>{children}</Label>;
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Label htmlFor={htmlFor}>{children}</Label>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="More information"
+            >
+              <Info className="h-3.5 w-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <p className="text-xs">{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   usePageTitle("Settings");
@@ -92,15 +136,22 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateSettings(formSettings);
+      // Ensure teamId is set
+      const settingsToSave = {
+        ...formSettings,
+        teamId: formSettings.teamId || user?.teamId || "",
+      };
+      await updateSettings(settingsToSave);
       toast({
         title: "Success",
         description: "Settings saved successfully",
       });
     } catch (error: any) {
+      console.error("Settings save error:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to save settings";
       toast({
         title: "Error",
-        description: error.message || "Failed to save settings",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -144,6 +195,66 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return <LoadingState message="Loading settings..." />;
+  }
+
+  // Show message if settings don't exist
+  if (!settings) {
+    // If admin, show restriction banner
+    if (user?.role !== "owner") {
+      return (
+        <div className="space-y-6 pb-8">
+          <PageHeader
+            title="Settings"
+            description="Manage billing rates and company information."
+          />
+          <AdminRestrictionBanner
+            title="Settings Not Created"
+            message="Settings have not been created for your team yet. Only owners can create settings."
+            action="Please contact your team owner to create the initial settings. Once created, you can view and update them."
+          />
+        </div>
+      );
+    }
+    
+    // If owner, show create button
+    return (
+      <div className="space-y-6 pb-8">
+        <PageHeader
+          title="Settings"
+          description="Manage billing rates and company information."
+        />
+        <Card>
+          <CardHeader>
+            <CardTitle>Settings Not Found</CardTitle>
+            <CardDescription>
+              You need to create settings for your team before you can manage them.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Click the button below to create default settings for your team. You can then customize them as needed.
+            </p>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="w-full sm:w-auto"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Settings...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Create Settings
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -207,7 +318,12 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="waterBillingMode">Water Billing Mode</Label>
+                <LabelWithInfo
+                  htmlFor="waterBillingMode"
+                  tooltip="Choose how water is billed: 'Metered' charges per cubic meter (m³) used, 'Fixed' charges a flat monthly fee regardless of usage."
+                >
+                  Water Billing Mode
+                </LabelWithInfo>
                 <Select
                   value={formSettings.waterBillingMode}
                   onValueChange={(value) =>
@@ -227,7 +343,12 @@ export default function SettingsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="waterFixedFee">Water Fixed Fee</Label>
+                <LabelWithInfo
+                  htmlFor="waterFixedFee"
+                  tooltip="Monthly fixed fee for water when Water Billing Mode is set to 'Fixed'. This amount is charged regardless of water usage."
+                >
+                  Water Fixed Fee
+                </LabelWithInfo>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">
                     {formSettings.currency}
@@ -254,7 +375,12 @@ export default function SettingsPage() {
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="waterRate">Water Rate (per m³)</Label>
+                <LabelWithInfo
+                  htmlFor="waterRate"
+                  tooltip="Rate charged per cubic meter (m³) of water consumed. Only applies when Water Billing Mode is set to 'Metered'."
+                >
+                  Water Rate (per m³)
+                </LabelWithInfo>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">
                     {formSettings.currency}
@@ -284,7 +410,12 @@ export default function SettingsPage() {
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="electricRate">Electric Rate (per kWh)</Label>
+                <LabelWithInfo
+                  htmlFor="electricRate"
+                  tooltip="Rate charged per kilowatt-hour (kWh) of electricity consumed. This is always calculated based on meter readings."
+                >
+                  Electric Rate (per kWh)
+                </LabelWithInfo>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">
                     {formSettings.currency}
@@ -314,7 +445,12 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="taxRate">Tax Rate (%)</Label>
+              <LabelWithInfo
+                htmlFor="taxRate"
+                tooltip="Value Added Tax (VAT) percentage applied to the subtotal. For example, 7% means 7% tax will be added to the total bill amount."
+              >
+                Tax Rate (%)
+              </LabelWithInfo>
               <Input
                 id="taxRate"
                 type="number"
@@ -343,7 +479,12 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name</Label>
+              <LabelWithInfo
+                htmlFor="companyName"
+                tooltip="Your company or organization name that will appear on invoices."
+              >
+                Company Name
+              </LabelWithInfo>
               <Input
                 id="companyName"
                 value={formSettings.companyName}
@@ -356,7 +497,12 @@ export default function SettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="companyAddress">Address</Label>
+              <LabelWithInfo
+                htmlFor="companyAddress"
+                tooltip="Company address that will be displayed on invoices."
+              >
+                Address
+              </LabelWithInfo>
               <Input
                 id="companyAddress"
                 value={formSettings.companyAddress}
@@ -370,7 +516,12 @@ export default function SettingsPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="companyPhone">Phone</Label>
+                <LabelWithInfo
+                  htmlFor="companyPhone"
+                  tooltip="Company phone number for contact information on invoices."
+                >
+                  Phone
+                </LabelWithInfo>
                 <Input
                   id="companyPhone"
                   type="tel"
@@ -384,7 +535,12 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="companyEmail">Email</Label>
+                <LabelWithInfo
+                  htmlFor="companyEmail"
+                  tooltip="Company email address for billing inquiries."
+                >
+                  Email
+                </LabelWithInfo>
                 <Input
                   id="companyEmail"
                   type="email"
@@ -426,7 +582,12 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="paymentTerms">Payment Terms (Days)</Label>
+                <LabelWithInfo
+                  htmlFor="paymentTerms"
+                  tooltip="Number of days after invoice issue date before payment is due. Used as fallback if 'Due Date Day of Month' is not set."
+                >
+                  Payment Terms (Days)
+                </LabelWithInfo>
                 <Input
                   id="paymentTerms"
                   type="number"
@@ -442,7 +603,12 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
+              <LabelWithInfo
+                htmlFor="currency"
+                tooltip="Currency code used for all monetary values (e.g., 'THB' for Thai Baht, 'USD' for US Dollars)."
+              >
+                Currency
+              </LabelWithInfo>
               <Input
                 id="currency"
                 value={formSettings.currency}
@@ -467,7 +633,12 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="bankName">Bank Name</Label>
+                <LabelWithInfo
+                  htmlFor="bankName"
+                  tooltip="Name of the bank where payments should be made. This will appear on invoices as 'ชำระเงินได้ที่ [Bank Name]'."
+                >
+                  Bank Name
+                </LabelWithInfo>
                 <Input
                   id="bankName"
                   value={formSettings.bankName || ""}
@@ -481,7 +652,12 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
+                <LabelWithInfo
+                  htmlFor="bankAccountNumber"
+                  tooltip="Bank account number where tenants should send payments. Displayed on invoices after the bank name."
+                >
+                  Bank Account Number
+                </LabelWithInfo>
                 <Input
                   id="bankAccountNumber"
                   value={formSettings.bankAccountNumber || ""}
@@ -497,7 +673,12 @@ export default function SettingsPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="lineId">Line ID</Label>
+                <LabelWithInfo
+                  htmlFor="lineId"
+                  tooltip="LINE ID for contact/payment inquiries. Displayed on invoices on a separate line as 'ไอดีไลน์ [Line ID]'."
+                >
+                  Line ID
+                </LabelWithInfo>
                 <Input
                   id="lineId"
                   value={formSettings.lineId || ""}
@@ -511,7 +692,12 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dueDateDayOfMonth">Due Date Day of Month</Label>
+                <LabelWithInfo
+                  htmlFor="dueDateDayOfMonth"
+                  tooltip="Day of the month when invoices are due (1-31). For example, 5 means bills are due on the 5th of every month. This overrides 'Payment Terms (Days)' if set."
+                >
+                  Due Date Day of Month
+                </LabelWithInfo>
                 <Input
                   id="dueDateDayOfMonth"
                   type="number"
@@ -531,8 +717,13 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="latePaymentPenaltyPerDay">Late Payment Penalty (per day)</Label>
+              <div className="space-y-2">
+                <LabelWithInfo
+                  htmlFor="latePaymentPenaltyPerDay"
+                  tooltip="Daily penalty fee charged when payment is overdue. Displayed on invoices as 'หากเกินกำหนด ชำระค่าปรับวันละ [amount]'. Set to 0 to disable."
+                >
+                  Late Payment Penalty (per day)
+                </LabelWithInfo>
               <Input
                 id="latePaymentPenaltyPerDay"
                 type="number"
@@ -565,7 +756,12 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="labelInvoice">Invoice Title</Label>
+                <LabelWithInfo
+                  htmlFor="labelInvoice"
+                  tooltip="Thai label for 'Invoice' that appears at the top of invoices. Default: 'ใบแจ้งหนี้'."
+                >
+                  Invoice Title
+                </LabelWithInfo>
                 <Input
                   id="labelInvoice"
                   value={formSettings.labelInvoice || ""}
@@ -579,7 +775,12 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="labelRoomRent">Room Rent Label</Label>
+                <LabelWithInfo
+                  htmlFor="labelRoomRent"
+                  tooltip="Thai label for 'Room Rent' in the invoice table. Default: 'ค่าเช่าห้อง'."
+                >
+                  Room Rent Label
+                </LabelWithInfo>
                 <Input
                   id="labelRoomRent"
                   value={formSettings.labelRoomRent || ""}
@@ -595,7 +796,12 @@ export default function SettingsPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="labelWater">Water Label</Label>
+                <LabelWithInfo
+                  htmlFor="labelWater"
+                  tooltip="Thai label for 'Water' in the invoice table. Default: 'ค่าน้ำประปา'."
+                >
+                  Water Label
+                </LabelWithInfo>
                 <Input
                   id="labelWater"
                   value={formSettings.labelWater || ""}
@@ -634,7 +840,12 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="defaultRoomRent">Default Monthly Rent</Label>
+                <LabelWithInfo
+                  htmlFor="defaultRoomRent"
+                  tooltip="Default monthly rent amount suggested when creating new rooms. Can be changed per room."
+                >
+                  Default Monthly Rent
+                </LabelWithInfo>
                 <Input
                   id="defaultRoomRent"
                   type="number"
@@ -649,7 +860,12 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="defaultRoomSize">Default Room Size (sqm)</Label>
+                <LabelWithInfo
+                  htmlFor="defaultRoomSize"
+                  tooltip="Default room size in square meters suggested when creating new rooms. Can be changed per room."
+                >
+                  Default Room Size (sqm)
+                </LabelWithInfo>
                 <Input
                   id="defaultRoomSize"
                   type="number"

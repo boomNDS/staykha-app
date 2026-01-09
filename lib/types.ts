@@ -109,6 +109,15 @@ export interface ReadingFormValues {
 
 export type MeterType = "water" | "electric";
 
+export interface InvoiceReading {
+  meterType: MeterType;
+  previousReading: number;
+  currentReading: number;
+  consumption: number;
+  previousPhotoUrl: string;
+  currentPhotoUrl: string;
+}
+
 export interface MeterReading {
   id: string;
   roomId: string;
@@ -172,15 +181,9 @@ export interface Invoice {
   waterBillingMode?: "metered" | "fixed";
   waterFixedFee?: number;
   teamId: string;
+  readingGroupId?: string; // Link to reading group - ensures one invoice per reading group
   team?: Team;
-  readings?: {
-    meterType: MeterType;
-    previousReading: number;
-    currentReading: number;
-    consumption: number;
-    previousPhotoUrl: string;
-    currentPhotoUrl: string;
-  }[];
+  readings?: InvoiceReading[];
   tenant?: Tenant;
   room?: Room;
 }
