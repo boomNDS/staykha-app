@@ -16,7 +16,6 @@ import type {
   MeterReadingGroup,
   Room,
   Tenant,
-  User,
 } from "./types";
 
 const delay = (ms = 150) => new Promise((resolve) => setTimeout(resolve, ms));

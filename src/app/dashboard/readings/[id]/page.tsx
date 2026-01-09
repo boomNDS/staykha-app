@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Droplets, Zap } from "lucide-react";
-import * as React from "react";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";

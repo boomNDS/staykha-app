@@ -4,7 +4,7 @@
  */
 
 import { atom } from "jotai";
-import type { User, AdminSettings, Team } from "./types";
+import type { AdminSettings, Team, User } from "./types";
 
 // User/Auth atoms
 export const userAtom = atom<User | null>(null);
@@ -20,6 +20,10 @@ export const teamLoadingAtom = atom<boolean>(false);
 
 // Helper atoms for computed values
 export const isAuthenticatedAtom = atom((get) => get(userAtom) !== null);
-export const userTeamIdAtom = atom((get) => get(userAtom)?.teamId ?? null);
-export const isOwnerAtom = atom((get) => get(userAtom)?.role === "owner" ?? false);
-export const isAdminAtom = atom((get) => get(userAtom)?.role === "admin" ?? false);
+export const userTeamIdAtom = atom<string | null>((get) => {
+  const user = get(userAtom);
+  if (!user) return null;
+  return user.teamId ?? null;
+});
+export const isOwnerAtom = atom((get) => get(userAtom)?.role === "owner");
+export const isAdminAtom = atom((get) => get(userAtom)?.role === "admin");

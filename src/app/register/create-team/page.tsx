@@ -2,6 +2,7 @@
 
 import { Gauge, Loader2 } from "lucide-react";
 import * as React from "react";
+import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { LoadingState } from "@/components/loading-state";
 import { useToast } from "@/hooks/use-toast";
 import { teamsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
@@ -56,21 +56,25 @@ export default function CreateTeamPage() {
       const { team } = await teamsApi.create({ name: teamName.trim() });
 
       // Update user with teamId using PocketBase API
-      const pocketbaseUrl = import.meta.env.VITE_POCKETBASE_URL || "http://127.0.0.1:8090";
+      const pocketbaseUrl =
+        import.meta.env.VITE_POCKETBASE_URL || "http://127.0.0.1:8090";
       const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("Authentication required");
       }
-      
-      const response = await fetch(`${pocketbaseUrl}/api/collections/users/records/${user.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+
+      const response = await fetch(
+        `${pocketbaseUrl}/api/collections/users/records/${user.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ teamId: team.id }),
         },
-        body: JSON.stringify({ teamId: team.id }),
-      });
-      
+      );
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Failed to update user with team");
@@ -79,7 +83,7 @@ export default function CreateTeamPage() {
       // Update user in context and localStorage
       const updatedUser = { ...user, teamId: team.id, team };
       localStorage.setItem("user", JSON.stringify(updatedUser));
-      
+
       // Trigger auth context update
       window.dispatchEvent(new Event("userUpdated"));
 
@@ -118,7 +122,8 @@ export default function CreateTeamPage() {
             Create Your Team
           </CardTitle>
           <CardDescription>
-            As an owner, you need to create a team to get started. This will be your organization.
+            As an owner, you need to create a team to get started. This will be
+            your organization.
           </CardDescription>
         </CardHeader>
         <CardContent>

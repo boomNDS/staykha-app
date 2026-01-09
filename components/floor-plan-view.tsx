@@ -117,12 +117,14 @@ export function FloorPlanView({
                   <Tooltip key={room.id}>
                     <TooltipTrigger asChild>
                       <button
+                        type="button"
                         onClick={() => onRoomClick?.(room)}
                         className={cn(
                           "relative flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all hover:scale-105 hover:shadow-lg",
                           getStatusColor(room.status),
                           onRoomClick && "cursor-pointer",
                         )}
+                        aria-label={`Room ${room.roomNumber} - ${room.status}`}
                       >
                         <div className="absolute top-2 right-2">
                           {getStatusIcon(room.status)}

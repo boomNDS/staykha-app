@@ -40,10 +40,13 @@ export default function NewBuildingPage() {
 
     if (!formData.name.trim()) newErrors.name = "Building name is required";
     if (!formData.address.trim()) newErrors.address = "Address is required";
-    if (!formData.totalFloors || Number.parseInt(formData.totalFloors) < 1) {
+    if (
+      !formData.totalFloors ||
+      Number.parseInt(formData.totalFloors, 10) < 1
+    ) {
       newErrors.totalFloors = "Must be at least 1 floor";
     }
-    if (!formData.totalRooms || Number.parseInt(formData.totalRooms) < 1) {
+    if (!formData.totalRooms || Number.parseInt(formData.totalRooms, 10) < 1) {
       newErrors.totalRooms = "Must be at least 1 room";
     }
 
@@ -74,8 +77,8 @@ export default function NewBuildingPage() {
     try {
       await createBuildingMutation.mutateAsync({
         ...formData,
-        totalFloors: Number.parseInt(formData.totalFloors),
-        totalRooms: Number.parseInt(formData.totalRooms),
+        totalFloors: Number.parseInt(formData.totalFloors, 10),
+        totalRooms: Number.parseInt(formData.totalRooms, 10),
         ownerId: user?.id || "",
       });
 
@@ -85,7 +88,7 @@ export default function NewBuildingPage() {
       });
 
       router.push("/overview/buildings");
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to create building",

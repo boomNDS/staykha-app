@@ -56,7 +56,7 @@ export default function BuildingsPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteBuildingMutation.mutateAsync(id);
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to delete building",

@@ -151,7 +151,7 @@ export default function ReadingsPage() {
     Boolean(selectedGroup?.electric) &&
     (isWaterFixed || Boolean(selectedGroup?.water));
 
-  const handleReminder = (roomId: string, type: "water" | "electric") => {
+  const _handleReminder = (roomId: string, type: "water" | "electric") => {
     const key = `${roomId}-${type}`;
     const timestamp = new Date().toISOString();
     setReminderHistory((prev) => {
@@ -164,7 +164,7 @@ export default function ReadingsPage() {
     });
   };
 
-  const handleScheduleFollowUp = (roomId: string) => {
+  const _handleScheduleFollowUp = (roomId: string) => {
     if (followUps[roomId]) {
       toast({
         title: "Already scheduled",

@@ -2,7 +2,6 @@
 
 import { Search } from "lucide-react";
 import * as React from "react";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
@@ -136,8 +135,17 @@ export function DataTable<T>({
     !allSelected;
 
   // Reset to page 1 when filters change
+  const prevFiltersRef = React.useRef({ searchTerm, activeFilters });
   React.useEffect(() => {
-    setCurrentPage(1);
+    const prev = prevFiltersRef.current;
+    const filtersChanged =
+      prev.searchTerm !== searchTerm ||
+      JSON.stringify(prev.activeFilters) !== JSON.stringify(activeFilters);
+    
+    if (filtersChanged) {
+      setCurrentPage(1);
+      prevFiltersRef.current = { searchTerm, activeFilters };
+    }
   }, [searchTerm, activeFilters]);
 
   const handleFilterChange = (key: string, value: string) => {
@@ -203,13 +211,13 @@ export function DataTable<T>({
                       selectedRowIds as Set<string>,
                     );
                     if (checked) {
-                      pageRowIds.forEach((id) =>
-                        nextSelection.add(id as string),
-                      );
+                      pageRowIds.forEach((id) => {
+                        nextSelection.add(id as string);
+                      });
                     } else {
-                      pageRowIds.forEach((id) =>
-                        nextSelection.delete(id as string),
-                      );
+                      pageRowIds.forEach((id) => {
+                        nextSelection.delete(id as string);
+                      });
                     }
                     onSelectionChange?.(nextSelection);
                   }}

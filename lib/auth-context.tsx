@@ -3,11 +3,12 @@
  * Provides a React Context interface while using Jotai atoms under the hood
  * This allows gradual migration - components can use useAuth() hook as before
  */
-import * as React from "react";
+
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import * as React from "react";
 import { authApi } from "./api-client";
+import { isLoadingAuthAtom, userAtom } from "./atoms";
 import type { User } from "./types";
-import { userAtom, isLoadingAuthAtom } from "./atoms";
 
 interface AuthContextType {
   user: User | null;
@@ -45,21 +46,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     loadUser();
-    
+
     // Listen for storage changes (when user is updated in other tabs/components)
     const handleStorageChange = () => {
       loadUser();
     };
-    
+
     // Listen to both storage events (cross-tab) and custom events (same-tab)
     window.addEventListener("storage", handleStorageChange);
-    
+
     // Custom event for same-tab updates
     const handleCustomStorage = () => {
       loadUser();
     };
     window.addEventListener("userUpdated", handleCustomStorage);
-    
+
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("userUpdated", handleCustomStorage);
@@ -70,7 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log("[Auth Context] Login attempt:", { email });
     try {
       const data = await authApi.login(email, password);
-      console.log("[Auth Context] Login successful:", { user: data.user, hasToken: !!data.token });
+      console.log("[Auth Context] Login successful:", {
+        user: data.user,
+        hasToken: !!data.token,
+      });
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);

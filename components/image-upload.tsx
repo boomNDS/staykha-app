@@ -61,9 +61,13 @@ export function ImageUpload({
     },
   });
 
+  const inputId = React.useId();
+
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">{label}</label>
+      <label htmlFor={inputId} className="text-sm font-medium text-foreground">
+        {label}
+      </label>
 
       {!preview ? (
         <div
@@ -75,7 +79,7 @@ export function ImageUpload({
             error && "border-destructive",
           )}
         >
-          <input {...getInputProps()} />
+          <input {...getInputProps({ id: inputId })} />
           <Upload className="h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">
             {isDragActive

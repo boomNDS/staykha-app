@@ -66,9 +66,10 @@ export default function RegisterPage() {
 
       toast({
         title: "Registration successful",
-        description: formData.role === "owner" 
-          ? "Now create your team to get started."
-          : "Now enter your invitation code to join a team.",
+        description:
+          formData.role === "owner"
+            ? "Now create your team to get started."
+            : "Now enter your invitation code to join a team.",
       });
 
       // Redirect based on role

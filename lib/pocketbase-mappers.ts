@@ -3,35 +3,35 @@
  */
 
 import type {
+  AdminInvitation,
+  AdminSettings,
   Building,
   Invoice,
   MeterReadingGroup,
   Room,
-  Tenant,
-  AdminSettings,
-  User,
-  AdminInvitation,
   Team,
-} from "@/lib/types"
-import type { RecordMeta } from "@/types/pocketbase"
+  Tenant,
+  User,
+} from "@/lib/types";
 import type {
-  TeamMapperInput,
   BuildingMapperInput,
-  RoomMapperInput,
-  TenantMapperInput,
-  ReadingGroupMapperInput,
-  InvoiceMapperInput,
-  SettingsMapperInput,
-  UserMapperInput,
   InvitationMapperInput,
-} from "@/types/mappers"
+  InvoiceMapperInput,
+  ReadingGroupMapperInput,
+  RoomMapperInput,
+  SettingsMapperInput,
+  TeamMapperInput,
+  TenantMapperInput,
+  UserMapperInput,
+} from "@/types/mappers";
+import type { RecordMeta } from "@/types/pocketbase";
 
 export const mapTeamRecord = (record: TeamMapperInput): Team => ({
   id: record.id,
   name: record.name,
   createdAt: record.created,
   updatedAt: record.updated,
-})
+});
 
 export const mapBuildingRecord = (record: BuildingMapperInput): Building => ({
   id: record.id,
@@ -44,7 +44,7 @@ export const mapBuildingRecord = (record: BuildingMapperInput): Building => ({
   teamId: record.teamId,
   createdAt: record.created,
   updatedAt: record.updated,
-})
+});
 
 export const mapRoomRecord = (record: RoomMapperInput): Room => ({
   id: record.id,
@@ -57,7 +57,7 @@ export const mapRoomRecord = (record: RoomMapperInput): Room => ({
   monthlyRent: record.monthlyRent,
   tenantId: record.tenantId ?? null,
   teamId: record.teamId,
-})
+});
 
 export const mapTenantRecord = (record: TenantMapperInput): Tenant => ({
   id: record.id,
@@ -71,9 +71,11 @@ export const mapTenantRecord = (record: TenantMapperInput): Tenant => ({
   status: record.status ?? "active",
   teamId: record.teamId,
   createdAt: record.created,
-})
+});
 
-export const mapReadingRecord = (record: ReadingGroupMapperInput): MeterReadingGroup => ({
+export const mapReadingRecord = (
+  record: ReadingGroupMapperInput,
+): MeterReadingGroup => ({
   id: record.id,
   roomId: record.roomId,
   roomNumber: record.roomNumber,
@@ -83,7 +85,7 @@ export const mapReadingRecord = (record: ReadingGroupMapperInput): MeterReadingG
   water: record.water as MeterReadingGroup["water"],
   electric: record.electric as MeterReadingGroup["electric"],
   teamId: record.teamId,
-})
+});
 
 export const mapInvoiceRecord = (record: InvoiceMapperInput): Invoice => ({
   id: record.id,
@@ -115,11 +117,13 @@ export const mapInvoiceRecord = (record: InvoiceMapperInput): Invoice => ({
   waterBillingMode: record.waterBillingMode,
   waterFixedFee: record.waterFixedFee,
   teamId: record.teamId,
-})
+});
 
-export const mapSettingsRecord = (record: SettingsMapperInput): AdminSettings & RecordMeta => ({
+export const mapSettingsRecord = (
+  record: SettingsMapperInput,
+): AdminSettings & RecordMeta => ({
   ...record,
-})
+});
 
 export const mapUserRecord = (record: UserMapperInput): User => ({
   id: record.id,
@@ -128,9 +132,11 @@ export const mapUserRecord = (record: UserMapperInput): User => ({
   role: record.role ?? "admin",
   teamId: record.teamId,
   createdAt: record.created,
-})
+});
 
-export const mapInvitationRecord = (record: InvitationMapperInput): AdminInvitation => ({
+export const mapInvitationRecord = (
+  record: InvitationMapperInput,
+): AdminInvitation => ({
   id: record.id,
   email: record.email,
   teamId: record.teamId,
@@ -141,4 +147,4 @@ export const mapInvitationRecord = (record: InvitationMapperInput): AdminInvitat
   expiresAt: record.expiresAt,
   createdAt: record.created,
   buildings: record.buildings ?? [],
-})
+});

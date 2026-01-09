@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, _password: string) => {
     // Mock login - replace with real API call
     const mockUser: User = {
       id: email === "owner@example.com" ? "owner-1" : "admin-1",

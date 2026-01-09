@@ -23,9 +23,7 @@ export function LoadingState({
         <div className="mx-auto mb-4 flex items-center justify-center">
           <UniqueLoading variant="morph" size={size} />
         </div>
-        {message && (
-          <p className="text-sm text-muted-foreground">{message}</p>
-        )}
+        {message && <p className="text-sm text-muted-foreground">{message}</p>}
       </div>
     </div>
   );

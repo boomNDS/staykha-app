@@ -2,11 +2,16 @@
  * Hook to manage team state using Jotai + React Query
  * Team data is fetched via React Query but also stored in Jotai for easy access
  */
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom, useAtomValue } from "jotai";
 import { useMemo } from "react";
 import { teamsApi } from "../api-client";
-import { teamAtom, teamLoadingAtom, userTeamIdAtom, isOwnerAtom } from "../atoms";
+import {
+  isOwnerAtom,
+  teamAtom,
+  teamLoadingAtom,
+  userTeamIdAtom,
+} from "../atoms";
 import type { Team } from "../types";
 
 export function useTeam() {

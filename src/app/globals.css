@@ -209,8 +209,16 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(1200px 480px at 10% -10%, var(--glow-primary), transparent 60%),
-      radial-gradient(900px 480px at 90% -20%, var(--glow-accent), transparent 55%);
+      radial-gradient(
+        1200px 480px at 10% -10%,
+        var(--glow-primary),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px 480px at 90% -20%,
+        var(--glow-accent),
+        transparent 55%
+      );
     background-attachment: fixed;
   }
 
@@ -221,7 +229,7 @@
 
 @media print {
   body {
-    background: #ffffff !important;
+    background: #ffffff;
   }
 
   body * {
@@ -229,16 +237,16 @@
   }
 
   .print-only {
-    display: block !important;
+    display: block;
   }
 
   .screen-only {
-    display: none !important;
+    display: none;
   }
 
   .print-area,
   .print-area * {
-    visibility: visible !important;
+    visibility: visible;
   }
 
   .print-area {

@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { DollarSign, Gauge, Home, Users } from "lucide-react";
-import * as React from "react";
 import { DataTable } from "@/components/data-table";
 import { LoadingState } from "@/components/loading-state";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
@@ -17,7 +16,7 @@ import {
   roomsApi,
   tenantsApi,
 } from "@/lib/api-client";
-import type { Invoice, MeterReadingGroup, Room, Tenant } from "@/lib/types";
+import type { MeterReadingGroup, Tenant } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatCurrency } from "@/lib/utils";
 

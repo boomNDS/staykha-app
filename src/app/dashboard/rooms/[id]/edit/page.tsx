@@ -25,7 +25,7 @@ import {
 import { buildingsApi, roomsApi, tenantsApi } from "@/lib/api-client";
 import { useParams, useRouter } from "@/lib/router";
 import { mapZodErrors, roomFormSchema, tenantDraftSchema } from "@/lib/schemas";
-import type { Building, RoomFormValues, TenantDraft } from "@/lib/types";
+import type { RoomFormValues, TenantDraft } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function EditRoomPage() {
@@ -145,7 +145,7 @@ export default function EditRoomPage() {
         updates: {
           roomNumber: formData.roomNumber,
           buildingId: formData.buildingId,
-          floor: Number.parseInt(formData.floor),
+          floor: Number.parseInt(formData.floor, 10),
           status: formData.status,
           monthlyRent: formData.monthlyRent
             ? Number.parseFloat(formData.monthlyRent)

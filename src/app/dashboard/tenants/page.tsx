@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { roomsApi, tenantsApi } from "@/lib/api-client";
 import { useRouter } from "@/lib/router";
-import type { Room, Tenant } from "@/lib/types";
+import type { Tenant } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatDate } from "@/lib/utils";
 

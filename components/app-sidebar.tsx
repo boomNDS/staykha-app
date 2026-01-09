@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   Building2,
@@ -14,11 +15,10 @@ import * as React from "react";
 import { StayKhaLogo } from "@/components/staykha-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/auth-context";
 import { teamsApi } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import { usePathname } from "@/lib/router";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
 
 const navigation = [
   {
@@ -201,8 +201,10 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
 
       {/* Collapse Toggle */}
       <button
+        type="button"
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar shadow-sm hover:bg-sidebar-accent"
+        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         <ChevronRight
           className={cn(

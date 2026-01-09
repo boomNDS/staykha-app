@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { LayoutGrid, List } from "lucide-react";
-import * as React from "react";
 import { DataTable } from "@/components/data-table";
 import { FloorPlanView } from "@/components/floor-plan-view";
 import { LoadingState } from "@/components/loading-state";
@@ -11,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildingsApi, roomsApi } from "@/lib/api-client";
 import { useParams, useRouter } from "@/lib/router";
-import type { Building, Room } from "@/lib/types";
+import type { Room } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function BuildingFloorPlanPage() {

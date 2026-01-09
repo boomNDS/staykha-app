@@ -3,11 +3,11 @@
 import { Menu, X } from "lucide-react";
 import * as React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { LoadingState } from "@/components/loading-state";
 import { StayKhaLogo } from "@/components/staykha-logo";
 import { Button } from "@/components/ui/button";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
-import { LoadingState } from "@/components/loading-state";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@/lib/router";
 
@@ -25,13 +25,13 @@ export default function DashboardLayout({
       router.push("/login");
       return;
     }
-    
+
     // Check if admin needs to join a team
     if (user && user.role === "admin" && !user.teamId) {
       router.push("/register/join-team");
       return;
     }
-    
+
     // Check if owner needs to create a team
     if (user && user.role === "owner" && !user.teamId) {
       router.push("/register/create-team");

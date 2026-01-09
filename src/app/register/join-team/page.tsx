@@ -2,6 +2,7 @@
 
 import { Gauge, Loader2 } from "lucide-react";
 import * as React from "react";
+import { LoadingState } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { LoadingState } from "@/components/loading-state";
 import { useToast } from "@/hooks/use-toast";
 import { invitationsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
@@ -53,12 +53,15 @@ export default function JoinTeamPage() {
 
     try {
       // Accept invitation by code
-      const { team } = await invitationsApi.acceptByCode(inviteCode.trim().toUpperCase(), user.id);
+      const { team } = await invitationsApi.acceptByCode(
+        inviteCode.trim().toUpperCase(),
+        user.id,
+      );
 
       // Update user in context and localStorage
       const updatedUser = { ...user, teamId: team.id, team };
       localStorage.setItem("user", JSON.stringify(updatedUser));
-      
+
       // Trigger auth context update
       window.dispatchEvent(new Event("userUpdated"));
 
@@ -97,7 +100,8 @@ export default function JoinTeamPage() {
             Join a Team
           </CardTitle>
           <CardDescription>
-            Enter the invitation code you received from the team owner to join their organization.
+            Enter the invitation code you received from the team owner to join
+            their organization.
           </CardDescription>
         </CardHeader>
         <CardContent>

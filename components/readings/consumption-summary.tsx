@@ -1,5 +1,3 @@
-import * as React from "react";
-
 interface ConsumptionSummaryProps {
   water?: number | null;
   electric?: number | null;

@@ -35,7 +35,12 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { settings, isLoading, isUpdating, updateSettings } = useSettings();
-  const { team, isLoading: isTeamLoading, isUpdating: isSavingTeam, updateTeam } = useTeam();
+  const {
+    team,
+    isLoading: isTeamLoading,
+    isUpdating: isSavingTeam,
+    updateTeam,
+  } = useTeam();
   const [isSaving, setIsSaving] = React.useState(false);
   const [teamName, setTeamName] = React.useState("");
 
@@ -260,7 +265,10 @@ export default function SettingsPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Preview:{" "}
-                  {formatCurrency(formSettings.waterRatePerUnit, formSettings.currency)}{" "}
+                  {formatCurrency(
+                    formSettings.waterRatePerUnit,
+                    formSettings.currency,
+                  )}{" "}
                   per m³
                 </p>
               </div>
@@ -286,10 +294,10 @@ export default function SettingsPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Preview:{" "}
-                  {                    formatCurrency(
-                      formSettings.electricRatePerUnit,
-                      formSettings.currency,
-                    )}{" "}
+                  {formatCurrency(
+                    formSettings.electricRatePerUnit,
+                    formSettings.currency,
+                  )}{" "}
                   per kWh
                 </p>
               </div>
@@ -329,7 +337,10 @@ export default function SettingsPage() {
                 id="companyName"
                 value={formSettings.companyName}
                 onChange={(e) =>
-                  setFormSettings({ ...formSettings, companyName: e.target.value })
+                  setFormSettings({
+                    ...formSettings,
+                    companyName: e.target.value,
+                  })
                 }
               />
             </div>
@@ -339,7 +350,10 @@ export default function SettingsPage() {
                 id="companyAddress"
                 value={formSettings.companyAddress}
                 onChange={(e) =>
-                  setFormSettings({ ...formSettings, companyAddress: e.target.value })
+                  setFormSettings({
+                    ...formSettings,
+                    companyAddress: e.target.value,
+                  })
                 }
               />
             </div>
@@ -351,7 +365,10 @@ export default function SettingsPage() {
                   type="tel"
                   value={formSettings.companyPhone}
                   onChange={(e) =>
-                    setFormSettings({ ...formSettings, companyPhone: e.target.value })
+                    setFormSettings({
+                      ...formSettings,
+                      companyPhone: e.target.value,
+                    })
                   }
                 />
               </div>
@@ -362,7 +379,10 @@ export default function SettingsPage() {
                   type="email"
                   value={formSettings.companyEmail}
                   onChange={(e) =>
-                    setFormSettings({ ...formSettings, companyEmail: e.target.value })
+                    setFormSettings({
+                      ...formSettings,
+                      companyEmail: e.target.value,
+                    })
                   }
                 />
               </div>
@@ -386,7 +406,10 @@ export default function SettingsPage() {
                   id="invoicePrefix"
                   value={formSettings.invoicePrefix}
                   onChange={(e) =>
-                    setFormSettings({ ...formSettings, invoicePrefix: e.target.value })
+                    setFormSettings({
+                      ...formSettings,
+                      invoicePrefix: e.target.value,
+                    })
                   }
                   placeholder="INV"
                 />
@@ -401,7 +424,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     setFormSettings({
                       ...formSettings,
-                      paymentTermsDays: Number.parseInt(e.target.value),
+                      paymentTermsDays: Number.parseInt(e.target.value, 10),
                     })
                   }
                 />

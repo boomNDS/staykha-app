@@ -113,7 +113,7 @@ export default function NewReadingPage() {
     },
   });
 
-  const simulateOCR = async (file: File): Promise<string> => {
+  const simulateOCR = async (_file: File): Promise<string> => {
     // Simulate OCR processing delay
     await new Promise((resolve) => setTimeout(resolve, 1500));
     // Mock OCR result - in production, this would call your OCR API
@@ -136,7 +136,7 @@ export default function NewReadingPage() {
           title: "OCR Complete",
           description: `Extracted reading: ${ocrResult}`,
         });
-      } catch (error) {
+      } catch (_error) {
         toast({
           title: "OCR Failed",
           description:

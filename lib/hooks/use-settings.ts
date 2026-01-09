@@ -2,7 +2,7 @@
  * Hook to manage settings state using Jotai + React Query
  * Settings are fetched via React Query but also stored in Jotai for easy access
  */
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom, useAtomValue } from "jotai";
 import { useMemo } from "react";
 import { settingsApi } from "../api-client";

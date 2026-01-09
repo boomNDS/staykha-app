@@ -28,9 +28,9 @@ import TenantsPage from "./app/dashboard/tenants/page";
 import ForgotPasswordPage from "./app/forgot-password/page";
 import LoginPage from "./app/login/page";
 import HomePage from "./app/page";
-import RegisterPage from "./app/register/page";
 import CreateTeamPage from "./app/register/create-team/page";
 import JoinTeamPage from "./app/register/join-team/page";
+import RegisterPage from "./app/register/page";
 import ResetPasswordPage from "./app/reset-password/page";
 import TermsPage from "./app/terms/page";
 

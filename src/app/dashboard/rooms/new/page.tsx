@@ -24,7 +24,7 @@ import { buildingsApi, roomsApi, settingsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@/lib/router";
 import { mapZodErrors, roomFormSchema } from "@/lib/schemas";
-import type { Building, RoomFormValues } from "@/lib/types";
+import type { RoomFormValues } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function NewRoomPage() {
@@ -102,7 +102,7 @@ export default function NewRoomPage() {
       await createRoomMutation.mutateAsync({
         roomNumber: formData.roomNumber,
         buildingId: formData.buildingId,
-        floor: Number.parseInt(formData.floor),
+        floor: Number.parseInt(formData.floor, 10),
         status: formData.status as "occupied" | "vacant" | "maintenance",
         monthlyRent: formData.monthlyRent
           ? Number.parseFloat(formData.monthlyRent)

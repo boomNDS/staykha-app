@@ -21,7 +21,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 export default function ForgotPasswordPage() {
   usePageTitle("Reset Password");
 
-  const router = useRouter();
+  const _router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSuccess, setIsSuccess] = React.useState(false);

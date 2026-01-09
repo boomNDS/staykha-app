@@ -1,7 +1,6 @@
 "use client";
 
 import { Droplets, Zap } from "lucide-react";
-import * as React from "react";
 import type { Invoice } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
