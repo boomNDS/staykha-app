@@ -1,0 +1,87 @@
+import * as React from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import type { TenantDraft } from "@/lib/types";
+
+interface TenantInlineFormProps {
+  value: TenantDraft;
+  onChange: (next: TenantDraft) => void;
+  showDeposit?: boolean;
+  errors?: Record<string, string>;
+}
+
+export function TenantInlineForm({
+  value,
+  onChange,
+  showDeposit = false,
+  errors = {},
+}: TenantInlineFormProps) {
+  const update = (patch: Partial<TenantDraft>) =>
+    onChange({ ...value, ...patch });
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="space-y-2 sm:col-span-2">
+        <Label htmlFor="tenantName">Full Name</Label>
+        <Input
+          id="tenantName"
+          value={value.name}
+          onChange={(e) => update({ name: e.target.value })}
+        />
+        {errors.name && (
+          <p className="text-sm text-destructive">{errors.name}</p>
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="tenantEmail">Email</Label>
+        <Input
+          id="tenantEmail"
+          type="email"
+          value={value.email}
+          onChange={(e) => update({ email: e.target.value })}
+        />
+        {errors.email && (
+          <p className="text-sm text-destructive">{errors.email}</p>
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="tenantPhone">Phone</Label>
+        <Input
+          id="tenantPhone"
+          value={value.phone}
+          onChange={(e) => update({ phone: e.target.value })}
+        />
+        {errors.phone && (
+          <p className="text-sm text-destructive">{errors.phone}</p>
+        )}
+      </div>
+      <div className={showDeposit ? "space-y-2" : "space-y-2 sm:col-span-2"}>
+        <Label htmlFor="tenantMoveIn">Move-in Date</Label>
+        <Input
+          id="tenantMoveIn"
+          type="date"
+          value={value.moveInDate}
+          onChange={(e) => update({ moveInDate: e.target.value })}
+        />
+        {errors.moveInDate && (
+          <p className="text-sm text-destructive">{errors.moveInDate}</p>
+        )}
+      </div>
+      {showDeposit && (
+        <div className="space-y-2">
+          <Label htmlFor="tenantDeposit">Deposit</Label>
+          <Input
+            id="tenantDeposit"
+            type="number"
+            min="0"
+            value={value.deposit ?? ""}
+            onChange={(e) => update({ deposit: e.target.value })}
+          />
+          {errors.deposit && (
+            <p className="text-sm text-destructive">{errors.deposit}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
