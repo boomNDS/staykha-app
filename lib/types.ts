@@ -202,6 +202,17 @@ export interface AdminSettings {
   paymentTermsDays: number;
   defaultRoomRent: number;
   defaultRoomSize: number;
+  // Payment & Billing Details
+  bankName?: string;
+  bankAccountNumber?: string;
+  lineId?: string;
+  latePaymentPenaltyPerDay?: number;
+  dueDateDayOfMonth?: number; // Day of month (1-31) when bills are due
+  // Thai Labels (optional - defaults to Thai if not set)
+  labelRoomRent?: string; // Default: "ค่าเช่าห้อง"
+  labelWater?: string; // Default: "ค่าน้ำประปา"
+  labelElectricity?: string; // Default: "ค่าไฟฟ้า"
+  labelInvoice?: string; // Default: "ใบแจ้งหนี้"
 }
 
 export interface AdminInvitation {

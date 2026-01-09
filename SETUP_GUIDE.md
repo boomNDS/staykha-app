@@ -319,6 +319,15 @@ Create the following collections in the PocketBase admin panel. For each collect
 - `paymentTermsDays` (Number, Required, Default: 30)
 - `defaultRoomRent` (Number, Default: 0)
 - `defaultRoomSize` (Number, Default: 0)
+- `bankName` (Text, Optional) - Bank name for payment instructions (e.g., "ธนาคารกรุงไทย")
+- `bankAccountNumber` (Text, Optional) - Bank account number for payments (e.g., "878-0-51077-9")
+- `lineId` (Text, Optional) - Line ID for contact (e.g., "@379zxxta")
+- `latePaymentPenaltyPerDay` (Number, Optional, Default: 0) - Penalty amount per day for late payments
+- `dueDateDayOfMonth` (Number, Optional, Default: 5) - Day of month when bills are due (1-31)
+- `labelInvoice` (Text, Optional, Default: "ใบแจ้งหนี้") - Thai label for invoice title
+- `labelRoomRent` (Text, Optional, Default: "ค่าเช่าห้อง") - Thai label for room rent
+- `labelWater` (Text, Optional, Default: "ค่าน้ำประปา") - Thai label for water bill
+- `labelElectricity` (Text, Optional, Default: "ค่าไฟฟ้า") - Thai label for electricity bill
 
 **Access Rules:**
 - **List/Search**: `@request.auth.id != "" && (@request.auth.role = "owner" || @request.auth.role = "admin") && teamId = @request.auth.teamId`
@@ -392,12 +401,21 @@ taxRate: 7
 currency: THB
 companyName: Your Company Name
 companyAddress: Your Company Address
-companyPhone: Your Company Phone
-companyEmail: your-email@example.com
+companyPhone: +66-2-123-4567
+companyEmail: billing@example.com
 invoicePrefix: INV
 paymentTermsDays: 30
 defaultRoomRent: 4500
 defaultRoomSize: 20
+bankName: ธนาคารกรุงไทย
+bankAccountNumber: 878-0-51077-9
+lineId: @379zxxta
+latePaymentPenaltyPerDay: 50
+dueDateDayOfMonth: 5
+labelInvoice: ใบแจ้งหนี้
+labelRoomRent: ค่าเช่าห้อง
+labelWater: ค่าน้ำประปา
+labelElectricity: ค่าไฟฟ้า
 ```
 
 4. Click **Save**

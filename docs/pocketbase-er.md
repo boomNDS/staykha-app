@@ -16,7 +16,7 @@
 | `tenants` | `name`, `email`, `phone`, `roomId`, `moveInDate`, `monthlyRent`, `deposit`, `status`, `teamId` | Links back to a single room and inherits rent/deposit info; `teamId` required for team isolation |
 | `reading_groups` | `roomId`, `roomNumber`, `tenantName`, `readingDate`, `status`, `water`, `electric`, `teamId` | Each record stores grouped water/electric readings for a room-month; `teamId` required for team isolation |
 | `invoices` | `tenantName`, `roomNumber`, `billingPeriod`, `issueDate`, `dueDate`, `status`, `total`, `waterUsage`, `electricUsage`, `teamId` | Tracks billing lifecycle; `status` matches the existing enum; `teamId` required for team isolation |
-| `settings` | `teamId`, all fields from `AdminSettings` (rates, currency, company data, default rent/size) | Per-team settings collection (one record per team) |
+| `settings` | `teamId`, all fields from `AdminSettings` (rates, currency, company data, default rent/size, payment/billing details, Thai labels) | Per-team settings collection (one record per team) |
 | `admin_invitations` | `email`, `teamId`, `invitedBy`, `invitedByName`, `status`, `inviteCode`, `expiresAt`, `buildings` | Manages admin invitation workflow per team |
 
 ## Entity Relationship Diagram
@@ -148,6 +148,15 @@ erDiagram
         number paymentTermsDays
         number defaultRoomRent
         number defaultRoomSize
+        string bankName "nullable"
+        string bankAccountNumber "nullable"
+        string lineId "nullable"
+        number latePaymentPenaltyPerDay "nullable"
+        number dueDateDayOfMonth "nullable"
+        string labelInvoice "nullable"
+        string labelRoomRent "nullable"
+        string labelWater "nullable"
+        string labelElectricity "nullable"
     }
 
     AdminInvitation {
@@ -197,7 +206,7 @@ For detailed field definitions, access rules, and setup instructions, see:
 | `tenants` | `name`, `email`, `phone`, `roomId`, `moveInDate`, `monthlyRent`, `deposit`, `status`, `teamId` | Tenant management; `teamId` required for team isolation |
 | `reading_groups` | `roomId`, `readingDate`, `status`, `water`, `electric`, `teamId` | Meter reading groups; `teamId` required for team isolation |
 | `invoices` | `roomId`, `billingPeriod`, `status`, `total`, `waterUsage`, `electricUsage`, `teamId` | Invoice management; `teamId` required for team isolation |
-| `settings` | `teamId`, rates, company info, defaults | Per-team settings (one record per team) |
+| `settings` | `teamId`, rates, company info, defaults, payment/billing details, Thai labels | Per-team settings (one record per team) |
 | `admin_invitations` | `email`, `invitedBy`, `status`, `inviteCode`, `expiresAt` | Admin invitation workflow |
 
 **Access Rules:** All collections implement role-based and team-based access control:

@@ -1,13 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Droplets, Loader2, Zap } from "lucide-react";
+import { Download, Droplets, Loader2, Printer, Zap } from "lucide-react";
 import * as React from "react";
+import { PrintInvoiceCard } from "@/components/billing/print-invoice-card";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { invoicesApi } from "@/lib/api-client";
 import { useParams, useRouter } from "@/lib/router";
@@ -105,6 +106,13 @@ export default function InvoiceDetailPage() {
         showBack
         actions={
           <>
+            <Button
+              variant="outline"
+              onClick={() => window.print()}
+            >
+              <Printer className="mr-2 h-4 w-4" />
+              Print
+            </Button>
             <Button
               variant="outline"
               onClick={() =>
@@ -369,6 +377,22 @@ export default function InvoiceDetailPage() {
               )}
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Thai Format Invoice (Print View) */}
+      <div className="hidden print:block">
+        <PrintInvoiceCard invoice={invoice} />
+      </div>
+
+      {/* Thai Format Invoice (Screen View) */}
+      <Card className="print:hidden">
+        <CardHeader>
+          <CardTitle>Invoice (Thai Format)</CardTitle>
+          <CardDescription>Printable format matching Thai billing style</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PrintInvoiceCard invoice={invoice} />
         </CardContent>
       </Card>
     </div>

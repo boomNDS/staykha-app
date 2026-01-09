@@ -591,7 +591,19 @@ export const invoicesApi = {
     // Calculate dates
     const issueDate = new Date(readingGroup.readingDate);
     const dueDate = new Date(issueDate);
-    dueDate.setDate(dueDate.getDate() + settings.paymentTermsDays);
+    
+    // Use dueDateDayOfMonth if set, otherwise use paymentTermsDays
+    if (settings.dueDateDayOfMonth && settings.dueDateDayOfMonth >= 1 && settings.dueDateDayOfMonth <= 31) {
+      // Set due date to the specified day of the month
+      dueDate.setDate(settings.dueDateDayOfMonth);
+      // If the due date is in the past for this month, move to next month
+      if (dueDate < issueDate) {
+        dueDate.setMonth(dueDate.getMonth() + 1);
+      }
+    } else {
+      // Fallback to paymentTermsDays
+      dueDate.setDate(dueDate.getDate() + settings.paymentTermsDays);
+    }
 
     // Calculate amounts
     const waterConsumption = readingGroup.water

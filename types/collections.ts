@@ -135,4 +135,15 @@ export type SettingsRecord = RecordMeta & {
   paymentTermsDays: number;
   defaultRoomRent?: number;
   defaultRoomSize?: number;
+  // Payment & Billing Details
+  bankName?: string;
+  bankAccountNumber?: string;
+  lineId?: string;
+  latePaymentPenaltyPerDay?: number;
+  dueDateDayOfMonth?: number;
+  // Thai Labels
+  labelRoomRent?: string;
+  labelWater?: string;
+  labelElectricity?: string;
+  labelInvoice?: string;
 };

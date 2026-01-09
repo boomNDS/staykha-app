@@ -10,7 +10,7 @@ A modern dormitory and room management system with automated meter reading and b
 - **Meter Readings**: Capture water and electric meter readings with photo uploads, grouped by room and month
 - **Billing & Invoicing**: Automated invoice generation from meter readings with configurable rates and billing modes
 - **Admin Management**: Multi-admin support with role-based access (owner/admin) and invitation system
-- **Settings**: Configurable billing rates, company information, and default values
+- **Settings**: Configurable billing rates, company information, payment details (bank info, late payment penalties), Thai invoice labels, and default values
 - **Dashboard**: Real-time overview with statistics, occupancy rates, and pending readings
 - **Authentication**: Login functionality (registration and password reset can be added using PocketBase's built-in features)
 
@@ -256,6 +256,15 @@ erDiagram
         number paymentTermsDays
         number defaultRoomRent
         number defaultRoomSize
+        string bankName "nullable"
+        string bankAccountNumber "nullable"
+        string lineId "nullable"
+        number latePaymentPenaltyPerDay "nullable"
+        number dueDateDayOfMonth "nullable"
+        string labelInvoice "nullable"
+        string labelRoomRent "nullable"
+        string labelWater "nullable"
+        string labelElectricity "nullable"
     }
 
     AdminInvitation {

@@ -61,6 +61,17 @@ export default function SettingsPage() {
     paymentTermsDays: 15,
     defaultRoomRent: 4500,
     defaultRoomSize: 28,
+    // Payment & Billing defaults
+    bankName: "",
+    bankAccountNumber: "",
+    lineId: "",
+    latePaymentPenaltyPerDay: 0,
+    dueDateDayOfMonth: 5,
+    // Thai Labels defaults
+    labelInvoice: "ใบแจ้งหนี้",
+    labelRoomRent: "ค่าเช่าห้อง",
+    labelWater: "ค่าน้ำประปา",
+    labelElectricity: "ค่าไฟฟ้า",
   });
 
   React.useEffect(() => {
@@ -441,6 +452,176 @@ export default function SettingsPage() {
                 placeholder="THB"
                 className="max-w-xs"
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Payment & Billing Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment & Billing Details</CardTitle>
+            <CardDescription>
+              Bank information and payment instructions for invoices
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="bankName">Bank Name</Label>
+                <Input
+                  id="bankName"
+                  value={formSettings.bankName || ""}
+                  onChange={(e) =>
+                    setFormSettings({
+                      ...formSettings,
+                      bankName: e.target.value,
+                    })
+                  }
+                  placeholder="ธนาคารกรุงไทย"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
+                <Input
+                  id="bankAccountNumber"
+                  value={formSettings.bankAccountNumber || ""}
+                  onChange={(e) =>
+                    setFormSettings({
+                      ...formSettings,
+                      bankAccountNumber: e.target.value,
+                    })
+                  }
+                  placeholder="878-0-51077-9"
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="lineId">Line ID</Label>
+                <Input
+                  id="lineId"
+                  value={formSettings.lineId || ""}
+                  onChange={(e) =>
+                    setFormSettings({
+                      ...formSettings,
+                      lineId: e.target.value,
+                    })
+                  }
+                  placeholder="@379zxxta"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dueDateDayOfMonth">Due Date Day of Month</Label>
+                <Input
+                  id="dueDateDayOfMonth"
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={formSettings.dueDateDayOfMonth || 5}
+                  onChange={(e) =>
+                    setFormSettings({
+                      ...formSettings,
+                      dueDateDayOfMonth: Number.parseInt(e.target.value, 10),
+                    })
+                  }
+                  placeholder="5"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Day of month when bills are due (e.g., 5 = 5th of every month)
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="latePaymentPenaltyPerDay">Late Payment Penalty (per day)</Label>
+              <Input
+                id="latePaymentPenaltyPerDay"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formSettings.latePaymentPenaltyPerDay || 0}
+                onChange={(e) =>
+                  setFormSettings({
+                    ...formSettings,
+                    latePaymentPenaltyPerDay: Number.parseFloat(e.target.value) || 0,
+                  })
+                }
+                placeholder="50"
+              />
+              <p className="text-xs text-muted-foreground">
+                Penalty amount charged per day for late payments (0 to disable)
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Thai Labels (Optional) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Invoice Labels (Thai)</CardTitle>
+            <CardDescription>
+              Customize Thai labels for invoice items (leave empty for defaults)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="labelInvoice">Invoice Title</Label>
+                <Input
+                  id="labelInvoice"
+                  value={formSettings.labelInvoice || ""}
+                  onChange={(e) =>
+                    setFormSettings({
+                      ...formSettings,
+                      labelInvoice: e.target.value,
+                    })
+                  }
+                  placeholder="ใบแจ้งหนี้"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="labelRoomRent">Room Rent Label</Label>
+                <Input
+                  id="labelRoomRent"
+                  value={formSettings.labelRoomRent || ""}
+                  onChange={(e) =>
+                    setFormSettings({
+                      ...formSettings,
+                      labelRoomRent: e.target.value,
+                    })
+                  }
+                  placeholder="ค่าเช่าห้อง"
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="labelWater">Water Label</Label>
+                <Input
+                  id="labelWater"
+                  value={formSettings.labelWater || ""}
+                  onChange={(e) =>
+                    setFormSettings({
+                      ...formSettings,
+                      labelWater: e.target.value,
+                    })
+                  }
+                  placeholder="ค่าน้ำประปา"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="labelElectricity">Electricity Label</Label>
+                <Input
+                  id="labelElectricity"
+                  value={formSettings.labelElectricity || ""}
+                  onChange={(e) =>
+                    setFormSettings({
+                      ...formSettings,
+                      labelElectricity: e.target.value,
+                    })
+                  }
+                  placeholder="ค่าไฟฟ้า"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
