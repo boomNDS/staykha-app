@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/lib/auth-context";
 import { router } from "./router";
 import "./app/globals.css";
@@ -20,6 +21,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <RouterProvider router={router} />
+        <Analytics />
       </AuthProvider>
     </QueryClientProvider>
   </React.StrictMode>,
