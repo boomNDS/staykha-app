@@ -15,6 +15,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { StayKhaLogo } from "@/components/staykha-logo";
+import { Typewriter } from "@/components/typewriter";
 import { Button } from "@/components/ui/button";
 import { SEO } from "@/lib/seo";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -107,7 +108,23 @@ export default function HomePage() {
                 variants={fadeUp}
                 className="font-heading text-balance text-4xl font-semibold leading-tight text-foreground sm:text-5xl"
               >
-                Complete property management for dormitories and rentals.
+                <Typewriter
+                  text={[
+                    "Complete property management for dormitories and rentals.",
+                    "Manage buildings, rooms, and tenants with ease.",
+                    "Automated meter readings and billing workflows.",
+                    "Multi-admin support with role-based access.",
+                  ]}
+                  speed={50}
+                  initialDelay={500}
+                  waitTime={3000}
+                  deleteSpeed={30}
+                  loop={true}
+                  className=""
+                  showCursor={true}
+                  cursorChar="|"
+                  cursorClassName="ml-1 text-primary"
+                />
               </motion.h1>
               <motion.p
                 variants={fadeUp}
