@@ -17,8 +17,8 @@ interface SettingsRequiredProps {
 }
 
 export function SettingsRequired({
-  title = "Settings Required",
-  description = "You need to create settings for your team before you can use this feature.",
+  title = "ต้องตั้งค่า Settings ก่อนใช้งาน",
+  description = "คุณต้องสร้าง Settings ของทีมก่อนจึงจะใช้ฟีเจอร์นี้ได้",
 }: SettingsRequiredProps) {
   const router = useRouter();
 
@@ -34,14 +34,14 @@ export function SettingsRequired({
         </CardHeader>
         <CardContent>
           <p className="mb-4 text-sm text-muted-foreground">
-            Click the button below to go to Settings and create default settings for your team.
+            คลิกปุ่มด้านล่างเพื่อไปที่ Settings และสร้างค่าเริ่มต้นสำหรับทีมของคุณ
           </p>
           <Button
             onClick={() => router.push("/overview/settings")}
             className="w-full"
           >
             <Settings className="mr-2 h-4 w-4" />
-            Go to Settings
+            ไปที่ Settings
           </Button>
         </CardContent>
       </Card>

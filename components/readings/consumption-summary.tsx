@@ -21,7 +21,7 @@ export function ConsumptionSummary({
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 sm:p-6">
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium text-muted-foreground">
-              Water Consumption
+              ปริมาณใช้น้ำ
             </span>
             <span className="text-2xl font-bold text-primary sm:text-3xl">
               {water.toLocaleString()} m³
@@ -33,7 +33,7 @@ export function ConsumptionSummary({
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 sm:p-6">
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium text-muted-foreground">
-              Electric Consumption
+              ปริมาณใช้ไฟ
             </span>
             <span className="text-2xl font-bold text-primary sm:text-3xl">
               {electric.toLocaleString()} kWh

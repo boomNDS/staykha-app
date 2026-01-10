@@ -42,39 +42,39 @@ export function OnboardingChecklist({
   const steps = [
     {
       key: "building",
-      title: "Add your first building",
-      description: "Set address and floors to organize rooms.",
+      title: "เพิ่มอาคารแรกของคุณ",
+      description: "กำหนดที่อยู่และจำนวนชั้นเพื่อจัดระเบียบห้องพัก",
       done: buildingsCount > 0,
       action: () => router.push("/overview/buildings/new"),
-      actionLabel: "Create building",
+      actionLabel: "สร้างอาคาร",
       icon: Building2,
       ownerOnly: true, // Only owners can create buildings
     },
     {
       key: "rooms",
-      title: "Create rooms",
-      description: "Add room numbers, floors, and rent.",
+      title: "สร้างห้องพัก",
+      description: "เพิ่มเลขห้อง ชั้น และค่าเช่า",
       done: roomsCount > 0,
       action: () => router.push("/overview/rooms/new"),
-      actionLabel: "Add rooms",
+      actionLabel: "เพิ่มห้อง",
       icon: DoorOpen,
     },
     {
       key: "tenants",
-      title: "Assign tenants",
-      description: "Link tenants to vacant rooms.",
+      title: "ผูกผู้เช่า",
+      description: "เชื่อมผู้เช่าเข้ากับห้องว่าง",
       done: tenantsCount > 0,
       action: () => router.push("/overview/tenants/new"),
-      actionLabel: "Add tenant",
+      actionLabel: "เพิ่มผู้เช่า",
       icon: Users,
     },
     {
       key: "readings",
-      title: "Capture monthly readings",
-      description: "Start water/electric readings for billing.",
+      title: "บันทึกมิเตอร์รายเดือน",
+      description: "เริ่มบันทึกน้ำ/ไฟเพื่อออกบิล",
       done: readingsCount > 0,
       action: () => router.push("/overview/readings/new"),
-      actionLabel: "Add reading",
+      actionLabel: "เพิ่มการอ่านมิเตอร์",
       icon: Gauge,
     },
   ];
@@ -99,10 +99,12 @@ export function OnboardingChecklist({
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <div>
           <CardTitle className="text-lg">
-            {user?.role === "owner" ? "Owner Setup Checklist" : "Setup Checklist"}
+            {user?.role === "owner"
+              ? "เช็กลิสต์เริ่มต้นสำหรับเจ้าของ"
+              : "เช็กลิสต์เริ่มต้น"}
           </CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
-            Complete the basics to start billing faster. {progress}% done.
+            ทำขั้นพื้นฐานเพื่อเริ่มออกบิลได้เร็วขึ้น เสร็จแล้ว {progress}%
           </p>
         </div>
         <Button

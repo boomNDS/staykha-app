@@ -47,7 +47,7 @@ export function MeterReadingSection({
   isProcessingOCR,
 }: MeterReadingSectionProps) {
   return (
-    <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
+    <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
       <div className="flex items-center gap-2">
         {icon}
         <h3 className="font-medium">{title}</h3>
@@ -56,14 +56,14 @@ export function MeterReadingSection({
       {mode === "ocr" && (
         <div className="grid gap-4 sm:grid-cols-2">
           <ImageUpload
-            label={`Upload Previous ${title} Photo`}
+            label={`อัปโหลดรูป ${title} ก่อนหน้า`}
             value={previousPhoto}
             onChange={onPreviousPhotoChange}
             error={errors[previousPhotoKey]}
             disabled={disabled || isProcessingOCR}
           />
           <ImageUpload
-            label={`Upload Current ${title} Photo`}
+            label={`อัปโหลดรูป ${title} ล่าสุด`}
             value={currentPhoto}
             onChange={onCurrentPhotoChange}
             error={errors[currentPhotoKey]}
@@ -75,7 +75,7 @@ export function MeterReadingSection({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor={`${previousReadingKey}-input`}>
-            Previous Reading ({unit})
+            เลขก่อนหน้า ({unit})
           </Label>
           <Input
             id={`${previousReadingKey}-input`}
@@ -83,7 +83,7 @@ export function MeterReadingSection({
             step="0.01"
             placeholder={
               mode === "ocr"
-                ? "Reading will be extracted automatically"
+                ? "ระบบจะอ่านค่าให้อัตโนมัติ"
                 : "123.45"
             }
             value={previousReading}
@@ -99,7 +99,7 @@ export function MeterReadingSection({
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${currentReadingKey}-input`}>
-            Current Reading ({unit})
+            เลขล่าสุด ({unit})
           </Label>
           <Input
             id={`${currentReadingKey}-input`}
@@ -107,7 +107,7 @@ export function MeterReadingSection({
             step="0.01"
             placeholder={
               mode === "ocr"
-                ? "Reading will be extracted automatically"
+                ? "ระบบจะอ่านค่าให้อัตโนมัติ"
                 : "167.89"
             }
             value={currentReading}

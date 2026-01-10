@@ -28,7 +28,7 @@ import type { Room } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function NewTenantPage() {
-  usePageTitle("New Tenant");
+  usePageTitle("เพิ่มผู้เช่าใหม่");
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -92,23 +92,23 @@ export default function NewTenantPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="New Tenant"
-        description="Enter tenant information and assign a room."
+        title="เพิ่มผู้เช่าใหม่"
+        description="กรอกข้อมูลผู้เช่าและผูกห้อง"
         showBack
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Tenant Information</CardTitle>
+          <CardTitle>ข้อมูลผู้เช่า</CardTitle>
           <CardDescription>
-            Fill in the details for the new tenant
+            กรอกรายละเอียดผู้เช่าใหม่
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
+                <Label htmlFor="name">ชื่อ-นามสกุล *</Label>
                 <Input
                   id="name"
                   required
@@ -116,7 +116,7 @@ export default function NewTenantPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  placeholder="Enter full name"
+                  placeholder="กรอกชื่อ-นามสกุล"
                   className={errors.name ? "border-destructive" : ""}
                 />
                 {errors.name && (
@@ -125,7 +125,7 @@ export default function NewTenantPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="email">อีเมล *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -143,7 +143,7 @@ export default function NewTenantPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number *</Label>
+                <Label htmlFor="phone">เบอร์โทรศัพท์ *</Label>
                 <Input
                   id="phone"
                   required
@@ -160,7 +160,7 @@ export default function NewTenantPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="roomId">Assign Room *</Label>
+                <Label htmlFor="roomId">ผูกห้อง *</Label>
                 <Select
                   value={formData.roomId}
                   onValueChange={(value) =>
@@ -171,7 +171,7 @@ export default function NewTenantPage() {
                     id="roomId"
                     className={errors.roomId ? "border-destructive" : ""}
                   >
-                    <SelectValue placeholder="Select a room" />
+                    <SelectValue placeholder="เลือกห้อง" />
                   </SelectTrigger>
                   <SelectContent>
                     {rooms.map((room) => (
@@ -185,12 +185,12 @@ export default function NewTenantPage() {
                   <p className="text-sm text-destructive">{errors.roomId}</p>
                 )}
                 <Button asChild variant="link" className="px-0 text-sm">
-                  <Link to="/overview/rooms/new">Create a room instead</Link>
+                  <Link to="/overview/rooms/new">สร้างห้องใหม่แทน</Link>
                 </Button>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="moveInDate">Move-in Date *</Label>
+                <Label htmlFor="moveInDate">วันที่ย้ายเข้า *</Label>
                 <Input
                   id="moveInDate"
                   type="date"
@@ -209,7 +209,7 @@ export default function NewTenantPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="contractEndDate">Contract End Date</Label>
+                <Label htmlFor="contractEndDate">วันสิ้นสุดสัญญา</Label>
                 <Input
                   id="contractEndDate"
                   type="date"
@@ -224,7 +224,7 @@ export default function NewTenantPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="monthlyRent">Monthly Rent (THB)</Label>
+                <Label htmlFor="monthlyRent">ค่าเช่ารายเดือน (บาท)</Label>
                 <Input
                   id="monthlyRent"
                   type="number"
@@ -243,7 +243,7 @@ export default function NewTenantPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="deposit">Security Deposit (THB)</Label>
+                <Label htmlFor="deposit">เงินประกัน (บาท)</Label>
                 <Input
                   id="deposit"
                   type="number"
@@ -260,7 +260,7 @@ export default function NewTenantPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="idCardNumber">ID Card Number</Label>
+                <Label htmlFor="idCardNumber">เลขบัตรประชาชน</Label>
                 <Input
                   id="idCardNumber"
                   value={formData.idCardNumber}
@@ -272,7 +272,7 @@ export default function NewTenantPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="emergencyContact">Emergency Contact Name</Label>
+                <Label htmlFor="emergencyContact">ชื่อผู้ติดต่อฉุกเฉิน</Label>
                 <Input
                   id="emergencyContact"
                   value={formData.emergencyContact}
@@ -282,12 +282,12 @@ export default function NewTenantPage() {
                       emergencyContact: e.target.value,
                     })
                   }
-                  placeholder="Contact person name"
+                  placeholder="ชื่อผู้ติดต่อ"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="emergencyPhone">Emergency Contact Phone</Label>
+                <Label htmlFor="emergencyPhone">เบอร์ผู้ติดต่อฉุกเฉิน</Label>
                 <Input
                   id="emergencyPhone"
                   value={formData.emergencyPhone}
@@ -299,7 +299,7 @@ export default function NewTenantPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">สถานะ</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) =>
@@ -310,8 +310,8 @@ export default function NewTenantPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="active">ใช้งาน</SelectItem>
+                    <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -319,14 +319,14 @@ export default function NewTenantPage() {
 
             <div className="flex gap-3">
               <Button type="submit" disabled={loading}>
-                {loading ? "Creating..." : "Create Tenant"}
+                {loading ? "กำลังสร้าง..." : "สร้างผู้เช่า"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
               >
-                Cancel
+                ยกเลิก
               </Button>
             </div>
           </form>

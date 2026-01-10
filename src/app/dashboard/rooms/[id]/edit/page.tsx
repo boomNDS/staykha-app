@@ -31,7 +31,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 export default function EditRoomPage() {
   const params = useParams();
   const roomId = params.id as string;
-  usePageTitle(`Edit Room ${roomId}`);
+  usePageTitle(`แก้ไขห้อง ${roomId}`);
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -114,7 +114,7 @@ export default function EditRoomPage() {
   });
 
   if (roomQuery.isLoading || buildingsQuery.isLoading) {
-    return <LoadingState fullScreen message="Loading room..." />;
+    return <LoadingState fullScreen message="กำลังโหลดข้อมูลห้อง..." />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -180,21 +180,21 @@ export default function EditRoomPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Edit Room"
-        description="Update room information."
+        title="แก้ไขห้อง"
+        description="อัปเดตข้อมูลห้อง"
         showBack
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Room Information</CardTitle>
-          <CardDescription>Update the room details</CardDescription>
+          <CardTitle>ข้อมูลห้อง</CardTitle>
+          <CardDescription>อัปเดตรายละเอียดห้อง</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="roomNumber">Room Number *</Label>
+                <Label htmlFor="roomNumber">เลขห้อง *</Label>
                 <Input
                   id="roomNumber"
                   required
@@ -211,7 +211,7 @@ export default function EditRoomPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="buildingName">Building *</Label>
+                <Label htmlFor="buildingName">อาคาร *</Label>
                 <Select
                   value={formData.buildingId}
                   onValueChange={(value) =>
@@ -219,7 +219,7 @@ export default function EditRoomPage() {
                   }
                 >
                   <SelectTrigger id="buildingName">
-                    <SelectValue placeholder="Select a building" />
+                    <SelectValue placeholder="เลือกอาคาร" />
                   </SelectTrigger>
                   <SelectContent>
                     {buildings.map((building) => (
@@ -237,7 +237,7 @@ export default function EditRoomPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="floor">Floor *</Label>
+                <Label htmlFor="floor">ชั้น *</Label>
                 <Input
                   id="floor"
                   type="number"
@@ -254,7 +254,7 @@ export default function EditRoomPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">สถานะ</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) =>
@@ -265,14 +265,14 @@ export default function EditRoomPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="vacant">Vacant</SelectItem>
-                    <SelectItem value="occupied">Occupied</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                    <SelectItem value="vacant">ว่าง</SelectItem>
+                    <SelectItem value="occupied">เข้าพัก</SelectItem>
+                    <SelectItem value="maintenance">ซ่อมบำรุง</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="size">Room Size (sqm)</Label>
+                <Label htmlFor="size">ขนาดห้อง (ตร.ม.)</Label>
                 <Input
                   id="size"
                   type="number"
@@ -287,7 +287,7 @@ export default function EditRoomPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="monthlyRent">Monthly Rent</Label>
+                <Label htmlFor="monthlyRent">ค่าเช่ารายเดือน</Label>
                 <Input
                   id="monthlyRent"
                   type="number"
@@ -310,10 +310,10 @@ export default function EditRoomPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-foreground">
-                      Assign tenant now
+                      ผูกผู้เช่าตอนนี้
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Create a tenant and link them to this room.
+                      สร้างผู้เช่าและผูกกับห้องนี้ทันที
                     </p>
                   </div>
                   <Button
@@ -321,7 +321,7 @@ export default function EditRoomPage() {
                     variant={assignTenantNow ? "default" : "outline"}
                     onClick={() => setAssignTenantNow((prev) => !prev)}
                   >
-                    {assignTenantNow ? "Enabled" : "Add Tenant"}
+                    {assignTenantNow ? "เปิดใช้งาน" : "เพิ่มผู้เช่า"}
                   </Button>
                 </div>
                 {assignTenantNow && (
@@ -337,14 +337,14 @@ export default function EditRoomPage() {
 
             <div className="flex gap-3">
               <Button type="submit" disabled={loading}>
-                {loading ? "Updating..." : "Update Room"}
+                {loading ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
               >
-                Cancel
+                ยกเลิก
               </Button>
             </div>
           </form>

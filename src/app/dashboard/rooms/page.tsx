@@ -33,7 +33,7 @@ import type { Room, Tenant, TenantDraft } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function RoomsPage() {
-  usePageTitle("Rooms");
+  usePageTitle("ห้องพัก");
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -110,11 +110,24 @@ export default function RoomsPage() {
 
   const getTenantName = (roomId: string) => {
     const tenant = tenants.find((t) => t.roomId === roomId);
-    return tenant?.name || "Unknown";
+    return tenant?.name || "ไม่ระบุ";
   };
 
   const getTenantByRoom = (roomId: string) =>
     tenants.find((tenant) => tenant.roomId === roomId) || null;
+
+  const getRoomStatusLabel = (status: Room["status"]) => {
+    switch (status) {
+      case "occupied":
+        return "เข้าพัก";
+      case "vacant":
+        return "ว่าง";
+      case "maintenance":
+        return "ซ่อมบำรุง";
+      default:
+        return status;
+    }
+  };
 
   const getAvailableTenants = () => {
     return tenants.filter((t) => !t.roomId || t.roomId === selectedRoom?.id);
@@ -123,11 +136,10 @@ export default function RoomsPage() {
   const handleDelete = (id: string) => {
     setConfirmState({
       open: true,
-      title: "Delete room?",
-      description:
-        "This will permanently remove the room and cannot be undone.",
-      confirmLabel: "Delete",
-      cancelLabel: "Cancel",
+      title: "ยืนยันการลบห้อง?",
+      description: "การลบห้องนี้จะไม่สามารถกู้คืนได้",
+      confirmLabel: "ลบ",
+      cancelLabel: "ยกเลิก",
       onConfirm: async () => {
         try {
           await deleteRoomMutation.mutateAsync(id);
@@ -163,10 +175,10 @@ export default function RoomsPage() {
     if (!tenant) return;
     setConfirmState({
       open: true,
-      title: "Remove tenant?",
-      description: "The tenant will be unassigned from this room.",
-      confirmLabel: "Unassign",
-      cancelLabel: "Cancel",
+      title: "ยกเลิกผู้เช่า?",
+      description: "ผู้เช่าจะถูกยกเลิกการผูกกับห้องนี้",
+      confirmLabel: "ยกเลิกการผูก",
+      cancelLabel: "ยกเลิก",
       onConfirm: async () => {
         try {
           await updateTenantMutation.mutateAsync({
@@ -222,7 +234,7 @@ export default function RoomsPage() {
   const columns = [
     {
       key: "roomNumber",
-      header: "Room Number",
+      header: "เลขห้อง",
       render: (room: Room) => (
         <div className="font-medium text-foreground">{room.roomNumber}</div>
       ),
@@ -230,7 +242,7 @@ export default function RoomsPage() {
     },
     {
       key: "buildingName",
-      header: "Building",
+      header: "อาคาร",
       render: (room: Room) => (
         <div className="text-sm text-muted-foreground">{room.buildingName}</div>
       ),
@@ -238,14 +250,14 @@ export default function RoomsPage() {
     },
     {
       key: "floor",
-      header: "Floor",
+      header: "ชั้น",
       render: (room: Room) => (
-        <div className="text-sm text-muted-foreground">Floor {room.floor}</div>
+        <div className="text-sm text-muted-foreground">ชั้น {room.floor}</div>
       ),
     },
     {
       key: "status",
-      header: "Status",
+      header: "สถานะ",
       render: (room: Room) => (
         <div className="space-y-1">
           <span
@@ -258,7 +270,7 @@ export default function RoomsPage() {
             }`}
           >
             {room.status === "occupied" && <User className="h-3 w-3" />}
-            {room.status}
+            {getRoomStatusLabel(room.status)}
           </span>
           {room.status === "occupied" && (
             <div className="text-xs text-muted-foreground">
@@ -270,33 +282,33 @@ export default function RoomsPage() {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "การดำเนินการ",
       render: (room: Room) => (
         <TableRowActions
           primary={{
-            label: "View",
+            label: "ดูรายละเอียด",
             icon: Eye,
             onClick: () => handleViewDetails(room),
           }}
           items={[
             room.status === "occupied"
               ? {
-                  label: "Remove tenant",
+                  label: "ยกเลิกผู้เช่า",
                   icon: UserX,
                   onClick: () => handleUnassignTenant(room),
                 }
               : {
-                  label: "Assign tenant",
+                  label: "ผูกผู้เช่า",
                   icon: UserPlus,
                   onClick: () => handleAssignTenant(room),
                 },
             {
-              label: "Edit room",
+              label: "แก้ไขห้อง",
               icon: Edit,
               onClick: () => router.push(`/overview/rooms/${room.id}/edit`),
             },
             {
-              label: "Delete room",
+              label: "ลบห้อง",
               icon: Trash2,
               destructive: true,
               disabled: room.status === "occupied",
@@ -311,49 +323,50 @@ export default function RoomsPage() {
   const filters = [
     {
       key: "status",
-      label: "Status",
+      label: "สถานะ",
       options: [
-        { label: "Occupied", value: "occupied" },
-        { label: "Vacant", value: "vacant" },
-        { label: "Maintenance", value: "maintenance" },
+        { label: "เข้าพัก", value: "occupied" },
+        { label: "ว่าง", value: "vacant" },
+        { label: "ซ่อมบำรุง", value: "maintenance" },
       ],
       filterFn: (room: Room, value: string) => room.status === value,
     },
     {
       key: "buildingName",
-      label: "Building",
+      label: "อาคาร",
       options: [
-        { label: "Building A", value: "Building A" },
-        { label: "Building B", value: "Building B" },
+        { label: "อาคาร A", value: "อาคาร A" },
+        { label: "อาคาร B", value: "อาคาร B" },
+        { label: "อาคาร C", value: "อาคาร C" },
       ],
       filterFn: (room: Room, value: string) => room.buildingName === value,
     },
   ];
 
   if (loading) {
-    return <LoadingState fullScreen message="Loading rooms..." />;
+    return <LoadingState fullScreen message="กำลังโหลดห้อง..." />;
   }
 
   return (
     <>
       <div className="space-y-6">
         <PageHeader
-          title="Rooms"
-          description="Manage room inventory and availability."
+          title="ห้องพัก"
+          description="จัดการจำนวนห้องและสถานะห้องพัก"
           actions={
             <>
               <Button
                 variant="outline"
                 onClick={() => router.push("/overview/rooms/bulk")}
               >
-                Bulk add
+                เพิ่มหลายห้อง
               </Button>
               <Button
                 onClick={() => router.push("/overview/rooms/new")}
                 className="gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Add Room
+                เพิ่มห้อง
               </Button>
             </>
           }
@@ -362,7 +375,7 @@ export default function RoomsPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <div className="rounded-xl border bg-card p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Total Rooms
+              จำนวนห้องทั้งหมด
             </p>
             <p className="mt-2 text-2xl font-semibold text-foreground">
               {rooms.length}
@@ -370,7 +383,7 @@ export default function RoomsPage() {
           </div>
           <div className="rounded-xl border bg-card p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Occupied
+              เข้าพัก
             </p>
             <p className="mt-2 text-2xl font-semibold text-blue-600">
               {rooms.filter((room) => room.status === "occupied").length}
@@ -378,7 +391,7 @@ export default function RoomsPage() {
           </div>
           <div className="rounded-xl border bg-card p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Vacant
+              ว่าง
             </p>
             <p className="mt-2 text-2xl font-semibold text-emerald-600">
               {rooms.filter((room) => room.status === "vacant").length}
@@ -386,7 +399,7 @@ export default function RoomsPage() {
           </div>
           <div className="rounded-xl border bg-card p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Maintenance
+              ซ่อมบำรุง
             </p>
             <p className="mt-2 text-2xl font-semibold text-amber-600">
               {rooms.filter((room) => room.status === "maintenance").length}
@@ -398,7 +411,7 @@ export default function RoomsPage() {
           <DataTable
             data={rooms}
             columns={columns}
-            searchPlaceholder="Search rooms..."
+            searchPlaceholder="ค้นหาห้อง..."
             filters={filters}
             pageSize={4}
             forcePagination
@@ -409,21 +422,21 @@ export default function RoomsPage() {
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Tenant to Room</DialogTitle>
+            <DialogTitle>ผูกผู้เช่ากับห้อง</DialogTitle>
             <DialogDescription>
-              {`Select a tenant to assign to room ${selectedRoom?.roomNumber || ""}`}
+              {`เลือกผู้เช่าเพื่อผูกกับห้อง ${selectedRoom?.roomNumber || ""}`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="flex items-center justify-between">
-              <Label>Select Tenant</Label>
+              <Label>เลือกผู้เช่า</Label>
               <Button
                 type="button"
                 variant={createTenantMode ? "default" : "outline"}
                 size="sm"
                 onClick={() => setCreateTenantMode((prev) => !prev)}
               >
-                {createTenantMode ? "Selecting" : "Create Tenant"}
+                {createTenantMode ? "กำลังเลือก" : "สร้างผู้เช่า"}
               </Button>
             </div>
             {!createTenantMode ? (
@@ -432,7 +445,7 @@ export default function RoomsPage() {
                 onValueChange={setSelectedTenantId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a tenant" />
+                  <SelectValue placeholder="เลือกผู้เช่า" />
                 </SelectTrigger>
                 <SelectContent>
                   {getAvailableTenants().map((tenant) => (
@@ -455,21 +468,21 @@ export default function RoomsPage() {
               variant="outline"
               onClick={() => setAssignDialogOpen(false)}
             >
-              Cancel
+              ยกเลิก
             </Button>
             {createTenantMode ? (
               <Button
                 onClick={handleCreateTenant}
                 disabled={!newTenant.name || !newTenant.email}
               >
-                Create & Assign
+                สร้างและผูก
               </Button>
             ) : (
               <Button
                 onClick={handleSubmitAssignment}
                 disabled={!selectedTenantId}
               >
-                Assign Tenant
+                ผูกผู้เช่า
               </Button>
             )}
           </DialogFooter>
@@ -479,9 +492,9 @@ export default function RoomsPage() {
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{`Room ${detailsRoom?.roomNumber}`}</DialogTitle>
+            <DialogTitle>{`ห้อง ${detailsRoom?.roomNumber}`}</DialogTitle>
             <DialogDescription>
-              {`${detailsRoom?.buildingName} • Floor ${detailsRoom?.floor}`}
+              {`${detailsRoom?.buildingName} • ชั้น ${detailsRoom?.floor}`}
             </DialogDescription>
           </DialogHeader>
           {detailsRoom && (
@@ -489,33 +502,35 @@ export default function RoomsPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-lg border bg-muted/20 p-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Status
+                    สถานะ
                   </p>
                   <p className="mt-2 text-sm font-semibold capitalize text-foreground">
-                    {detailsRoom.status}
+                    {getRoomStatusLabel(detailsRoom.status)}
                   </p>
                 </div>
                 <div className="rounded-lg border bg-muted/20 p-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Monthly Rent
+                    ค่าเช่ารายเดือน
                   </p>
                   <p className="mt-2 text-sm font-semibold text-foreground">
                     {detailsRoom.monthlyRent
                       ? `฿${detailsRoom.monthlyRent.toLocaleString()}`
-                      : "Not set"}
+                      : "ยังไม่ได้ตั้งค่า"}
                   </p>
                 </div>
                 <div className="rounded-lg border bg-muted/20 p-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Room Size
+                    ขนาดห้อง
                   </p>
                   <p className="mt-2 text-sm font-semibold text-foreground">
-                    {detailsRoom.size ? `${detailsRoom.size} m²` : "Not set"}
+                    {detailsRoom.size
+                      ? `${detailsRoom.size} ตร.ม.`
+                      : "ยังไม่ได้ตั้งค่า"}
                   </p>
                 </div>
                 <div className="rounded-lg border bg-muted/20 p-3">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Room ID
+                    รหัสห้อง
                   </p>
                   <p className="mt-2 text-xs font-mono text-foreground">
                     {detailsRoom.id}
@@ -526,7 +541,7 @@ export default function RoomsPage() {
               <div className="rounded-lg border p-4">
                 <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <User className="h-4 w-4 text-muted-foreground" />
-                  Tenant
+                  ผู้เช่า
                 </div>
                 <div className="mt-3 space-y-1">
                   {getTenantByRoom(detailsRoom.id) ? (
@@ -540,7 +555,7 @@ export default function RoomsPage() {
                     </>
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      No tenant assigned yet.
+                      ยังไม่มีผู้เช่า
                     </p>
                   )}
                 </div>
@@ -552,20 +567,20 @@ export default function RoomsPage() {
               variant="outline"
               onClick={() => setDetailsDialogOpen(false)}
             >
-              Close
+              ปิด
             </Button>
             {detailsRoom?.status === "occupied" ? (
               <Button
                 variant="outline"
                 onClick={() => detailsRoom && handleUnassignTenant(detailsRoom)}
               >
-                Remove tenant
+                ยกเลิกผู้เช่า
               </Button>
             ) : (
               <Button
                 onClick={() => detailsRoom && handleAssignTenant(detailsRoom)}
               >
-                Assign tenant
+                ผูกผู้เช่า
               </Button>
             )}
             <Button
@@ -574,7 +589,7 @@ export default function RoomsPage() {
                 router.push(`/overview/rooms/${detailsRoom.id}/edit`)
               }
             >
-              Edit room
+              แก้ไขห้อง
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -583,7 +598,7 @@ export default function RoomsPage() {
         open={confirmState.open}
         title={confirmState.title}
         description={confirmState.description}
-        confirmLabel="Confirm"
+        confirmLabel="ยืนยัน"
         onConfirm={() => {
           const action = confirmState.onConfirm;
           setConfirmState((prev) => ({ ...prev, open: false }));

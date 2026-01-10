@@ -34,7 +34,7 @@ type InputMode = "ocr" | "manual";
 type MeterScope = "water" | "electric" | "both";
 
 export default function NewReadingPage() {
-  usePageTitle("New Reading");
+  usePageTitle("เพิ่มการอ่านมิเตอร์");
 
   const router = useRouter();
   const { user } = useAuth();
@@ -49,7 +49,7 @@ export default function NewReadingPage() {
     queryKey: ["settings", user?.teamId],
     queryFn: () => {
       if (!user?.teamId) {
-        throw new Error("Team ID is required to load settings");
+        throw new Error("จำเป็นต้องมี Team ID เพื่อโหลด Settings");
       }
       return settingsApi.get(user.teamId);
     },
@@ -70,10 +70,12 @@ export default function NewReadingPage() {
   
   // Show settings required message if settings don't exist
   if (settingsQuery.isSuccess && !settings) {
-    return <SettingsRequired 
-      title="Settings Required"
-      description="You need to create settings for your team before you can create meter readings."
-    />;
+    return (
+      <SettingsRequired
+        title="ต้องตั้งค่า Settings ก่อนใช้งาน"
+        description="คุณต้องสร้าง Settings ของทีมก่อนจึงจะเพิ่มการอ่านมิเตอร์ได้"
+      />
+    );
   }
   
   const isWaterFixed = settings?.waterBillingMode === "fixed";
@@ -154,7 +156,7 @@ export default function NewReadingPage() {
         }
       }
       
-      throw new Error("No numbers found in image");
+      throw new Error("ไม่พบตัวเลขในรูปภาพ");
     } finally {
       await worker.terminate();
     }
@@ -173,17 +175,17 @@ export default function NewReadingPage() {
         const ocrResult = await performOCR(file);
         setFormData((prev) => ({ ...prev, [readingField]: ocrResult }));
         toast({
-          title: "OCR Complete",
-          description: `Extracted reading: ${ocrResult}`,
+          title: "OCR สำเร็จ",
+          description: `ค่าที่อ่านได้: ${ocrResult}`,
         });
       } catch (error) {
         console.error("OCR error:", error);
         toast({
-          title: "OCR Failed",
+          title: "OCR ไม่สำเร็จ",
           description:
             error instanceof Error 
-              ? `Could not extract reading: ${error.message}. Please enter manually.`
-              : "Could not extract reading from image. Please enter manually.",
+              ? `ไม่สามารถอ่านค่าได้: ${error.message} กรุณากรอกเอง`
+              : "ไม่สามารถอ่านค่าได้จากรูปภาพ กรุณากรอกเอง",
           variant: "destructive",
         });
       } finally {
@@ -228,8 +230,8 @@ export default function NewReadingPage() {
     const { isValid, data } = validateForm();
     if (!isValid || !data) {
       toast({
-        title: "Validation Error",
-        description: "Please fix the errors in the form",
+        title: "ข้อมูลไม่ถูกต้อง",
+        description: "กรุณาแก้ไขข้อมูลที่ผิดพลาด",
         variant: "destructive",
       });
       return;
@@ -289,18 +291,18 @@ export default function NewReadingPage() {
       });
 
       toast({
-        title: "Success",
+        title: "บันทึกสำเร็จ",
         description:
           includesWater && includesElectric
-            ? "Meter readings added successfully"
-            : "Reading saved. Complete the other meter when ready.",
+            ? "บันทึกการอ่านมิเตอร์เรียบร้อย"
+            : "บันทึกแล้ว สามารถเติมอีกมิเตอร์ภายหลังได้",
       });
 
       router.push("/overview/readings");
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to add meter reading",
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถเพิ่มการอ่านมิเตอร์ได้",
         variant: "destructive",
       });
     } finally {
@@ -332,15 +334,19 @@ export default function NewReadingPage() {
   return (
     <div className="space-y-6 pb-8">
       <PageHeader
-        title="New Meter Reading"
-        description={`${inputMode === "ocr" ? "Upload meter photos for automatic reading extraction" : "Enter meter readings manually"} • Add one meter now and complete the other later.`}
+        title="เพิ่มการอ่านมิเตอร์ใหม่"
+        description={`${
+          inputMode === "ocr"
+            ? "อัปโหลดรูปมิเตอร์เพื่ออ่านค่าอัตโนมัติ"
+            : "กรอกตัวเลขมิเตอร์ด้วยตนเอง"
+        } • เพิ่มมิเตอร์ได้ทีละรายการ และกลับมาเติมอีกมิเตอร์ภายหลังได้`}
         showBack
       />
 
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
-            <CardTitle>Reading Details</CardTitle>
+            <CardTitle>รายละเอียดการอ่าน</CardTitle>
             <div className="pt-4">
               <Tabs
                 value={inputMode}
@@ -349,20 +355,20 @@ export default function NewReadingPage() {
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="ocr" className="gap-2">
                     <Camera className="h-4 w-4" />
-                    <span className="hidden sm:inline">OCR Upload</span>
+                    <span className="hidden sm:inline">อัปโหลด OCR</span>
                     <span className="sm:hidden">OCR</span>
                   </TabsTrigger>
                   <TabsTrigger value="manual" className="gap-2">
                     <Keyboard className="h-4 w-4" />
-                    <span className="hidden sm:inline">Manual Input</span>
-                    <span className="sm:hidden">Manual</span>
+                    <span className="hidden sm:inline">กรอกเอง</span>
+                    <span className="sm:hidden">กรอกเอง</span>
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
             <div className="pt-4">
               <Label className="text-sm text-muted-foreground">
-                Meter Type
+                ประเภทมิเตอร์
               </Label>
               <ToggleGroup
                 type="single"
@@ -377,19 +383,17 @@ export default function NewReadingPage() {
               >
                 {!isWaterFixed && (
                   <ToggleGroupItem value="both">
-                    Water + Electric
+                    น้ำ + ไฟ
                   </ToggleGroupItem>
                 )}
                 {!isWaterFixed && (
-                  <ToggleGroupItem value="water">Water Only</ToggleGroupItem>
+                  <ToggleGroupItem value="water">เฉพาะน้ำ</ToggleGroupItem>
                 )}
-                <ToggleGroupItem value="electric">
-                  Electric Only
-                </ToggleGroupItem>
+                <ToggleGroupItem value="electric">เฉพาะไฟ</ToggleGroupItem>
               </ToggleGroup>
               {isWaterFixed && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Water is billed as a fixed monthly fee.
+                  ค่าน้ำคิดแบบเหมาจ่ายรายเดือน
                 </p>
               )}
             </div>
@@ -397,7 +401,7 @@ export default function NewReadingPage() {
           <CardContent className="space-y-6">
             {/* Room Selection */}
             <div className="space-y-2">
-              <Label htmlFor="room">Room</Label>
+              <Label htmlFor="room">ห้อง</Label>
               <Select
                 value={formData.roomId}
                 onValueChange={(value) =>
@@ -408,12 +412,12 @@ export default function NewReadingPage() {
                 <SelectTrigger
                   className={errors.roomId ? "border-destructive" : ""}
                 >
-                  <SelectValue placeholder="Select a room" />
+                  <SelectValue placeholder="เลือกห้อง" />
                 </SelectTrigger>
                 <SelectContent>
                   {rooms.map((room) => (
                     <SelectItem key={room.id} value={room.id}>
-                      {room.buildingName} - Room {room.roomNumber}
+                      {room.buildingName} - ห้อง {room.roomNumber}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -425,7 +429,7 @@ export default function NewReadingPage() {
 
             {/* Reading Date */}
             <div className="space-y-2">
-              <Label htmlFor="readingDate">Reading Date</Label>
+              <Label htmlFor="readingDate">วันที่อ่านมิเตอร์</Label>
               <Input
                 id="readingDate"
                 type="date"
@@ -440,7 +444,7 @@ export default function NewReadingPage() {
             <div className="space-y-6">
               {includesWater ? (
                 <MeterReadingSection
-                  title="Water Meter"
+                  title="มิเตอร์น้ำ"
                   icon={<Droplets className="h-5 w-5 text-blue-500" />}
                   unit="m³"
                   mode={inputMode}
@@ -479,7 +483,7 @@ export default function NewReadingPage() {
               ) : null}
               {includesElectric ? (
                 <MeterReadingSection
-                  title="Electric Meter"
+                  title="มิเตอร์ไฟ"
                   icon={<Zap className="h-5 w-5 text-amber-500" />}
                   unit="kWh"
                   mode={inputMode}
@@ -533,7 +537,7 @@ export default function NewReadingPage() {
                 disabled={isLoading || isProcessingOCR}
                 className="w-full sm:w-auto"
               >
-                Cancel
+                ยกเลิก
               </Button>
               <Button
                 type="submit"
@@ -543,10 +547,10 @@ export default function NewReadingPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    กำลังบันทึก...
                   </>
                 ) : (
-                  "Save Reading"
+                  "บันทึกการอ่าน"
                 )}
               </Button>
             </div>

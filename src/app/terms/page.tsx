@@ -13,7 +13,7 @@ const fadeUp = {
 };
 
 export default function TermsPage() {
-  usePageTitle("Terms & Privacy Policy");
+  usePageTitle("ข้อกำหนดและนโยบายความเป็นส่วนตัว");
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,116,144,0.15),_transparent_45%),radial-gradient(circle_at_bottom,_rgba(56,189,248,0.12),_transparent_55%)]">
@@ -32,14 +32,14 @@ export default function TermsPage() {
               StayKha
             </p>
             <p className="text-xs text-muted-foreground">
-              Owner operations suite
+              ชุดเครื่องมือสำหรับเจ้าของ
             </p>
           </div>
         </div>
         <Button asChild variant="outline">
           <Link to="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
+            กลับหน้าแรก
           </Link>
         </Button>
       </motion.header>
@@ -64,10 +64,10 @@ export default function TermsPage() {
               </div>
               <div>
                 <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                  Terms of Service & Privacy Policy
+                  ข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัว
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Last updated: {new Date().toLocaleDateString()}
+                  อัปเดตล่าสุด: {new Date().toLocaleDateString("th-TH")}
                 </p>
               </div>
             </div>
@@ -80,186 +80,163 @@ export default function TermsPage() {
             <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
               <section>
                 <h2 className="text-2xl font-semibold text-foreground">
-                  1. Terms of Service
+                  1. ข้อกำหนดการใช้งาน
                 </h2>
                 <div className="mt-4 space-y-4 text-muted-foreground">
                   <p>
-                    By accessing and using StayKha, you accept and agree to be
-                    bound by the terms and provision of this agreement.
+                    เมื่อเข้าถึงและใช้งาน StayKha ถือว่าคุณยอมรับและตกลงตาม
+                    ข้อกำหนดและเงื่อนไขการใช้งานในเอกสารนี้
                   </p>
                   <h3 className="text-xl font-semibold text-foreground">
-                    1.1 Use License
+                    1.1 สิทธิ์การใช้งาน
                   </h3>
                   <p>
-                    Permission is granted to temporarily use StayKha for
-                    personal or commercial property management purposes. This is
-                    the grant of a license, not a transfer of title, and under
-                    this license you may not:
+                    อนุญาตให้ใช้ StayKha เพื่อการจัดการทรัพย์สินส่วนบุคคลหรือเชิงพาณิชย์
+                    การใช้งานนี้เป็นการให้สิทธิ์ใช้งาน ไม่ใช่การโอนกรรมสิทธิ์ และคุณไม่สามารถ:
                   </p>
                   <ul className="list-disc space-y-2 pl-6">
-                    <li>Modify or copy the materials</li>
+                    <li>ดัดแปลงหรือคัดลอกเนื้อหา</li>
                     <li>
-                      Use the materials for any commercial purpose or for any
-                      public display
+                      ใช้เนื้อหาเพื่อวัตถุประสงค์อื่นนอกเหนือจากการจัดการทรัพย์สิน
                     </li>
                     <li>
-                      Attempt to reverse engineer any software contained in
-                      StayKha
+                      พยายามถอดรหัสหรือทำวิศวกรรมย้อนกลับซอฟต์แวร์ใด ๆ ใน StayKha
                     </li>
                     <li>
-                      Remove any copyright or other proprietary notations from
-                      the materials
+                      ลบข้อความลิขสิทธิ์หรือข้อสงวนสิทธิ์อื่น ๆ
                     </li>
                   </ul>
                   <h3 className="text-xl font-semibold text-foreground">
-                    1.2 Account Responsibility
+                    1.2 ความรับผิดชอบของบัญชี
                   </h3>
                   <p>
-                    You are responsible for maintaining the confidentiality of
-                    your account credentials and for all activities that occur
-                    under your account. You agree to notify us immediately of
-                    any unauthorized use of your account.
+                    คุณมีหน้าที่รักษาความลับของข้อมูลบัญชีและรับผิดชอบกิจกรรมทั้งหมด
+                    ที่เกิดขึ้นภายใต้บัญชีของคุณ และต้องแจ้งให้เราทราบทันทีเมื่อพบ
+                    การใช้งานบัญชีโดยไม่ได้รับอนุญาต
                   </p>
                   <h3 className="text-xl font-semibold text-foreground">
-                    1.3 Service Availability
+                    1.3 ความพร้อมให้บริการ
                   </h3>
                   <p>
-                    We strive to provide continuous access to StayKha, but we do
-                    not guarantee uninterrupted or error-free service. We
-                    reserve the right to modify, suspend, or discontinue any
-                    part of the service at any time.
+                    เราพยายามให้บริการอย่างต่อเนื่อง แต่ไม่รับประกันว่าจะไม่มีข้อผิดพลาด
+                    หรือการหยุดชะงัก และขอสงวนสิทธิ์ในการปรับปรุง ระงับ หรือยุติบริการ
+                    บางส่วนได้ทุกเมื่อ
                   </p>
                 </div>
               </section>
 
               <section>
                 <h2 className="text-2xl font-semibold text-foreground">
-                  2. Privacy Policy
+                  2. นโยบายความเป็นส่วนตัว
                 </h2>
                 <div className="mt-4 space-y-4 text-muted-foreground">
                   <p>
-                    Your privacy is important to us. This Privacy Policy
-                    explains how we collect, use, and protect your information
-                    when you use StayKha.
+                    ความเป็นส่วนตัวของคุณสำคัญสำหรับเรา นโยบายนี้อธิบายวิธีที่เรา
+                    เก็บรวบรวม ใช้งาน และปกป้องข้อมูลเมื่อคุณใช้งาน StayKha
                   </p>
                   <h3 className="text-xl font-semibold text-foreground">
-                    2.1 Information We Collect
+                    2.1 ข้อมูลที่เราเก็บรวบรวม
                   </h3>
                   <p>
-                    We collect information that you provide directly to us,
-                    including:
+                    เราเก็บข้อมูลที่คุณให้กับเราโดยตรง เช่น:
                   </p>
                   <ul className="list-disc space-y-2 pl-6">
-                    <li>Account information (name, email address, password)</li>
-                    <li>Property and tenant data you enter into the system</li>
-                    <li>Meter readings and billing information</li>
-                    <li>Usage data and analytics</li>
+                    <li>ข้อมูลบัญชี (ชื่อ อีเมล รหัสผ่าน)</li>
+                    <li>ข้อมูลอาคาร ห้อง และผู้เช่าที่คุณบันทึก</li>
+                    <li>ข้อมูลการอ่านมิเตอร์และการออกบิล</li>
+                    <li>ข้อมูลการใช้งานและสถิติ</li>
                   </ul>
                   <h3 className="text-xl font-semibold text-foreground">
-                    2.2 How We Use Your Information
+                    2.2 การใช้ข้อมูลของคุณ
                   </h3>
-                  <p>We use the information we collect to:</p>
+                  <p>เราใช้ข้อมูลที่เก็บรวบรวมเพื่อ:</p>
                   <ul className="list-disc space-y-2 pl-6">
-                    <li>Provide, maintain, and improve our services</li>
-                    <li>Process transactions and send related information</li>
-                    <li>
-                      Send technical notices, updates, and support messages
-                    </li>
-                    <li>Respond to your comments and questions</li>
-                    <li>Monitor and analyze trends and usage</li>
+                    <li>ให้บริการ ดูแล และพัฒนาระบบ</li>
+                    <li>ประมวลผลข้อมูลและส่งข้อมูลที่เกี่ยวข้อง</li>
+                    <li>แจ้งเตือน อัปเดต และข้อความสนับสนุน</li>
+                    <li>ตอบกลับข้อเสนอแนะและคำถาม</li>
+                    <li>ติดตามและวิเคราะห์แนวโน้มการใช้งาน</li>
                   </ul>
                   <h3 className="text-xl font-semibold text-foreground">
-                    2.3 Data Security
+                    2.3 ความปลอดภัยของข้อมูล
                   </h3>
                   <p>
-                    We implement appropriate technical and organizational
-                    measures to protect your personal information against
-                    unauthorized access, alteration, disclosure, or destruction.
-                    However, no method of transmission over the Internet is 100%
-                    secure.
+                    เรามีมาตรการทางเทคนิคและการจัดการที่เหมาะสมเพื่อปกป้องข้อมูล
+                    อย่างไรก็ตาม ไม่มีวิธีใดบนอินเทอร์เน็ตที่ปลอดภัยได้ 100%
                   </p>
                   <h3 className="text-xl font-semibold text-foreground">
-                    2.4 Data Retention
+                    2.4 การเก็บรักษาข้อมูล
                   </h3>
                   <p>
-                    We retain your information for as long as your account is
-                    active or as needed to provide you services. You may request
-                    deletion of your account and associated data at any time.
+                    เราจะเก็บข้อมูลตราบเท่าที่บัญชีของคุณยังใช้งานอยู่หรือจำเป็นต่อการให้บริการ
+                    คุณสามารถขอลบบัญชีและข้อมูลที่เกี่ยวข้องได้ทุกเมื่อ
                   </p>
                   <h3 className="text-xl font-semibold text-foreground">
-                    2.5 Third-Party Services
+                    2.5 บริการจากบุคคลที่สาม
                   </h3>
                   <p>
-                    StayKha uses PocketBase as a backend service. Your data is
-                    stored securely on PocketBase servers. Please refer to
-                    PocketBase's privacy policy for information about their data
-                    handling practices.
+                    StayKha ใช้ PocketBase เป็นระบบหลังบ้าน ข้อมูลของคุณจะถูกจัดเก็บ
+                    อย่างปลอดภัยบนเซิร์ฟเวอร์ของ PocketBase โปรดอ่านนโยบายความเป็นส่วนตัว
+                    ของ PocketBase สำหรับรายละเอียดเพิ่มเติม
                   </p>
                 </div>
               </section>
 
               <section>
                 <h2 className="text-2xl font-semibold text-foreground">
-                  3. User Data and Content
+                  3. ข้อมูลและเนื้อหาของผู้ใช้
                 </h2>
                 <div className="mt-4 space-y-4 text-muted-foreground">
                   <h3 className="text-xl font-semibold text-foreground">
-                    3.1 Your Content
+                    3.1 เนื้อหาของคุณ
                   </h3>
                   <p>
-                    You retain ownership of all data and content you upload or
-                    enter into StayKha. You grant us a license to use, store,
-                    and process this data solely for the purpose of providing
-                    the service to you.
+                    คุณยังคงเป็นเจ้าของข้อมูลที่อัปโหลดหรือบันทึกใน StayKha
+                    และยินยอมให้เราใช้ เก็บ และประมวลผลข้อมูลเพื่อให้บริการเท่านั้น
                   </p>
                   <h3 className="text-xl font-semibold text-foreground">
-                    3.2 Data Export
+                    3.2 การส่งออกข้อมูล
                   </h3>
                   <p>
-                    You may export your data at any time through the application
-                    interface. We provide tools to download your information in
-                    standard formats.
+                    คุณสามารถส่งออกข้อมูลได้ตลอดเวลาผ่านแอปพลิเคชัน เราจัดเตรียมเครื่องมือ
+                    สำหรับดาวน์โหลดข้อมูลในรูปแบบมาตรฐาน
                   </p>
                 </div>
               </section>
 
               <section>
                 <h2 className="text-2xl font-semibold text-foreground">
-                  4. Limitation of Liability
+                  4. ข้อจำกัดความรับผิด
                 </h2>
                 <div className="mt-4 space-y-4 text-muted-foreground">
                   <p>
-                    StayKha is provided "as is" without warranties of any kind.
-                    We shall not be liable for any indirect, incidental,
-                    special, consequential, or punitive damages resulting from
-                    your use of or inability to use the service.
+                    StayKha ให้บริการตามสภาพที่เป็นอยู่โดยไม่มีการรับประกันใด ๆ
+                    เราจะไม่รับผิดชอบต่อความเสียหายทางอ้อม พิเศษ หรือโดยบังเอิญ
+                    ที่เกิดจากการใช้งานหรือไม่สามารถใช้งานบริการได้
                   </p>
                 </div>
               </section>
 
               <section>
                 <h2 className="text-2xl font-semibold text-foreground">
-                  5. Changes to Terms
+                  5. การเปลี่ยนแปลงข้อกำหนด
                 </h2>
                 <div className="mt-4 space-y-4 text-muted-foreground">
                   <p>
-                    We reserve the right to modify these terms at any time. We
-                    will notify users of any material changes by posting the new
-                    terms on this page and updating the "Last updated" date.
+                    เราขอสงวนสิทธิ์ในการเปลี่ยนแปลงข้อกำหนดเมื่อใดก็ได้ โดยจะแจ้งให้ทราบ
+                    ผ่านการอัปเดตในหน้านี้และระบุวันที่อัปเดตล่าสุด
                   </p>
                 </div>
               </section>
 
               <section>
                 <h2 className="text-2xl font-semibold text-foreground">
-                  6. Contact Us
+                  6. ติดต่อเรา
                 </h2>
                 <div className="mt-4 space-y-4 text-muted-foreground">
                   <p>
-                    If you have any questions about these Terms of Service or
-                    Privacy Policy, please contact us through the application or
-                    at the contact information provided in your account
-                    settings.
+                    หากมีคำถามเกี่ยวกับข้อกำหนดการใช้งานหรือนโยบายความเป็นส่วนตัว
+                    กรุณาติดต่อเราผ่านแอปพลิเคชันหรือข้อมูลติดต่อที่ตั้งค่าไว้ในบัญชีของคุณ
                   </p>
                 </div>
               </section>
@@ -270,7 +247,7 @@ export default function TermsPage() {
             <Button asChild variant="outline">
               <Link to="/">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Home
+                กลับหน้าแรก
               </Link>
             </Button>
           </motion.div>

@@ -29,7 +29,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 import { formatDate } from "@/lib/utils";
 
 export default function BuildingsPage() {
-  usePageTitle("Buildings");
+  usePageTitle("อาคาร");
 
   const router = useRouter();
   const { toast } = useToast();
@@ -48,8 +48,8 @@ export default function BuildingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["buildings"] });
       toast({
-        title: "Success",
-        description: "Building deleted successfully",
+        title: "สำเร็จ",
+        description: "ลบอาคารเรียบร้อย",
       });
     },
   });
@@ -59,8 +59,8 @@ export default function BuildingsPage() {
       await deleteBuildingMutation.mutateAsync(id);
     } catch (_error) {
       toast({
-        title: "Error",
-        description: "Failed to delete building",
+        title: "เกิดข้อผิดพลาด",
+        description: "ลบอาคารไม่สำเร็จ",
         variant: "destructive",
       });
     } finally {
@@ -71,7 +71,7 @@ export default function BuildingsPage() {
   const columns = [
     {
       key: "name" as keyof Building,
-      header: "Building Name",
+      header: "ชื่ออาคาร",
       render: (building: Building) => (
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -90,7 +90,7 @@ export default function BuildingsPage() {
     },
     {
       key: "totalFloors" as keyof Building,
-      header: "Floors",
+      header: "ชั้น",
       render: (building: Building) => (
         <span className="text-foreground">{building.totalFloors}</span>
       ),
@@ -98,7 +98,7 @@ export default function BuildingsPage() {
     },
     {
       key: "totalRooms" as keyof Building,
-      header: "Total Rooms",
+      header: "จำนวนห้อง",
       render: (building: Building) => (
         <span className="text-foreground">{building.totalRooms}</span>
       ),
@@ -106,7 +106,7 @@ export default function BuildingsPage() {
     },
     {
       key: "occupiedRooms" as keyof Building,
-      header: "Occupancy",
+      header: "การเข้าพัก",
       render: (building: Building) => (
         <div>
           <p className="font-medium text-foreground">
@@ -114,14 +114,14 @@ export default function BuildingsPage() {
           </p>
           <p className="text-sm text-muted-foreground">
             {Math.round((building.occupiedRooms / building.totalRooms) * 100)}%
-            occupied
+            เข้าพัก
           </p>
         </div>
       ),
     },
     {
       key: "createdAt" as keyof Building,
-      header: "Created",
+      header: "วันที่สร้าง",
       render: (building: Building) => (
         <span className="text-muted-foreground text-sm">
           {formatDate(building.createdAt)}
@@ -131,24 +131,24 @@ export default function BuildingsPage() {
     },
     {
       key: "id" as keyof Building,
-      header: "Actions",
+      header: "การดำเนินการ",
       render: (building: Building) => (
         <TableRowActions
           primary={{
-            label: "Floor plan",
+            label: "ผังห้อง",
             icon: LayoutGrid,
             onClick: () =>
               router.push(`/overview/buildings/${building.id}/floor-plan`),
           }}
           items={[
             {
-              label: "Edit building",
+              label: "แก้ไขอาคาร",
               icon: Edit,
               onClick: () =>
                 router.push(`/overview/buildings/${building.id}/edit`),
             },
             {
-              label: "Delete",
+              label: "ลบ",
               icon: Trash2,
               destructive: true,
               onClick: () => setDeleteId(building.id),
@@ -164,31 +164,31 @@ export default function BuildingsPage() {
     return (
       <div className="space-y-6">
         <PageHeader
-          title="Buildings"
-          description="Manage your building properties."
+          title="อาคาร"
+          description="จัดการข้อมูลอาคารของคุณ"
         />
         <AdminRestrictionBanner
-          title="Owner Action Required"
-          message="Only owners can create and manage buildings. Please contact your team owner to create buildings."
-          action="Once buildings are created, you can create rooms and manage tenants within those buildings."
+          title="ต้องให้เจ้าของดำเนินการ"
+          message="เฉพาะเจ้าของเท่านั้นที่สามารถสร้างและจัดการอาคารได้ โปรดติดต่อเจ้าของทีมเพื่อสร้างอาคาร"
+          action="เมื่อมีอาคารแล้ว คุณสามารถสร้างห้องและจัดการผู้เช่าในอาคารนั้นได้"
         />
       </div>
     );
   }
 
   if (isLoading) {
-    return <LoadingState fullScreen message="Loading buildings..." />;
+    return <LoadingState fullScreen message="กำลังโหลดอาคาร..." />;
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Buildings"
-        description="Manage your building properties."
+        title="อาคาร"
+        description="จัดการข้อมูลอาคารของคุณ"
         actions={
           <Button onClick={() => router.push("/overview/buildings/new")}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Building
+            เพิ่มอาคาร
           </Button>
         }
       />
@@ -196,9 +196,9 @@ export default function BuildingsPage() {
       {buildings.length === 0 ? (
         <EmptyState
           icon={<Home className="h-8 w-8 text-muted-foreground" />}
-          title="No buildings yet"
-          description="Get started by creating your first building"
-          actionLabel="Add Building"
+          title="ยังไม่มีอาคาร"
+          description="เริ่มต้นด้วยการเพิ่มอาคารแรกของคุณ"
+          actionLabel="เพิ่มอาคาร"
           onAction={() => router.push("/overview/buildings/new")}
         />
       ) : (
@@ -206,7 +206,7 @@ export default function BuildingsPage() {
           <DataTable
             columns={columns}
             data={buildings}
-            searchPlaceholder="Search buildings..."
+            searchPlaceholder="ค้นหาอาคาร..."
             forcePagination
           />
         </div>
@@ -215,19 +215,18 @@ export default function BuildingsPage() {
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>ยืนยันการลบ?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this building. This action cannot be
-              undone.
+              การลบอาคารนี้จะไม่สามารถกู้คืนได้
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && handleDelete(deleteId)}
               className="bg-destructive"
             >
-              Delete
+              ลบ
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

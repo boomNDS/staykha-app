@@ -5,81 +5,81 @@ const numberString = (label: string) =>
     .string()
     .refine(
       (value) => value === "" || !Number.isNaN(Number(value)),
-      `${label} must be a number`,
+      `${label} ต้องเป็นตัวเลข`,
     );
 
 export const tenantDraftSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Email is invalid"),
-  phone: z.string().min(1, "Phone is required"),
-  moveInDate: z.string().min(1, "Move-in date is required"),
-  deposit: numberString("Deposit").optional(),
+  name: z.string().min(1, "กรุณากรอกชื่อ"),
+  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+  phone: z.string().min(1, "กรุณากรอกเบอร์โทร"),
+  moveInDate: z.string().min(1, "กรุณาเลือกวันที่ย้ายเข้า"),
+  deposit: numberString("เงินประกัน").optional(),
 });
 
 export const roomFormSchema = z.object({
-  roomNumber: z.string().min(1, "Room number is required"),
-  buildingId: z.string().min(1, "Building is required"),
+  roomNumber: z.string().min(1, "กรุณากรอกเลขห้อง"),
+  buildingId: z.string().min(1, "กรุณาเลือกอาคาร"),
   floor: z
     .string()
     .refine(
       (value) => Number.isInteger(Number(value)) && Number(value) >= 1,
-      "Floor must be at least 1",
+      "ชั้นต้องมากกว่าหรือเท่ากับ 1",
     ),
   status: z.enum(["occupied", "vacant", "maintenance"]),
-  monthlyRent: numberString("Monthly rent"),
-  size: numberString("Room size"),
+  monthlyRent: numberString("ค่าเช่ารายเดือน"),
+  size: numberString("ขนาดห้อง"),
 });
 
 export const bulkRoomSchema = z
   .object({
-    buildingId: z.string().min(1, "Building is required"),
+    buildingId: z.string().min(1, "กรุณาเลือกอาคาร"),
     floorStart: z
       .string()
       .refine(
         (value) => Number.isInteger(Number(value)) && Number(value) >= 1,
-        "Floor start must be at least 1",
+        "ชั้นเริ่มต้นต้องมากกว่าหรือเท่ากับ 1",
       ),
     floorEnd: z
       .string()
       .refine(
         (value) => Number.isInteger(Number(value)) && Number(value) >= 1,
-        "Floor end must be at least 1",
+        "ชั้นสิ้นสุดต้องมากกว่าหรือเท่ากับ 1",
       ),
     roomsPerFloor: z
       .string()
       .refine(
         (value) => Number.isInteger(Number(value)) && Number(value) >= 1,
-        "Rooms per floor must be at least 1",
+        "จำนวนห้องต่อชั้นต้องมากกว่าหรือเท่ากับ 1",
       ),
     startIndex: z
       .string()
       .refine(
         (value) => Number.isInteger(Number(value)) && Number(value) >= 1,
-        "Start index must be at least 1",
+        "เลขเริ่มต้นต้องมากกว่าหรือเท่ากับ 1",
       ),
     status: z.enum(["occupied", "vacant", "maintenance"]),
-    monthlyRent: numberString("Monthly rent"),
-    size: numberString("Room size"),
+    monthlyRent: numberString("ค่าเช่ารายเดือน"),
+    size: numberString("ขนาดห้อง"),
   })
   .superRefine((data, ctx) => {
     if (Number(data.floorEnd) < Number(data.floorStart)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["floorEnd"],
-        message: "Floor end must be greater than or equal to floor start",
+        message: "ชั้นสิ้นสุดต้องมากกว่าหรือเท่ากับชั้นเริ่มต้น",
       });
     }
   });
 
 export const tenantFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Email is invalid"),
-  phone: z.string().min(1, "Phone is required"),
-  roomId: z.string().min(1, "Room is required"),
-  moveInDate: z.string().min(1, "Move-in date is required"),
+  name: z.string().min(1, "กรุณากรอกชื่อ"),
+  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+  phone: z.string().min(1, "กรุณากรอกเบอร์โทร"),
+  roomId: z.string().min(1, "กรุณาเลือกห้อง"),
+  moveInDate: z.string().min(1, "กรุณาเลือกวันที่ย้ายเข้า"),
   contractEndDate: z.string().optional(),
-  monthlyRent: numberString("Monthly rent"),
-  deposit: numberString("Deposit"),
+  monthlyRent: numberString("ค่าเช่ารายเดือน"),
+  deposit: numberString("เงินประกัน"),
   idCardNumber: z.string().optional(),
   emergencyContact: z.string().optional(),
   emergencyPhone: z.string().optional(),
@@ -92,8 +92,8 @@ export const createReadingFormSchema = (
 ) =>
   z
     .object({
-      roomId: z.string().min(1, "Please select a room"),
-      readingDate: z.string().min(1, "Reading date is required"),
+      roomId: z.string().min(1, "กรุณาเลือกห้อง"),
+      readingDate: z.string().min(1, "กรุณาเลือกวันที่อ่านมิเตอร์"),
       waterPreviousReading: z.string().optional(),
       waterCurrentReading: z.string().optional(),
       electricPreviousReading: z.string().optional(),
@@ -132,13 +132,13 @@ export const createReadingFormSchema = (
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: [previousKey],
-            message: "Required",
+            message: "จำเป็นต้องกรอก",
           });
         } else if (parseValue(previous) === null) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: [previousKey],
-            message: `${label} must be a number`,
+            message: `${label} ต้องเป็นตัวเลข`,
           });
         }
 
@@ -146,13 +146,13 @@ export const createReadingFormSchema = (
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: [currentKey],
-            message: "Required",
+            message: "จำเป็นต้องกรอก",
           });
         } else if (parseValue(current) === null) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: [currentKey],
-            message: `${label} must be a number`,
+            message: `${label} ต้องเป็นตัวเลข`,
           });
         }
 
@@ -166,7 +166,7 @@ export const createReadingFormSchema = (
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: [currentKey],
-            message: "Current reading must be >= previous reading",
+            message: "เลขล่าสุดต้องมากกว่าหรือเท่ากับเลขก่อนหน้า",
           });
         }
       };
@@ -177,7 +177,7 @@ export const createReadingFormSchema = (
           current: data.waterCurrentReading,
           previousKey: "waterPreviousReading",
           currentKey: "waterCurrentReading",
-          label: "Water reading",
+          label: "เลขมิเตอร์น้ำ",
         });
       }
 
@@ -187,7 +187,7 @@ export const createReadingFormSchema = (
           current: data.electricCurrentReading,
           previousKey: "electricPreviousReading",
           currentKey: "electricCurrentReading",
-          label: "Electric reading",
+          label: "เลขมิเตอร์ไฟ",
         });
       }
 
@@ -196,64 +196,64 @@ export const createReadingFormSchema = (
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["waterPreviousPhoto"],
-            message: "Required",
+            message: "จำเป็นต้องกรอก",
           });
         }
         if (includesWater && !data.waterCurrentPhoto) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["waterCurrentPhoto"],
-            message: "Required",
+            message: "จำเป็นต้องกรอก",
           });
         }
         if (includesElectric && !data.electricPreviousPhoto) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["electricPreviousPhoto"],
-            message: "Required",
+            message: "จำเป็นต้องกรอก",
           });
         }
         if (includesElectric && !data.electricCurrentPhoto) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["electricCurrentPhoto"],
-            message: "Required",
+            message: "จำเป็นต้องกรอก",
           });
         }
       }
     });
 
 export const loginSchema = z.object({
-  email: z.string().email("Email is invalid"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+  password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
 });
 
 export const registerSchema = z
   .object({
-    name: z.string().min(1, "Name is required"),
-    email: z.string().email("Email is invalid"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    passwordConfirm: z.string().min(6, "Password confirmation is required"),
+    name: z.string().min(1, "กรุณากรอกชื่อ"),
+    email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+    password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
+    passwordConfirm: z.string().min(6, "กรุณายืนยันรหัสผ่าน"),
     role: z.enum(["owner", "admin"], {
-      required_error: "Please select a role",
+      required_error: "กรุณาเลือกบทบาท",
     }),
   })
   .refine((data) => data.password === data.passwordConfirm, {
-    message: "Passwords do not match",
+    message: "รหัสผ่านไม่ตรงกัน",
     path: ["passwordConfirm"],
   });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email("Email is invalid"),
+  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
 });
 
 export const resetPasswordSchema = z
   .object({
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    passwordConfirm: z.string().min(6, "Password confirmation is required"),
+    password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
+    passwordConfirm: z.string().min(6, "กรุณายืนยันรหัสผ่าน"),
   })
   .refine((data) => data.password === data.passwordConfirm, {
-    message: "Passwords do not match",
+    message: "รหัสผ่านไม่ตรงกัน",
     path: ["passwordConfirm"],
   });
 

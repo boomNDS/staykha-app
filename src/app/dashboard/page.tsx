@@ -21,7 +21,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 import { formatCurrency } from "@/lib/utils";
 
 export default function DashboardPage() {
-  usePageTitle("Overview");
+  usePageTitle("ภาพรวม");
 
   const tenantsQuery = useQuery({
     queryKey: ["tenants"],
@@ -64,31 +64,31 @@ export default function DashboardPage() {
 
   const stats = [
     {
-      title: "Total Tenants",
+      title: "ผู้เช่าทั้งหมด",
       value: tenants.length,
-      description: `${tenants.filter((t) => t.status === "active").length} active tenants`,
+      description: `${tenants.filter((t) => t.status === "active").length} ผู้เช่าที่กำลังอยู่`,
       icon: Users,
-      trend: { value: 12, label: "vs last month" },
+      trend: { value: 12, label: "เทียบเดือนที่แล้ว" },
     },
     {
-      title: "Occupied Rooms",
+      title: "ห้องที่มีผู้เช่า",
       value: `${occupiedRooms}/${rooms.length}`,
-      description: `${rooms.length ? ((occupiedRooms / rooms.length) * 100).toFixed(0) : "0"}% occupancy`,
+      description: `${rooms.length ? ((occupiedRooms / rooms.length) * 100).toFixed(0) : "0"}% มีผู้เช่า`,
       icon: Home,
-      trend: { value: 8, label: "vs last month" },
+      trend: { value: 8, label: "เทียบเดือนที่แล้ว" },
     },
     {
-      title: "Pending Readings",
+      title: "การอ่านที่ค้างอยู่",
       value: pendingReadings,
-      description: "Awaiting billing or missing meter",
+      description: "รอออกบิลหรือขาดมิเตอร์",
       icon: Gauge,
     },
     {
-      title: "Monthly Revenue",
+      title: "รายได้ประจำเดือน",
       value: formatCurrency(totalRevenue),
-      description: "From invoices this month",
+      description: "จากใบแจ้งหนี้เดือนนี้",
       icon: DollarSign,
-      trend: { value: 15, label: "vs last month" },
+      trend: { value: 15, label: "เทียบเดือนที่แล้ว" },
       iconClassName: "bg-green-500/10",
     },
   ];
@@ -96,7 +96,7 @@ export default function DashboardPage() {
   const tenantColumns = [
     {
       key: "name",
-      header: "Tenant",
+      header: "ผู้เช่า",
       searchable: true,
       render: (tenant: Tenant) => (
         <span className="font-medium text-foreground">{tenant.name}</span>
@@ -104,7 +104,7 @@ export default function DashboardPage() {
     },
     {
       key: "email",
-      header: "Email",
+      header: "อีเมล",
       searchable: true,
       className: "hidden md:table-cell",
       render: (tenant: Tenant) => (
@@ -113,7 +113,7 @@ export default function DashboardPage() {
     },
     {
       key: "phone",
-      header: "Phone",
+      header: "โทรศัพท์",
       searchable: true,
       className: "hidden lg:table-cell",
       render: (tenant: Tenant) => (
@@ -122,7 +122,7 @@ export default function DashboardPage() {
     },
     {
       key: "room",
-      header: "Room",
+      header: "ห้อง",
       searchable: true,
       render: (tenant: Tenant) => {
         const room = rooms.find((r) => r.id === tenant.roomId);
@@ -143,8 +143,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 pb-8 sm:space-y-8">
       <PageHeader
-        title="Overview"
-        description="Overview of your StayKha operations."
+        title="ภาพรวม"
+        description="ภาพรวมการจัดการ StayKha ของคุณ"
       />
 
       <OnboardingChecklist
@@ -167,18 +167,18 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Recent Tenants</span>
+              <span>ผู้เช่าล่าสุด</span>
               <Badge variant="secondary" className="font-normal">
-                {tenants.length} total
+                {tenants.length} ทั้งหมด
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <LoadingState message="Loading tenants..." />
+              <LoadingState message="กำลังโหลดผู้เช่า..." />
             ) : tenants.length === 0 ? (
               <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                No tenants found
+                ยังไม่มีผู้เช่า
               </div>
             ) : (
               <DataTable
@@ -196,18 +196,18 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Recent Readings</span>
+              <span>การอ่านมิเตอร์ล่าสุด</span>
               <Badge variant="secondary" className="font-normal">
-                {readings.length} this month
+                {readings.length} เดือนนี้
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <LoadingState message="Loading readings..." />
+              <LoadingState message="กำลังโหลดการอ่านมิเตอร์..." />
             ) : readings.length === 0 ? (
               <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                No readings found
+                ยังไม่มีการอ่านมิเตอร์
               </div>
             ) : (
               <div className="space-y-3">
@@ -227,7 +227,7 @@ export default function DashboardPage() {
                             {reading.tenantName}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Room {reading.roomNumber} • Monthly readings
+                            ห้อง {reading.roomNumber} • การอ่านรายเดือน
                           </p>
                         </div>
                       </div>

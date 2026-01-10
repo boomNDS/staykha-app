@@ -44,9 +44,9 @@ export default function ResetPasswordPage() {
   React.useEffect(() => {
     if (!token) {
       toast({
-        title: "Invalid reset link",
+        title: "ลิงก์ไม่ถูกต้อง",
         description:
-          "The reset link is missing or invalid. Please request a new one.",
+          "ลิงก์รีเซ็ตไม่ถูกต้องหรือไม่ครบถ้วน กรุณาขอลิงก์ใหม่อีกครั้ง",
         variant: "destructive",
       });
       router.push("/forgot-password");
@@ -84,18 +84,18 @@ export default function ResetPasswordPage() {
       );
       setIsSuccess(true);
       toast({
-        title: "Password reset successful",
-        description: "Your password has been reset. You can now sign in.",
+        title: "รีเซ็ตรหัสผ่านสำเร็จ",
+        description: "รีเซ็ตรหัสผ่านเรียบร้อยแล้ว คุณสามารถ Sign in ได้ทันที",
       });
       setTimeout(() => {
         router.push("/login");
       }, 2000);
     } catch (error: any) {
       toast({
-        title: "Failed to reset password",
+        title: "รีเซ็ตรหัสผ่านไม่สำเร็จ",
         description:
           error.message ||
-          "The reset link may have expired. Please request a new one.",
+          "ลิงก์อาจหมดอายุ กรุณาขอลิงก์ใหม่อีกครั้ง",
         variant: "destructive",
       });
     } finally {
@@ -113,18 +113,18 @@ export default function ResetPasswordPage() {
               <Lock className="h-7 w-7 text-primary-foreground" />
             </div>
             <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
-              Password Reset Successful
+              รีเซ็ตรหัสผ่านสำเร็จ
             </CardTitle>
             <CardDescription>
-              Your password has been reset successfully
+              รีเซ็ตรหัสผ่านเรียบร้อยแล้ว
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-center text-sm text-muted-foreground">
-              Redirecting you to the sign in page...
+              กำลังพาไปยังหน้า Sign in...
             </p>
             <Button asChild className="w-full">
-              <Link to="/login">Go to Sign In</Link>
+              <Link to="/login">ไปที่ Sign in</Link>
             </Button>
           </CardContent>
         </Card>
@@ -146,28 +146,27 @@ export default function ResetPasswordPage() {
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary/80">
-              StayKha Admin
+              ผู้ดูแล StayKha
             </p>
             <h1 className="font-heading mt-3 text-3xl font-semibold tracking-tight text-foreground">
-              Set New Password
+              ตั้งรหัสผ่านใหม่
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Enter your new password below. Make sure it's at least 6
-              characters long.
+              กรอกรหัสผ่านใหม่ด้านล่าง โดยต้องมีอย่างน้อย 6 ตัวอักษร
             </p>
           </div>
           <div className="grid gap-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
               <span className="h-2 w-2 rounded-full bg-primary" />
-              Use a strong, unique password
+              ใช้รหัสผ่านที่คาดเดายากและไม่ซ้ำ
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
               <span className="h-2 w-2 rounded-full bg-primary" />
-              Minimum 6 characters required
+              ต้องมีอย่างน้อย 6 ตัวอักษร
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
               <span className="h-2 w-2 rounded-full bg-primary" />
-              Keep your password secure
+              เก็บรหัสผ่านให้ปลอดภัย
             </div>
           </div>
         </div>
@@ -180,7 +179,7 @@ export default function ResetPasswordPage() {
             <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
               Reset Password
             </CardTitle>
-            <CardDescription>Enter your new password</CardDescription>
+            <CardDescription>กรอกรหัสผ่านใหม่ของคุณ</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -189,7 +188,7 @@ export default function ResetPasswordPage() {
                   htmlFor="password"
                   className="text-sm font-medium text-foreground"
                 >
-                  New Password
+                  รหัสผ่านใหม่
                 </label>
                 <Input
                   id="password"
@@ -214,7 +213,7 @@ export default function ResetPasswordPage() {
                   htmlFor="passwordConfirm"
                   className="text-sm font-medium text-foreground"
                 >
-                  Confirm Password
+                  ยืนยันรหัสผ่าน
                 </label>
                 <Input
                   id="passwordConfirm"
@@ -241,7 +240,7 @@ export default function ResetPasswordPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Resetting...
+                    กำลังรีเซ็ตรหัสผ่าน...
                   </>
                 ) : (
                   "Reset Password"
@@ -251,7 +250,7 @@ export default function ResetPasswordPage() {
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">
-                Remember your password?{" "}
+                จำรหัสผ่านได้แล้วใช่ไหม?{" "}
               </span>
               <Link
                 to="/login"

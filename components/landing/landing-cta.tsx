@@ -27,26 +27,25 @@ export function LandingCTA() {
       >
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-primary/80">
-            Get started fast
+            เริ่มต้นอย่างรวดเร็ว
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-foreground sm:text-3xl">
-            Ready to streamline your property operations?
+            พร้อมยกระดับการจัดการที่พักของคุณหรือยัง?
           </h2>
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            Manage buildings, tenants, meter readings, and billing with
-            automated workflows, multi-admin support, and customizable
-            settings—all designed for property owners.
+            จัดการอาคาร ห้องพัก ผู้เช่า การอ่านมิเตอร์ และการออกบิลด้วยเวิร์กโฟลว์อัตโนมัติ
+            รองรับหลายผู้ดูแล ตั้งค่าได้ยืดหยุ่น—ออกแบบมาเพื่อเจ้าของที่พักโดยเฉพาะ
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button asChild size="lg">
             <Link to="/login">
-              Create your first property
+              สร้างที่พักแรกของคุณ
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
           <Button asChild size="lg" variant="outline">
-            <Link to="/overview/billing">See billing workflow</Link>
+            <Link to="/overview/billing">ดูเวิร์กโฟลว์การออกบิล</Link>
           </Button>
         </div>
       </motion.div>

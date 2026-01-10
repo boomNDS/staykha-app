@@ -53,13 +53,13 @@ export default function ForgotPasswordPage() {
       await authApi.requestPasswordReset(formData.email);
       setIsSuccess(true);
       toast({
-        title: "Reset link sent",
-        description: "Check your email for password reset instructions.",
+        title: "ส่งลิงก์รีเซ็ตรหัสผ่านแล้ว",
+        description: "โปรดตรวจสอบอีเมลเพื่อทำการรีเซ็ตรหัสผ่าน",
       });
     } catch (error: any) {
       toast({
-        title: "Failed to send reset link",
-        description: error.message || "Please check your email and try again.",
+        title: "ส่งลิงก์ไม่สำเร็จ",
+        description: error.message || "กรุณาตรวจสอบอีเมลและลองใหม่อีกครั้ง",
         variant: "destructive",
       });
     } finally {
@@ -77,20 +77,19 @@ export default function ForgotPasswordPage() {
               <Mail className="h-7 w-7 text-primary-foreground" />
             </div>
             <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
-              Check Your Email
+              โปรดตรวจสอบอีเมล
             </CardTitle>
             <CardDescription>
-              We've sent password reset instructions to {formData.email}
+              เราได้ส่งคำแนะนำการรีเซ็ตรหัสผ่านไปที่ {formData.email}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-center text-sm text-muted-foreground">
-              Click the link in the email to reset your password. If you don't
-              see it, check your spam folder.
+              คลิกลิงก์ในอีเมลเพื่อรีเซ็ตรหัสผ่าน หากไม่พบให้ตรวจสอบโฟลเดอร์สแปม
             </p>
             <div className="flex flex-col gap-2">
               <Button asChild className="w-full">
-                <Link to="/login">Back to Sign In</Link>
+                <Link to="/login">กลับไปหน้า Sign in</Link>
               </Button>
               <Button
                 variant="outline"
@@ -100,7 +99,7 @@ export default function ForgotPasswordPage() {
                   setFormData({ email: "" });
                 }}
               >
-                Send Another Email
+                ส่งอีเมลอีกครั้ง
               </Button>
             </div>
           </CardContent>
@@ -119,28 +118,27 @@ export default function ForgotPasswordPage() {
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary/80">
-              StayKha Admin
+              ผู้ดูแล StayKha
             </p>
             <h1 className="font-heading mt-3 text-3xl font-semibold tracking-tight text-foreground">
               Reset Password
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Enter your email address and we'll send you a link to reset your
-              password.
+              กรอกอีเมลของคุณเพื่อรับลิงก์สำหรับรีเซ็ตรหัสผ่าน
             </p>
           </div>
           <div className="grid gap-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
               <span className="h-2 w-2 rounded-full bg-primary" />
-              Secure password reset process
+              ขั้นตอนรีเซ็ตรหัสผ่านที่ปลอดภัย
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
               <span className="h-2 w-2 rounded-full bg-primary" />
-              Reset link expires in 1 hour
+              ลิงก์หมดอายุภายใน 1 ชั่วโมง
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
               <span className="h-2 w-2 rounded-full bg-primary" />
-              Check your email inbox
+              ตรวจสอบกล่องจดหมายของคุณ
             </div>
           </div>
         </div>
@@ -151,10 +149,10 @@ export default function ForgotPasswordPage() {
               <Mail className="h-7 w-7 text-primary-foreground" />
             </div>
             <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
-              Forgot Password?
+              ลืมรหัสผ่าน?
             </CardTitle>
             <CardDescription>
-              Enter your email to receive a reset link
+              กรอกอีเมลเพื่อรับลิงก์รีเซ็ตรหัสผ่าน
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -164,7 +162,7 @@ export default function ForgotPasswordPage() {
                   htmlFor="email"
                   className="text-sm font-medium text-foreground"
                 >
-                  Email
+                  อีเมล
                 </label>
                 <Input
                   id="email"
@@ -188,17 +186,17 @@ export default function ForgotPasswordPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
+                    กำลังส่ง...
                   </>
                 ) : (
-                  "Send Reset Link"
+                  "ส่งลิงก์รีเซ็ตรหัสผ่าน"
                 )}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">
-                Remember your password?{" "}
+                จำรหัสผ่านได้แล้วใช่ไหม?{" "}
               </span>
               <Link
                 to="/login"

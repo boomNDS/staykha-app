@@ -28,9 +28,9 @@ let settings: AdminSettings = {
   taxRate: 7,
   currency: "THB",
   companyName: "StayKha",
-  companyAddress: "123 Campus Drive, University City, UC 12345",
+  companyAddress: "123 ถนนมหาวิทยาลัย เมืองมหาวิทยาลัย 12345",
   companyPhone: "+66-2-123-4567",
-  companyEmail: "billing@dormitory.edu",
+  companyEmail: "billing@staykha.com",
   invoicePrefix: "INV",
   paymentTermsDays: 15,
   defaultRoomRent: 4500,
@@ -98,7 +98,7 @@ export const authApi = {
     const user = mockUsers.find((u) => u.email === email);
 
     if (!user || !["password123", "owner123", "admin123"].includes(password)) {
-      throw new Error("Invalid credentials");
+      throw new Error("ข้อมูลเข้าสู่ระบบไม่ถูกต้อง");
     }
 
     return {
@@ -122,7 +122,7 @@ export const roomsApi = {
     await delay();
     const room = mockRooms.find((r) => r.id === id);
     if (!room) {
-      throw new Error("Room not found");
+      throw new Error("ไม่พบห้อง");
     }
     return { room };
   },
@@ -140,7 +140,7 @@ export const roomsApi = {
     await delay();
     const index = mockRooms.findIndex((r) => r.id === id);
     if (index === -1) {
-      throw new Error("Room not found");
+      throw new Error("ไม่พบห้อง");
     }
     const updated = {
       ...mockRooms[index],
@@ -205,7 +205,7 @@ export const roomsApi = {
     await delay();
     const index = mockRooms.findIndex((r) => r.id === id);
     if (index === -1) {
-      throw new Error("Room not found");
+      throw new Error("ไม่พบห้อง");
     }
     const room = mockRooms[index];
     mockRooms.splice(index, 1);
@@ -230,7 +230,7 @@ export const tenantsApi = {
     await delay();
     const tenant = mockTenants.find((t) => t.id === id);
     if (!tenant) {
-      throw new Error("Tenant not found");
+      throw new Error("ไม่พบผู้เช่า");
     }
     return { tenant };
   },
@@ -257,7 +257,7 @@ export const tenantsApi = {
     await delay();
     const index = mockTenants.findIndex((t) => t.id === id);
     if (index === -1) {
-      throw new Error("Tenant not found");
+      throw new Error("ไม่พบผู้เช่า");
     }
 
     const previous = mockTenants[index];
@@ -291,7 +291,7 @@ export const tenantsApi = {
     await delay();
     const index = mockTenants.findIndex((t) => t.id === id);
     if (index === -1) {
-      throw new Error("Tenant not found");
+      throw new Error("ไม่พบผู้เช่า");
     }
     const tenant = mockTenants[index];
     if (tenant.roomId) {
@@ -315,7 +315,7 @@ export const buildingsApi = {
     await delay();
     const building = mockBuildings.find((b) => b.id === id);
     if (!building) {
-      throw new Error("Building not found");
+      throw new Error("ไม่พบอาคาร");
     }
     return { building };
   },
@@ -334,7 +334,7 @@ export const buildingsApi = {
     await delay();
     const index = mockBuildings.findIndex((b) => b.id === id);
     if (index === -1) {
-      throw new Error("Building not found");
+      throw new Error("ไม่พบอาคาร");
     }
     const updated = {
       ...mockBuildings[index],
@@ -355,7 +355,7 @@ export const buildingsApi = {
     await delay();
     const index = mockBuildings.findIndex((b) => b.id === id);
     if (index === -1) {
-      throw new Error("Building not found");
+      throw new Error("ไม่พบอาคาร");
     }
     mockBuildings.splice(index, 1);
     return { success: true };
@@ -371,7 +371,7 @@ export const readingsApi = {
     await delay();
     const group = groupReadings().find((item) => item.id === id);
     if (!group) {
-      throw new Error("Reading group not found");
+      throw new Error("ไม่พบกลุ่มการอ่านมิเตอร์");
     }
     return { reading: group };
   },
@@ -395,7 +395,7 @@ export const readingsApi = {
   }) => {
     await delay();
     if (!data.water && !data.electric) {
-      throw new Error("At least one meter reading is required.");
+      throw new Error("ต้องมีการอ่านมิเตอร์อย่างน้อย 1 รายการ");
     }
 
     const room = mockRooms.find((item) => item.id === data.roomId);
@@ -462,7 +462,7 @@ export const readingsApi = {
     await delay();
     const index = mockReadings.findIndex((r) => r.id === id);
     if (index === -1) {
-      throw new Error("Reading not found");
+      throw new Error("ไม่พบการอ่านมิเตอร์");
     }
     const updated = {
       ...mockReadings[index],
@@ -482,7 +482,7 @@ export const invoicesApi = {
     await delay();
     const invoice = mockInvoices.find((inv) => inv.id === id);
     if (!invoice) {
-      throw new Error("Invoice not found");
+      throw new Error("ไม่พบใบแจ้งหนี้");
     }
     return { invoice };
   },
@@ -490,7 +490,7 @@ export const invoicesApi = {
     await delay();
     const index = mockInvoices.findIndex((inv) => inv.id === id);
     if (index === -1) {
-      throw new Error("Invoice not found");
+      throw new Error("ไม่พบใบแจ้งหนี้");
     }
     const updated = { ...mockInvoices[index], ...updates };
     mockInvoices[index] = updated;
@@ -500,7 +500,7 @@ export const invoicesApi = {
     await delay();
     const invoice = mockInvoices.find((inv) => inv.id === id);
     if (!invoice) {
-      throw new Error("Invoice not found");
+      throw new Error("ไม่พบใบแจ้งหนี้");
     }
     return new Blob([`Invoice ${invoice.id}`], { type: "application/pdf" });
   },
@@ -508,16 +508,16 @@ export const invoicesApi = {
     await delay();
     const group = groupReadings().find((item) => item.id === readingGroupId);
     if (!group) {
-      throw new Error("Reading group not found");
+      throw new Error("ไม่พบกลุ่มการอ่านมิเตอร์");
     }
     if (!group.electric) {
       throw new Error(
-        "Electric reading is required before generating an invoice.",
+        "ต้องมีการอ่านมิเตอร์ไฟก่อนจึงจะสร้างใบแจ้งหนี้ได้",
       );
     }
     if (settings.waterBillingMode !== "fixed" && !group.water) {
       throw new Error(
-        "Complete both water and electric readings before generating an invoice.",
+        "กรุณากรอกการอ่านมิเตอร์น้ำและไฟให้ครบก่อนสร้างใบแจ้งหนี้",
       );
     }
     const room = mockRooms.find((item) => item.id === group.roomId);
@@ -542,7 +542,7 @@ export const invoicesApi = {
       roomId: group.roomId,
       roomNumber: group.roomNumber,
       tenantName: group.tenantName,
-      billingPeriod: issueDate.toLocaleString("default", {
+      billingPeriod: issueDate.toLocaleString("th-TH", {
         month: "long",
         year: "numeric",
       }),
@@ -605,7 +605,7 @@ export const adminsApi = {
     await delay();
     const admin = mockUsers.find((u) => u.id === id && u.role === "admin");
     if (!admin) {
-      throw new Error("Admin not found");
+      throw new Error("ไม่พบผู้ดูแล");
     }
     return { success: true };
   },
@@ -621,7 +621,7 @@ export const invitationsApi = {
   ) => {
     await delay();
     if (!data.email || !data.name) {
-      throw new Error("Email and name are required");
+      throw new Error("กรุณากรอกอีเมลและชื่อ");
     }
 
     const inviteCode = `INV-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -646,7 +646,7 @@ export const invitationsApi = {
     await delay();
     const index = mockInvitations.findIndex((inv) => inv.id === id);
     if (index === -1) {
-      throw new Error("Invitation not found");
+      throw new Error("ไม่พบคำเชิญ");
     }
     mockInvitations.splice(index, 1);
     return { success: true };

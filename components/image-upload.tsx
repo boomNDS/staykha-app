@@ -83,18 +83,18 @@ export function ImageUpload({
           <Upload className="h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">
             {isDragActive
-              ? "Drop the image here"
-              : "Drag & drop or click to upload"}
+              ? "วางรูปที่นี่"
+              : "ลากและวาง หรือคลิกเพื่ออัปโหลด"}
           </p>
           <p className="text-xs text-muted-foreground">
-            PNG, JPG, WEBP (max 5MB)
+            PNG, JPG, WEBP (สูงสุด 5MB)
           </p>
         </div>
       ) : (
         <div className="relative h-40 rounded-lg border border-border bg-muted overflow-hidden">
           <img
             src={preview || "/placeholder.svg"}
-            alt="Preview"
+            alt="ตัวอย่างรูป"
             className="h-full w-full object-cover"
           />
           {!disabled && (

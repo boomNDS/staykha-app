@@ -29,7 +29,7 @@ import type { RoomFormValues } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function NewRoomPage() {
-  usePageTitle("New Room");
+  usePageTitle("เพิ่มห้องใหม่");
 
   const router = useRouter();
   const { user } = useAuth();
@@ -42,7 +42,7 @@ export default function NewRoomPage() {
     queryKey: ["settings", user?.teamId],
     queryFn: () => {
       if (!user?.teamId) {
-        throw new Error("Team ID is required to load settings");
+        throw new Error("จำเป็นต้องมี Team ID เพื่อโหลด Settings");
       }
       return settingsApi.get(user.teamId);
     },
@@ -64,10 +64,12 @@ export default function NewRoomPage() {
   
   // Show settings required message if settings don't exist
   if (settingsQuery.isSuccess && !settings) {
-    return <SettingsRequired 
-      title="Settings Required"
-      description="You need to create settings for your team before you can create rooms."
-    />;
+    return (
+      <SettingsRequired
+        title="ต้องตั้งค่า Settings ก่อนใช้งาน"
+        description="คุณต้องสร้าง Settings ของทีมก่อนจึงจะเพิ่มห้องได้"
+      />
+    );
   }
   
   React.useEffect(() => {
@@ -131,23 +133,23 @@ export default function NewRoomPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="New Room"
-        description="Create a new room in the system."
+        title="เพิ่มห้องใหม่"
+        description="สร้างห้องใหม่ในระบบ"
         showBack
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Room Information</CardTitle>
+          <CardTitle>ข้อมูลห้อง</CardTitle>
           <CardDescription>
-            Fill in the details for the new room
+            กรอกรายละเอียดห้องใหม่
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="roomNumber">Room Number *</Label>
+                <Label htmlFor="roomNumber">เลขห้อง *</Label>
                 <Input
                   id="roomNumber"
                   required
@@ -165,7 +167,7 @@ export default function NewRoomPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="buildingName">Building *</Label>
+                <Label htmlFor="buildingName">อาคาร *</Label>
                 <Select
                   value={formData.buildingId}
                   onValueChange={(value) =>
@@ -173,7 +175,7 @@ export default function NewRoomPage() {
                   }
                 >
                   <SelectTrigger id="buildingName">
-                    <SelectValue placeholder="Select a building" />
+                    <SelectValue placeholder="เลือกอาคาร" />
                   </SelectTrigger>
                   <SelectContent>
                     {buildings.map((building) => (
@@ -191,7 +193,7 @@ export default function NewRoomPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="floor">Floor *</Label>
+                <Label htmlFor="floor">ชั้น *</Label>
                 <Input
                   id="floor"
                   type="number"
@@ -208,7 +210,7 @@ export default function NewRoomPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">สถานะ</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) =>
@@ -219,14 +221,14 @@ export default function NewRoomPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="vacant">Vacant</SelectItem>
-                    <SelectItem value="occupied">Occupied</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                    <SelectItem value="vacant">ว่าง</SelectItem>
+                    <SelectItem value="occupied">เข้าพัก</SelectItem>
+                    <SelectItem value="maintenance">ซ่อมบำรุง</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="size">Room Size (sqm)</Label>
+                <Label htmlFor="size">ขนาดห้อง (ตร.ม.)</Label>
                 <Input
                   id="size"
                   type="number"
@@ -241,7 +243,7 @@ export default function NewRoomPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="monthlyRent">Monthly Rent</Label>
+                <Label htmlFor="monthlyRent">ค่าเช่ารายเดือน</Label>
                 <Input
                   id="monthlyRent"
                   type="number"
@@ -261,14 +263,14 @@ export default function NewRoomPage() {
 
             <div className="flex gap-3">
               <Button type="submit" disabled={loading}>
-                {loading ? "Creating..." : "Create Room"}
+                {loading ? "กำลังสร้าง..." : "สร้างห้อง"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
               >
-                Cancel
+                ยกเลิก
               </Button>
             </div>
           </form>

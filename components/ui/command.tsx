@@ -29,8 +29,8 @@ function Command({
 }
 
 function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
+  title = "แผงคำสั่ง",
+  description = "ค้นหาคำสั่งที่ต้องการใช้งาน...",
   children,
   className,
   showCloseButton = true,

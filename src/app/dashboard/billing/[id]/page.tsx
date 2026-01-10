@@ -22,7 +22,7 @@ import { formatCurrency } from "@/lib/utils";
 export default function InvoiceDetailPage() {
   const params = useParams();
   const invoiceId = params.id as string;
-  usePageTitle(`Invoice ${invoiceId}`);
+  usePageTitle(`ใบแจ้งหนี้ ${invoiceId}`);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -49,8 +49,8 @@ export default function InvoiceDetailPage() {
   const handleDownloadPdf = async () => {
     if (!invoice) {
       toast({
-        title: "Error",
-        description: "Invoice data not available for PDF generation.",
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่พบข้อมูลใบแจ้งหนี้สำหรับสร้างไฟล์ PDF",
         variant: "destructive",
       });
       return;
@@ -63,7 +63,7 @@ export default function InvoiceDetailPage() {
       
       const node = printCardRef.current;
       if (!node) {
-        throw new Error("Invoice card element not found");
+        throw new Error("ไม่พบองค์ประกอบใบแจ้งหนี้");
       }
 
       const dataUrl = await toPng(node, {
@@ -89,14 +89,17 @@ export default function InvoiceDetailPage() {
       pdf.save(`invoice-${invoice.invoiceNumber || invoiceId}.pdf`);
       
       toast({
-        title: "PDF downloaded",
-        description: "Invoice PDF has been downloaded successfully.",
+        title: "ดาวน์โหลด PDF แล้ว",
+        description: "ดาวน์โหลดใบแจ้งหนี้ PDF สำเร็จ",
       });
     } catch (error) {
       console.error("Error downloading PDF:", error);
       toast({
-        title: "PDF download failed",
-        description: error instanceof Error ? error.message : "Could not generate PDF. Please try again.",
+        title: "ดาวน์โหลด PDF ไม่สำเร็จ",
+        description:
+          error instanceof Error
+            ? error.message
+            : "ไม่สามารถสร้างไฟล์ PDF ได้ กรุณาลองใหม่อีกครั้ง",
         variant: "destructive",
       });
     } finally {
@@ -105,19 +108,19 @@ export default function InvoiceDetailPage() {
   };
 
   if (invoiceQuery.isLoading) {
-    return <LoadingState fullScreen message="Loading invoice..." />;
+    return <LoadingState fullScreen message="กำลังโหลดใบแจ้งหนี้..." />;
   }
 
   if (!invoice) {
     return (
       <div className="flex h-screen flex-col items-center justify-center">
-        <p className="text-muted-foreground">Invoice not found</p>
+        <p className="text-muted-foreground">ไม่พบใบแจ้งหนี้</p>
         <Button
           variant="link"
           onClick={() => router.push("/overview/billing")}
           className="mt-2"
         >
-          Back to Billing
+          กลับไปหน้าใบแจ้งหนี้
         </Button>
       </div>
     );
@@ -145,7 +148,7 @@ export default function InvoiceDetailPage() {
   return (
     <div className="space-y-6 pb-8">
       <PageHeader
-        title="Invoice Preview"
+        title="ตัวอย่างใบแจ้งหนี้"
         description={invoice.invoiceNumber}
         showBack
         actions={
@@ -162,18 +165,18 @@ export default function InvoiceDetailPage() {
                 })
               }
             >
-              {invoice.status === "paid" ? "Mark Pending" : "Mark Paid"}
+              {invoice.status === "paid" ? "ทำเป็นรอชำระ" : "ทำเป็นชำระแล้ว"}
             </Button>
             <Button onClick={handleDownloadPdf} disabled={isDownloading}>
               {isDownloading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Downloading...
+                  กำลังดาวน์โหลด...
                 </>
               ) : (
                 <>
                   <Download className="mr-2 h-4 w-4" />
-                  Download PDF
+                  ดาวน์โหลด PDF
                 </>
               )}
             </Button>
@@ -186,21 +189,29 @@ export default function InvoiceDetailPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <CardTitle className="text-xl sm:text-2xl">
-                Utility Bill
+                บิลค่าสาธารณูปโภค
               </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Billing Period: {invoice.billingPeriod}
+                รอบบิล: {invoice.billingPeriod}
               </p>
             </div>
             <Badge
               variant={invoice.status === "paid" ? "default" : "secondary"}
             >
-              {invoice.status.toUpperCase()}
+              {invoice.status === "paid"
+                ? "ชำระแล้ว"
+                : invoice.status === "pending"
+                  ? "รอชำระ"
+                  : invoice.status === "overdue"
+                    ? "ค้างชำระ"
+                    : invoice.status === "sent"
+                      ? "ส่งแล้ว"
+                      : "ร่าง"}
             </Badge>
           </div>
           {isWaterFixed && (
             <Badge variant="outline" className="mt-2">
-              Water fixed fee
+              ค่าน้ำแบบเหมาจ่าย
             </Badge>
           )}
         </CardHeader>
@@ -209,7 +220,7 @@ export default function InvoiceDetailPage() {
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">
-                Bill To
+                ออกบิลถึง
               </p>
               <p className="font-semibold text-foreground">
                 {invoice.tenant?.name || invoice.tenantName || "—"}
@@ -223,13 +234,13 @@ export default function InvoiceDetailPage() {
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">
-                Property Details
+                รายละเอียดห้อง
               </p>
               <p className="font-semibold text-foreground">
-                Room {invoice.room?.roomNumber || invoice.roomNumber}
+                ห้อง {invoice.room?.roomNumber || invoice.roomNumber}
               </p>
               <p className="text-sm text-muted-foreground">
-                {invoice.room?.buildingName || "—"}, Floor{" "}
+                {invoice.room?.buildingName || "—"}, ชั้น{" "}
                 {invoice.room?.floor ?? "—"}
               </p>
             </div>
@@ -239,26 +250,26 @@ export default function InvoiceDetailPage() {
 
           <div>
             <h3 className="mb-4 font-semibold text-foreground">
-              Billing Summary
+              สรุปยอดบิล
             </h3>
             <div className="overflow-hidden rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3 text-left font-medium">Item</th>
+                    <th className="px-4 py-3 text-left font-medium">รายการ</th>
                     <th className="px-4 py-3 text-center font-medium">
-                      Previous
+                      เลขก่อนหน้า
                     </th>
                     <th className="px-4 py-3 text-center font-medium">
-                      Current
+                      เลขล่าสุด
                     </th>
-                    <th className="px-4 py-3 text-right font-medium">Amount</th>
+                    <th className="px-4 py-3 text-right font-medium">จำนวนเงิน</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-t">
                     <td className="px-4 py-3 font-medium text-foreground">
-                      Room Rent
+                      ค่าเช่าห้อง
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       —
@@ -274,7 +285,7 @@ export default function InvoiceDetailPage() {
                     <td className="px-4 py-3 font-medium text-foreground">
                       <span className="inline-flex items-center gap-2">
                         <Droplets className="h-4 w-4 text-blue-500" />
-                        Water {isWaterFixed ? "(Fixed)" : ""}
+                        ค่าน้ำ {isWaterFixed ? "(เหมาจ่าย)" : ""}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
@@ -299,7 +310,7 @@ export default function InvoiceDetailPage() {
                     <td className="px-4 py-3 font-medium text-foreground">
                       <span className="inline-flex items-center gap-2">
                         <Zap className="h-4 w-4 text-amber-500" />
-                        Electric
+                        ค่าไฟ
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
@@ -318,7 +329,7 @@ export default function InvoiceDetailPage() {
                   </tr>
                   <tr className="border-t bg-muted/20">
                     <td className="px-4 py-3 font-semibold text-foreground">
-                      Subtotal
+                      รวมย่อย
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       —
@@ -332,7 +343,7 @@ export default function InvoiceDetailPage() {
                   </tr>
                   <tr className="border-t">
                     <td className="px-4 py-3 font-semibold text-foreground">
-                      Tax (7%)
+                      ภาษี (7%)
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       —
@@ -346,7 +357,7 @@ export default function InvoiceDetailPage() {
                   </tr>
                   <tr className="border-t bg-primary/5">
                     <td className="px-4 py-3 text-base font-semibold text-foreground">
-                      Total Amount
+                      ยอดรวมทั้งหมด
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       —
@@ -364,13 +375,13 @@ export default function InvoiceDetailPage() {
             <div className="mt-4 grid gap-3 rounded-lg border border-border bg-muted/20 p-4 text-sm text-muted-foreground sm:grid-cols-2">
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <span>Water Usage</span>
+                  <span>ใช้น้ำ</span>
                   <span className="font-mono text-foreground">
-                    {isWaterFixed ? "Fixed fee" : `${waterConsumption} m³`}
+                    {isWaterFixed ? "เหมาจ่าย" : `${waterConsumption} m³`}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Water Rate</span>
+                  <span>อัตราค่าน้ำ</span>
                   <span className="font-mono text-foreground">
                     {isWaterFixed
                       ? formatCurrency(invoice.waterFixedFee ?? 0)
@@ -380,13 +391,13 @@ export default function InvoiceDetailPage() {
               </div>
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <span>Electric Usage</span>
+                  <span>ใช้ไฟ</span>
                   <span className="font-mono text-foreground">
                     {electricConsumption} kWh
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Electric Rate</span>
+                  <span>อัตราค่าไฟ</span>
                   <span className="font-mono text-foreground">
                     {formatCurrency(electricRate)}/kWh
                   </span>
@@ -401,22 +412,22 @@ export default function InvoiceDetailPage() {
           <div className="rounded-lg border border-border bg-muted/30 p-4">
             <div className="grid gap-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Invoice Date</span>
+                <span className="text-muted-foreground">วันที่ออกบิล</span>
                 <span className="text-foreground">
-                  {new Date(issuedAt).toLocaleDateString()}
+                  {new Date(issuedAt).toLocaleDateString("th-TH")}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Due Date</span>
+                <span className="text-muted-foreground">วันครบกำหนด</span>
                 <span className="font-medium text-foreground">
-                  {new Date(invoice.dueDate).toLocaleDateString()}
+                  {new Date(invoice.dueDate).toLocaleDateString("th-TH")}
                 </span>
               </div>
               {invoice.paidDate && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Paid Date</span>
+                  <span className="text-muted-foreground">วันที่ชำระ</span>
                   <span className="text-foreground">
-                    {new Date(invoice.paidDate).toLocaleDateString()}
+                    {new Date(invoice.paidDate).toLocaleDateString("th-TH")}
                   </span>
                 </div>
               )}
@@ -433,8 +444,8 @@ export default function InvoiceDetailPage() {
       {/* Thai Format Invoice (Screen View) - Used for PDF generation */}
       <Card className="screen-only print:hidden">
         <CardHeader>
-          <CardTitle>Invoice (Thai Format)</CardTitle>
-          <CardDescription>Printable format matching Thai billing style</CardDescription>
+          <CardTitle>ใบแจ้งหนี้ (รูปแบบไทย)</CardTitle>
+          <CardDescription>รูปแบบสำหรับพิมพ์ตามสไตล์ใบแจ้งหนี้ไทย</CardDescription>
         </CardHeader>
         <CardContent>
           <div ref={printCardRef} className="bg-white w-full max-w-full overflow-visible">

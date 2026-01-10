@@ -65,11 +65,11 @@ export default function RegisterPage() {
       localStorage.setItem("tempUser", JSON.stringify(user));
 
       toast({
-        title: "Registration successful",
+        title: "สมัครสำเร็จ",
         description:
           formData.role === "owner"
-            ? "Now create your team to get started."
-            : "Now enter your invitation code to join a team.",
+            ? "สร้างทีมของคุณเพื่อเริ่มต้นใช้งาน"
+            : "กรอกรหัสคำเชิญเพื่อเข้าร่วมทีม",
       });
 
       // Redirect based on role
@@ -80,9 +80,9 @@ export default function RegisterPage() {
       }
     } catch (error: any) {
       toast({
-        title: "Registration failed",
+        title: "สมัครไม่สำเร็จ",
         description:
-          error.message || "Failed to create account. Please try again.",
+          error.message || "ไม่สามารถสร้างบัญชีได้ กรุณาลองใหม่อีกครั้ง",
         variant: "destructive",
       });
     } finally {
@@ -100,28 +100,27 @@ export default function RegisterPage() {
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary/80">
-              StayKha Admin
+              ผู้ดูแล StayKha
             </p>
             <h1 className="font-heading mt-3 text-3xl font-semibold tracking-tight text-foreground">
-              Join StayKha
+              เข้าร่วม StayKha
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Create your account to start managing your properties, tenants,
-              and billing with ease.
+              สร้างบัญชีเพื่อเริ่มจัดการอาคาร ห้อง ผู้เช่า และบิลได้อย่างง่ายดาย
             </p>
           </div>
           <div className="grid gap-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
               <span className="h-2 w-2 rounded-full bg-primary" />
-              Manage multiple buildings and rooms
+              จัดการหลายอาคารและหลายห้องได้ในที่เดียว
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
               <span className="h-2 w-2 rounded-full bg-primary" />
-              Track meter readings and generate invoices
+              ติดตามการอ่านมิเตอร์และสร้างใบแจ้งหนี้
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
               <span className="h-2 w-2 rounded-full bg-primary" />
-              Access from anywhere, anytime
+              ใช้งานได้ทุกที่ ทุกเวลา
             </div>
           </div>
         </div>
@@ -132,10 +131,10 @@ export default function RegisterPage() {
               <Gauge className="h-7 w-7 text-primary-foreground" />
             </div>
             <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
-              Create Account
+              Sign up
             </CardTitle>
             <CardDescription>
-              Enter your information to get started
+              กรอกข้อมูลเพื่อเริ่มต้นใช้งาน
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -145,12 +144,12 @@ export default function RegisterPage() {
                   htmlFor="name"
                   className="text-sm font-medium text-foreground"
                 >
-                  Name
+                  ชื่อ
                 </label>
                 <Input
                   id="name"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="สมชาย ใจดี"
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
@@ -170,7 +169,7 @@ export default function RegisterPage() {
                   htmlFor="email"
                   className="text-sm font-medium text-foreground"
                 >
-                  Email
+                  อีเมล
                 </label>
                 <Input
                   id="email"
@@ -195,7 +194,7 @@ export default function RegisterPage() {
                   htmlFor="password"
                   className="text-sm font-medium text-foreground"
                 >
-                  Password
+                  รหัสผ่าน
                 </label>
                 <Input
                   id="password"
@@ -220,7 +219,7 @@ export default function RegisterPage() {
                   htmlFor="passwordConfirm"
                   className="text-sm font-medium text-foreground"
                 >
-                  Confirm Password
+                  ยืนยันรหัสผ่าน
                 </label>
                 <Input
                   id="passwordConfirm"
@@ -248,7 +247,7 @@ export default function RegisterPage() {
                   htmlFor="role"
                   className="text-sm font-medium text-foreground"
                 >
-                  I am a...
+                  ฉันคือ...
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -261,9 +260,9 @@ export default function RegisterPage() {
                         : "border-border hover:border-primary/50"
                     } ${errors.role ? "border-destructive" : ""}`}
                   >
-                    <div className="font-medium">Owner</div>
+                    <div className="font-medium">เจ้าของ</div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      Create and manage your own team
+                      สร้างและจัดการทีมของคุณ
                     </div>
                   </button>
                   <button
@@ -276,9 +275,9 @@ export default function RegisterPage() {
                         : "border-border hover:border-primary/50"
                     } ${errors.role ? "border-destructive" : ""}`}
                   >
-                    <div className="font-medium">Admin</div>
+                    <div className="font-medium">ผู้ดูแล</div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      Join an existing team
+                      เข้าร่วมทีมที่มีอยู่แล้ว
                     </div>
                   </button>
                 </div>
@@ -293,17 +292,17 @@ export default function RegisterPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
+                    กำลังสมัครใช้งาน...
                   </>
                 ) : (
-                  "Create Account"
+                  "Sign up"
                 )}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">
-                Already have an account?{" "}
+                มีบัญชีอยู่แล้วใช่ไหม?{" "}
               </span>
               <Link
                 to="/login"

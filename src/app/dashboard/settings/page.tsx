@@ -59,7 +59,7 @@ function LabelWithInfo({
             <button
               type="button"
               className="inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              aria-label="More information"
+              aria-label="ข้อมูลเพิ่มเติม"
             >
               <Info className="h-3.5 w-3.5" />
             </button>
@@ -98,9 +98,9 @@ export default function SettingsPage() {
     taxRate: 7,
     currency: "THB",
     companyName: "StayKha",
-    companyAddress: "123 Campus Drive, University City, UC 12345",
+    companyAddress: "123 ถนนมหาวิทยาลัย เมืองมหาวิทยาลัย 12345",
     companyPhone: "+66-2-123-4567",
-    companyEmail: "billing@dormitory.edu",
+    companyEmail: "billing@staykha.com",
     invoicePrefix: "INV",
     paymentTermsDays: 15,
     defaultRoomRent: 4500,
@@ -143,14 +143,14 @@ export default function SettingsPage() {
       };
       await updateSettings(settingsToSave);
       toast({
-        title: "Success",
-        description: "Settings saved successfully",
+        title: "บันทึกสำเร็จ",
+        description: "บันทึก Settings เรียบร้อย",
       });
     } catch (error: any) {
       console.error("Settings save error:", error);
       const errorMessage = error?.response?.data?.message || error?.message || "Failed to save settings";
       toast({
-        title: "Error",
+        title: "เกิดข้อผิดพลาด",
         description: errorMessage,
         variant: "destructive",
       });
@@ -162,8 +162,8 @@ export default function SettingsPage() {
   const handleSaveTeam = async () => {
     if (!teamName.trim()) {
       toast({
-        title: "Error",
-        description: "Team name is required",
+        title: "เกิดข้อผิดพลาด",
+        description: "กรุณากรอกชื่อทีม",
         variant: "destructive",
       });
       return;
@@ -181,20 +181,20 @@ export default function SettingsPage() {
         window.dispatchEvent(new Event("userUpdated"));
       }
       toast({
-        title: "Success",
-        description: "Team name updated successfully",
+        title: "บันทึกสำเร็จ",
+        description: "อัปเดตชื่อทีมเรียบร้อย",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update team name",
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถอัปเดตชื่อทีมได้",
         variant: "destructive",
       });
     }
   };
 
   if (isLoading) {
-    return <LoadingState message="Loading settings..." />;
+    return <LoadingState message="กำลังโหลด Settings..." />;
   }
 
   // Show message if settings don't exist
@@ -205,12 +205,12 @@ export default function SettingsPage() {
         <div className="space-y-6 pb-8">
           <PageHeader
             title="Settings"
-            description="Manage billing rates and company information."
+            description="จัดการอัตราค่าบริการและข้อมูลบริษัท"
           />
           <AdminRestrictionBanner
-            title="Settings Not Created"
-            message="Settings have not been created for your team yet. Only owners can create settings."
-            action="Please contact your team owner to create the initial settings. Once created, you can view and update them."
+            title="ยังไม่ได้สร้าง Settings"
+            message="ทีมของคุณยังไม่ได้สร้าง Settings เฉพาะเจ้าของเท่านั้นที่สามารถสร้างได้"
+            action="กรุณาติดต่อเจ้าของทีมเพื่อสร้าง Settings เริ่มต้น เมื่อสร้างแล้วคุณจะสามารถดูและแก้ไขได้"
           />
         </div>
       );
@@ -221,18 +221,18 @@ export default function SettingsPage() {
       <div className="space-y-6 pb-8">
         <PageHeader
           title="Settings"
-          description="Manage billing rates and company information."
+          description="จัดการอัตราค่าบริการและข้อมูลบริษัท"
         />
         <Card>
           <CardHeader>
-            <CardTitle>Settings Not Found</CardTitle>
+            <CardTitle>ไม่พบ Settings</CardTitle>
             <CardDescription>
-              You need to create settings for your team before you can manage them.
+              คุณต้องสร้าง Settings ของทีมก่อนจึงจะจัดการได้
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="mb-4 text-sm text-muted-foreground">
-              Click the button below to create default settings for your team. You can then customize them as needed.
+              คลิกปุ่มด้านล่างเพื่อสร้าง Settings เริ่มต้น แล้วจึงปรับแต่งตามต้องการ
             </p>
             <Button
               onClick={handleSave}
@@ -242,12 +242,12 @@ export default function SettingsPage() {
               {isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Settings...
+                  กำลังสร้าง Settings...
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  Create Settings
+                  สร้าง Settings
                 </>
               )}
             </Button>
@@ -261,7 +261,7 @@ export default function SettingsPage() {
     <div className="space-y-6 pb-8">
       <PageHeader
         title="Settings"
-        description="Manage billing rates and company information."
+        description="จัดการอัตราค่าบริการและข้อมูลบริษัท"
       />
 
       <div className="space-y-6">
@@ -269,20 +269,20 @@ export default function SettingsPage() {
         {user?.role === "owner" && team && (
           <Card>
             <CardHeader>
-              <CardTitle>Team Information</CardTitle>
+              <CardTitle>ข้อมูลทีม</CardTitle>
               <CardDescription>
-                Manage your team/organization name
+                จัดการชื่อทีม/องค์กรของคุณ
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="teamName">Team Name</Label>
+                <Label htmlFor="teamName">ชื่อทีม</Label>
                 <div className="flex gap-2">
                   <Input
                     id="teamName"
                     value={teamName}
                     onChange={(e) => setTeamName(e.target.value)}
-                    placeholder="Enter team name"
+                    placeholder="กรอกชื่อทีม"
                     className="flex-1"
                   />
                   <Button
@@ -292,12 +292,12 @@ export default function SettingsPage() {
                     {isSavingTeam ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
+                        กำลังบันทึก...
                       </>
                     ) : (
                       <>
                         <Save className="mr-2 h-4 w-4" />
-                        Save
+                        บันทึก
                       </>
                     )}
                   </Button>
@@ -310,9 +310,9 @@ export default function SettingsPage() {
         {/* Billing Rates */}
         <Card>
           <CardHeader>
-            <CardTitle>Billing Rates</CardTitle>
+            <CardTitle>อัตราค่าบริการ</CardTitle>
             <CardDescription>
-              Set the rates per unit for water and electricity
+              กำหนดอัตราต่อหน่วยสำหรับค่าน้ำและค่าไฟ
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -320,9 +320,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="waterBillingMode"
-                  tooltip="Choose how water is billed: 'Metered' charges per cubic meter (m³) used, 'Fixed' charges a flat monthly fee regardless of usage."
+                  tooltip="เลือกวิธีคิดค่าน้ำ: แบบมิเตอร์คิดตามจำนวนที่ใช้ (m³), แบบเหมาจ่ายคิดรายเดือนเท่ากันทุกเดือน"
                 >
-                  Water Billing Mode
+                  โหมดการคิดค่าน้ำ
                 </LabelWithInfo>
                 <Select
                   value={formSettings.waterBillingMode}
@@ -337,17 +337,17 @@ export default function SettingsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="metered">Metered (per m³)</SelectItem>
-                    <SelectItem value="fixed">Fixed Monthly Fee</SelectItem>
+                    <SelectItem value="metered">ตามมิเตอร์ (ต่อ m³)</SelectItem>
+                    <SelectItem value="fixed">เหมาจ่ายรายเดือน</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="waterFixedFee"
-                  tooltip="Monthly fixed fee for water when Water Billing Mode is set to 'Fixed'. This amount is charged regardless of water usage."
+                  tooltip="ค่าน้ำเหมาจ่ายรายเดือนเมื่อเลือกโหมด 'เหมาจ่าย' คิดเท่ากันทุกเดือนไม่ขึ้นกับการใช้น้ำ"
                 >
-                  Water Fixed Fee
+                  ค่าน้ำเหมาจ่าย
                 </LabelWithInfo>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">
@@ -370,16 +370,16 @@ export default function SettingsPage() {
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {formSettings.waterBillingMode === "fixed"
-                    ? `Applied per month: ${formatCurrency(formSettings.waterFixedFee, formSettings.currency)}`
-                    : "Switch to fixed to enable."}
+                    ? `คิดต่อเดือน: ${formatCurrency(formSettings.waterFixedFee, formSettings.currency)}`
+                    : "เปลี่ยนเป็นเหมาจ่ายเพื่อใช้งาน"}
                 </p>
               </div>
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="waterRate"
-                  tooltip="Rate charged per cubic meter (m³) of water consumed. Only applies when Water Billing Mode is set to 'Metered'."
+                  tooltip="อัตราค่าน้ำต่อ m³ ใช้เมื่อเลือกโหมด 'ตามมิเตอร์' เท่านั้น"
                 >
-                  Water Rate (per m³)
+                  อัตราค่าน้ำ (ต่อ m³)
                 </LabelWithInfo>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">
@@ -401,20 +401,20 @@ export default function SettingsPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Preview:{" "}
+                  ตัวอย่าง:{" "}
                   {formatCurrency(
                     formSettings.waterRatePerUnit,
                     formSettings.currency,
                   )}{" "}
-                  per m³
+                  ต่อ m³
                 </p>
               </div>
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="electricRate"
-                  tooltip="Rate charged per kilowatt-hour (kWh) of electricity consumed. This is always calculated based on meter readings."
+                  tooltip="อัตราค่าไฟต่อ kWh คำนวณจากการอ่านมิเตอร์เสมอ"
                 >
-                  Electric Rate (per kWh)
+                  อัตราค่าไฟ (ต่อ kWh)
                 </LabelWithInfo>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">
@@ -435,21 +435,21 @@ export default function SettingsPage() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Preview:{" "}
+                  ตัวอย่าง:{" "}
                   {formatCurrency(
                     formSettings.electricRatePerUnit,
                     formSettings.currency,
                   )}{" "}
-                  per kWh
+                  ต่อ kWh
                 </p>
               </div>
             </div>
             <div className="space-y-2">
               <LabelWithInfo
                 htmlFor="taxRate"
-                tooltip="Value Added Tax (VAT) percentage applied to the subtotal. For example, 7% means 7% tax will be added to the total bill amount."
+                tooltip="อัตราภาษีมูลค่าเพิ่ม (VAT) ที่คิดจากยอดรวมย่อย เช่น 7% คือเพิ่มภาษี 7% จากยอดรวมย่อย"
               >
-                Tax Rate (%)
+                อัตราภาษี (%)
               </LabelWithInfo>
               <Input
                 id="taxRate"
@@ -474,16 +474,16 @@ export default function SettingsPage() {
         {/* Company Information */}
         <Card>
           <CardHeader>
-            <CardTitle>Company Information</CardTitle>
-            <CardDescription>Details that appear on invoices</CardDescription>
+            <CardTitle>ข้อมูลบริษัท/หอพัก</CardTitle>
+            <CardDescription>ข้อมูลที่จะปรากฏบนใบแจ้งหนี้</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <LabelWithInfo
                 htmlFor="companyName"
-                tooltip="Your company or organization name that will appear on invoices."
+                tooltip="ชื่อบริษัทหรือองค์กรที่จะแสดงบนใบแจ้งหนี้"
               >
-                Company Name
+                ชื่อบริษัท
               </LabelWithInfo>
               <Input
                 id="companyName"
@@ -499,9 +499,9 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <LabelWithInfo
                 htmlFor="companyAddress"
-                tooltip="Company address that will be displayed on invoices."
+                tooltip="ที่อยู่บริษัทที่จะแสดงบนใบแจ้งหนี้"
               >
-                Address
+                ที่อยู่
               </LabelWithInfo>
               <Input
                 id="companyAddress"
@@ -518,9 +518,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="companyPhone"
-                  tooltip="Company phone number for contact information on invoices."
+                  tooltip="เบอร์โทรบริษัทสำหรับติดต่อบนใบแจ้งหนี้"
                 >
-                  Phone
+                  โทรศัพท์
                 </LabelWithInfo>
                 <Input
                   id="companyPhone"
@@ -537,9 +537,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="companyEmail"
-                  tooltip="Company email address for billing inquiries."
+                  tooltip="อีเมลสำหรับติดต่อเรื่องการชำระเงิน"
                 >
-                  Email
+                  อีเมล
                 </LabelWithInfo>
                 <Input
                   id="companyEmail"
@@ -560,15 +560,15 @@ export default function SettingsPage() {
         {/* Invoice Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Invoice Settings</CardTitle>
+            <CardTitle>ตั้งค่าใบแจ้งหนี้</CardTitle>
             <CardDescription>
-              Configure invoice generation options
+              กำหนดตัวเลือกการสร้างใบแจ้งหนี้
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="invoicePrefix">Invoice Prefix</Label>
+                <Label htmlFor="invoicePrefix">คำนำหน้าเลขที่ใบแจ้งหนี้</Label>
                 <Input
                   id="invoicePrefix"
                   value={formSettings.invoicePrefix}
@@ -584,9 +584,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="paymentTerms"
-                  tooltip="Number of days after invoice issue date before payment is due. Used as fallback if 'Due Date Day of Month' is not set."
+                  tooltip="จำนวนวันนับจากวันที่ออกบิลจนถึงวันครบกำหนด ใช้เป็นค่าตั้งต้นหากไม่ได้กำหนดวันครบกำหนดรายเดือน"
                 >
-                  Payment Terms (Days)
+                  กำหนดชำระ (วัน)
                 </LabelWithInfo>
                 <Input
                   id="paymentTerms"
@@ -605,9 +605,9 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <LabelWithInfo
                 htmlFor="currency"
-                tooltip="Currency code used for all monetary values (e.g., 'THB' for Thai Baht, 'USD' for US Dollars)."
+                tooltip="รหัสสกุลเงินที่ใช้กับค่าทางการเงินทั้งหมด (เช่น THB, USD)"
               >
-                Currency
+                สกุลเงิน
               </LabelWithInfo>
               <Input
                 id="currency"
@@ -625,9 +625,9 @@ export default function SettingsPage() {
         {/* Payment & Billing Details */}
         <Card>
           <CardHeader>
-            <CardTitle>Payment & Billing Details</CardTitle>
+            <CardTitle>ข้อมูลการชำระเงิน</CardTitle>
             <CardDescription>
-              Bank information and payment instructions for invoices
+              ข้อมูลธนาคารและคำแนะนำการชำระเงินบนใบแจ้งหนี้
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -635,9 +635,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="bankName"
-                  tooltip="Name of the bank where payments should be made. This will appear on invoices as 'ชำระเงินได้ที่ [Bank Name]'."
+                  tooltip="ชื่อธนาคารที่รับชำระเงิน จะแสดงบนใบแจ้งหนี้เป็น 'ชำระเงินได้ที่ [ชื่อธนาคาร]'"
                 >
-                  Bank Name
+                  ชื่อธนาคาร
                 </LabelWithInfo>
                 <Input
                   id="bankName"
@@ -654,9 +654,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="bankAccountNumber"
-                  tooltip="Bank account number where tenants should send payments. Displayed on invoices after the bank name."
+                  tooltip="เลขที่บัญชีสำหรับรับชำระเงิน จะแสดงต่อจากชื่อธนาคารบนใบแจ้งหนี้"
                 >
-                  Bank Account Number
+                  เลขที่บัญชีธนาคาร
                 </LabelWithInfo>
                 <Input
                   id="bankAccountNumber"
@@ -675,7 +675,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="lineId"
-                  tooltip="LINE ID for contact/payment inquiries. Displayed on invoices on a separate line as 'ไอดีไลน์ [Line ID]'."
+                  tooltip="LINE ID สำหรับติดต่อเรื่องการชำระเงิน จะแสดงบนใบแจ้งหนี้เป็นบรรทัด 'ไอดีไลน์ [Line ID]'"
                 >
                   Line ID
                 </LabelWithInfo>
@@ -694,9 +694,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="dueDateDayOfMonth"
-                  tooltip="Day of the month when invoices are due (1-31). For example, 5 means bills are due on the 5th of every month. This overrides 'Payment Terms (Days)' if set."
+                  tooltip="กำหนดวันครบกำหนดรายเดือน (1-31) เช่น 5 คือครบกำหนดวันที่ 5 ของทุกเดือน และจะทับค่ากำหนดชำระเป็นวัน"
                 >
-                  Due Date Day of Month
+                  วันครบกำหนดรายเดือน
                 </LabelWithInfo>
                 <Input
                   id="dueDateDayOfMonth"
@@ -713,16 +713,16 @@ export default function SettingsPage() {
                   placeholder="5"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Day of month when bills are due (e.g., 5 = 5th of every month)
+                  วันที่ครบกำหนดชำระในแต่ละเดือน (เช่น 5 = วันที่ 5 ของทุกเดือน)
                 </p>
               </div>
             </div>
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="latePaymentPenaltyPerDay"
-                  tooltip="Daily penalty fee charged when payment is overdue. Displayed on invoices as 'หากเกินกำหนด ชำระค่าปรับวันละ [amount]'. Set to 0 to disable."
+                  tooltip="ค่าปรับรายวันที่คิดเมื่อชำระเกินกำหนด จะแสดงบนใบแจ้งหนี้เป็น 'หากเกินกำหนด ชำระค่าปรับวันละ [จำนวนเงิน]'. ตั้งค่า 0 เพื่อปิด"
                 >
-                  Late Payment Penalty (per day)
+                  ค่าปรับชำระล่าช้า (ต่อวัน)
                 </LabelWithInfo>
               <Input
                 id="latePaymentPenaltyPerDay"
@@ -739,7 +739,7 @@ export default function SettingsPage() {
                 placeholder="50"
               />
               <p className="text-xs text-muted-foreground">
-                Penalty amount charged per day for late payments (0 to disable)
+                จำนวนค่าปรับต่อวันสำหรับการชำระล่าช้า (0 เพื่อปิด)
               </p>
             </div>
           </CardContent>
@@ -748,9 +748,9 @@ export default function SettingsPage() {
         {/* Thai Labels (Optional) */}
         <Card>
           <CardHeader>
-            <CardTitle>Invoice Labels (Thai)</CardTitle>
+            <CardTitle>ป้ายกำกับใบแจ้งหนี้ (ไทย)</CardTitle>
             <CardDescription>
-              Customize Thai labels for invoice items (leave empty for defaults)
+              ปรับแต่งข้อความภาษาไทยบนใบแจ้งหนี้ (เว้นว่างเพื่อใช้ค่าเริ่มต้น)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -758,9 +758,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="labelInvoice"
-                  tooltip="Thai label for 'Invoice' that appears at the top of invoices. Default: 'ใบแจ้งหนี้'."
+                  tooltip="ข้อความไทยสำหรับคำว่า 'ใบแจ้งหนี้' ที่แสดงด้านบนใบแจ้งหนี้ ค่าเริ่มต้น: 'ใบแจ้งหนี้'"
                 >
-                  Invoice Title
+                  หัวข้อใบแจ้งหนี้
                 </LabelWithInfo>
                 <Input
                   id="labelInvoice"
@@ -777,9 +777,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="labelRoomRent"
-                  tooltip="Thai label for 'Room Rent' in the invoice table. Default: 'ค่าเช่าห้อง'."
+                  tooltip="ข้อความไทยสำหรับ 'ค่าเช่าห้อง' ในตารางใบแจ้งหนี้ ค่าเริ่มต้น: 'ค่าเช่าห้อง'"
                 >
-                  Room Rent Label
+                  ป้ายกำกับค่าเช่าห้อง
                 </LabelWithInfo>
                 <Input
                   id="labelRoomRent"
@@ -798,9 +798,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="labelWater"
-                  tooltip="Thai label for 'Water' in the invoice table. Default: 'ค่าน้ำประปา'."
+                  tooltip="ข้อความไทยสำหรับ 'ค่าน้ำประปา' ในตารางใบแจ้งหนี้ ค่าเริ่มต้น: 'ค่าน้ำประปา'"
                 >
-                  Water Label
+                  ป้ายกำกับค่าน้ำ
                 </LabelWithInfo>
                 <Input
                   id="labelWater"
@@ -815,7 +815,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="labelElectricity">Electricity Label</Label>
+                <Label htmlFor="labelElectricity">ป้ายกำกับค่าไฟ</Label>
                 <Input
                   id="labelElectricity"
                   value={formSettings.labelElectricity || ""}
@@ -834,17 +834,17 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Room Defaults</CardTitle>
-            <CardDescription>Applied when creating new rooms</CardDescription>
+            <CardTitle>ค่าเริ่มต้นของห้อง</CardTitle>
+            <CardDescription>ใช้เมื่อสร้างห้องใหม่</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="defaultRoomRent"
-                  tooltip="Default monthly rent amount suggested when creating new rooms. Can be changed per room."
+                  tooltip="ค่าเช่ารายเดือนเริ่มต้นเมื่อสร้างห้องใหม่ สามารถแก้ไขได้รายห้อง"
                 >
-                  Default Monthly Rent
+                  ค่าเช่ารายเดือนเริ่มต้น
                 </LabelWithInfo>
                 <Input
                   id="defaultRoomRent"
@@ -862,9 +862,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="defaultRoomSize"
-                  tooltip="Default room size in square meters suggested when creating new rooms. Can be changed per room."
+                  tooltip="ขนาดห้องเริ่มต้น (ตร.ม.) เมื่อสร้างห้องใหม่ สามารถแก้ไขได้รายห้อง"
                 >
-                  Default Room Size (sqm)
+                  ขนาดห้องเริ่มต้น (ตร.ม.)
                 </LabelWithInfo>
                 <Input
                   id="defaultRoomSize"
@@ -893,12 +893,12 @@ export default function SettingsPage() {
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                กำลังบันทึก...
               </>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Save Settings
+                บันทึก Settings
               </>
             )}
           </Button>

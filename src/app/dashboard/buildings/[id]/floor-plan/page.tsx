@@ -17,7 +17,7 @@ export default function BuildingFloorPlanPage() {
   const params = useParams();
   const router = useRouter();
   const buildingId = params.id as string;
-  usePageTitle(`Floor Plan ${buildingId}`);
+  usePageTitle(`ผังห้อง ${buildingId}`);
   const buildingQuery = useQuery({
     queryKey: ["buildings", buildingId],
     queryFn: () => buildingsApi.getById(buildingId),
@@ -32,6 +32,11 @@ export default function BuildingFloorPlanPage() {
     (room: Room) => room.buildingId === buildingId,
   );
   const isLoading = buildingQuery.isLoading || roomsQuery.isLoading;
+  const statusLabels: Record<Room["status"], string> = {
+    occupied: "เข้าพัก",
+    vacant: "ว่าง",
+    maintenance: "ซ่อมบำรุง",
+  };
 
   const handleRoomClick = (room: Room) => {
     router.push(`/overview/rooms/${room.id}/edit`);
@@ -40,21 +45,21 @@ export default function BuildingFloorPlanPage() {
   const columns = [
     {
       key: "roomNumber" as keyof Room,
-      header: "Room",
+      header: "ห้อง",
       render: (room: Room) => (
         <span className="font-medium text-foreground">{room.roomNumber}</span>
       ),
     },
     {
       key: "floor" as keyof Room,
-      header: "Floor",
+      header: "ชั้น",
       render: (room: Room) => (
-        <span className="text-muted-foreground">Floor {room.floor}</span>
+        <span className="text-muted-foreground">ชั้น {room.floor}</span>
       ),
     },
     {
       key: "status" as keyof Room,
-      header: "Status",
+      header: "สถานะ",
       render: (room: Room) => (
         <Badge
           variant={
@@ -65,20 +70,20 @@ export default function BuildingFloorPlanPage() {
                 : "outline"
           }
         >
-          {room.status}
+          {statusLabels[room.status]}
         </Badge>
       ),
     },
     {
       key: "size" as keyof Room,
-      header: "Size",
+      header: "ขนาด",
       render: (room: Room) => (
-        <span className="text-muted-foreground">{room.size || "-"} m²</span>
+        <span className="text-muted-foreground">{room.size || "-"} ตร.ม.</span>
       ),
     },
     {
       key: "monthlyRent" as keyof Room,
-      header: "Rent",
+      header: "ค่าเช่า",
       render: (room: Room) => (
         <span className="text-foreground">
           ฿{room.monthlyRent?.toLocaleString() || "-"}
@@ -88,11 +93,11 @@ export default function BuildingFloorPlanPage() {
   ];
 
   if (isLoading) {
-    return <LoadingState fullScreen message="Loading building data..." />;
+    return <LoadingState fullScreen message="กำลังโหลดข้อมูลอาคาร..." />;
   }
 
   if (!building) {
-    return <div className="text-center py-12">Building not found</div>;
+    return <div className="text-center py-12">ไม่พบข้อมูลอาคาร</div>;
   }
 
   return (
@@ -106,17 +111,17 @@ export default function BuildingFloorPlanPage() {
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Total Rooms</p>
+          <p className="text-sm text-muted-foreground">จำนวนห้องทั้งหมด</p>
           <p className="text-2xl font-bold text-foreground">{rooms.length}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Occupied</p>
+          <p className="text-sm text-muted-foreground">เข้าพัก</p>
           <p className="text-2xl font-bold text-emerald-600">
             {rooms.filter((r) => r.status === "occupied").length}
           </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Occupancy Rate</p>
+          <p className="text-sm text-muted-foreground">อัตราการเข้าพัก</p>
           <p className="text-2xl font-bold text-foreground">
             {rooms.length > 0
               ? Math.round(
@@ -135,11 +140,11 @@ export default function BuildingFloorPlanPage() {
         <TabsList>
           <TabsTrigger value="floorplan" className="gap-2">
             <LayoutGrid className="h-4 w-4" />
-            Floor Plan
+            ผังห้อง
           </TabsTrigger>
           <TabsTrigger value="list" className="gap-2">
             <List className="h-4 w-4" />
-            List View
+            มุมมองรายการ
           </TabsTrigger>
         </TabsList>
 
@@ -157,7 +162,7 @@ export default function BuildingFloorPlanPage() {
               columns={columns}
               data={rooms}
               searchable={false}
-              searchPlaceholder="Search rooms..."
+              searchPlaceholder="ค้นหาห้อง..."
               forcePagination
             />
           </div>

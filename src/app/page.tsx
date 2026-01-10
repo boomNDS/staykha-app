@@ -1,6 +1,7 @@
 "use client";
 
-import { Feature } from "@/components/feature";
+import { Features } from "@/components/feature";
+import { CookieConsent } from "@/components/cookie-consent";
 import { LandingCTA } from "@/components/landing/landing-cta";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { LandingHeader } from "@/components/landing/landing-header";
@@ -10,27 +11,37 @@ import { usePageTitle } from "@/lib/use-page-title";
 
 export default function HomePage() {
   usePageTitle(
-    "Home",
-    "StayKha is a comprehensive property management system for dormitories and rental properties. Manage buildings, rooms, tenants, meter readings, and automated billing with multi-admin support, configurable settings, and Thai language invoice support.",
+    "หน้าแรก",
+    "StayKha คือระบบบริหารจัดการที่พักสำหรับหอพักและบ้านเช่า รวมการจัดการอาคาร ห้องพัก ผู้เช่า การอ่านมิเตอร์ และการออกบิลอัตโนมัติในเวิร์กโฟลว์เดียว รองรับหลายผู้ดูแลและปรับแต่งได้ พร้อมใบแจ้งหนี้ภาษาไทย | StayKha is a property management system for rentals, covering buildings, rooms, tenants, meter readings, and automated billing in one workflow.",
   );
 
   return (
     <>
       <SEO
-        title="Home"
-        description="StayKha is a comprehensive property management system for dormitories and rental properties. Manage buildings, rooms, tenants, meter readings, and automated billing with multi-admin support, configurable settings, and Thai language invoice support."
+        title="หน้าแรก"
+        description="StayKha คือระบบบริหารจัดการที่พักสำหรับหอพักและบ้านเช่า รวมการจัดการอาคาร ห้องพัก ผู้เช่า การอ่านมิเตอร์ และการออกบิลอัตโนมัติในเวิร์กโฟลว์เดียว รองรับหลายผู้ดูแลและปรับแต่งได้ พร้อมใบแจ้งหนี้ภาษาไทย | StayKha is a property management system for rentals, covering buildings, rooms, tenants, meter readings, and automated billing in one workflow."
         keywords={[
+          "ระบบบริหารที่พัก",
+          "ออกบิลค่าน้ำไฟ",
+          "อ่านมิเตอร์",
+          "ค่าน้ำ",
+          "ค่าไฟ",
+          "จัดการผู้เช่า",
+          "จัดการหอพัก",
+          "จัดการห้องพัก",
+          "ระบบจัดการหอพัก",
+          "ระบบจัดการบ้านเช่า",
+          "ใบแจ้งหนี้อัตโนมัติ",
+          "หลายผู้ดูแล",
+          "ใบแจ้งหนี้ภาษาไทย",
           "property management",
-          "utility billing",
-          "meter readings",
-          "water billing",
-          "electricity billing",
-          "tenant management",
+          "rental management",
           "dormitory management",
-          "room management",
-          "automated invoicing",
-          "multi-admin",
-          "Thai invoice",
+          "apartment management",
+          "tenant management",
+          "meter reading",
+          "utility billing",
+          "invoice automation",
         ]}
         url={typeof window !== "undefined" ? window.location.origin : ""}
       />
@@ -40,12 +51,13 @@ export default function HomePage() {
         <main className="mx-auto w-full max-w-6xl px-6 pb-20 pt-10">
           <LandingHero />
 
-          <Feature />
+          <Features />
 
           <LandingCTA />
         </main>
 
         <LandingFooter />
+        <CookieConsent />
       </div>
     </>
   );

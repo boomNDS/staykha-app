@@ -23,7 +23,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 export default function EditBuildingPage() {
   const params = useParams();
   const buildingId = params.id as string;
-  usePageTitle(`Edit Building ${buildingId}`);
+  usePageTitle(`แก้ไขอาคาร ${buildingId}`);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -66,16 +66,16 @@ export default function EditBuildingPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) newErrors.name = "Building name is required";
-    if (!formData.address.trim()) newErrors.address = "Address is required";
+    if (!formData.name.trim()) newErrors.name = "กรุณากรอกชื่ออาคาร";
+    if (!formData.address.trim()) newErrors.address = "กรุณากรอกที่อยู่";
     if (
       !formData.totalFloors ||
       Number.parseInt(formData.totalFloors, 10) < 1
     ) {
-      newErrors.totalFloors = "Must be at least 1 floor";
+      newErrors.totalFloors = "ต้องมีอย่างน้อย 1 ชั้น";
     }
     if (!formData.totalRooms || Number.parseInt(formData.totalRooms, 10) < 1) {
-      newErrors.totalRooms = "Must be at least 1 room";
+      newErrors.totalRooms = "ต้องมีอย่างน้อย 1 ห้อง";
     }
 
     setErrors(newErrors);
@@ -100,15 +100,15 @@ export default function EditBuildingPage() {
       });
 
       toast({
-        title: "Success",
-        description: "Building updated successfully",
+        title: "สำเร็จ",
+        description: "อัปเดตอาคารเรียบร้อย",
       });
 
       router.push("/overview/buildings");
     } catch (_error) {
       toast({
-        title: "Error",
-        description: "Failed to update building",
+        title: "เกิดข้อผิดพลาด",
+        description: "อัปเดตอาคารไม่สำเร็จ",
         variant: "destructive",
       });
     } finally {
@@ -117,33 +117,33 @@ export default function EditBuildingPage() {
   };
 
   if (buildingQuery.isLoading) {
-    return <LoadingState fullScreen message="Loading building..." />;
+    return <LoadingState fullScreen message="กำลังโหลดอาคาร..." />;
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Edit Building"
-        description="Update building information."
+        title="แก้ไขอาคาร"
+        description="อัปเดตข้อมูลอาคาร"
         showBack
       />
 
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Building Information</CardTitle>
+          <CardTitle>ข้อมูลอาคาร</CardTitle>
           <CardDescription>
-            Modify the details for this building
+            แก้ไขรายละเอียดของอาคารนี้
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium">
-                Building Name
+                ชื่ออาคาร
               </label>
               <Input
                 id="name"
-                placeholder="e.g., Building A"
+                placeholder="เช่น อาคาร A"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -157,11 +157,11 @@ export default function EditBuildingPage() {
 
             <div className="space-y-2">
               <label htmlFor="address" className="text-sm font-medium">
-                Address
+                ที่อยู่
               </label>
               <Input
                 id="address"
-                placeholder="e.g., 123 Sukhumvit Road, Bangkok 10110"
+                placeholder="เช่น 123 ถนนสุขุมวิท กรุงเทพฯ 10110"
                 value={formData.address}
                 onChange={(e) =>
                   setFormData({ ...formData, address: e.target.value })
@@ -176,13 +176,13 @@ export default function EditBuildingPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label htmlFor="totalFloors" className="text-sm font-medium">
-                  Total Floors
+                  จำนวนชั้น
                 </label>
                 <Input
                   id="totalFloors"
                   type="number"
                   min="1"
-                  placeholder="e.g., 3"
+                  placeholder="เช่น 3"
                   value={formData.totalFloors}
                   onChange={(e) =>
                     setFormData({ ...formData, totalFloors: e.target.value })
@@ -198,13 +198,13 @@ export default function EditBuildingPage() {
 
               <div className="space-y-2">
                 <label htmlFor="totalRooms" className="text-sm font-medium">
-                  Total Rooms
+                  จำนวนห้อง
                 </label>
                 <Input
                   id="totalRooms"
                   type="number"
                   min="1"
-                  placeholder="e.g., 15"
+                  placeholder="เช่น 15"
                   value={formData.totalRooms}
                   onChange={(e) =>
                     setFormData({ ...formData, totalRooms: e.target.value })
@@ -224,10 +224,10 @@ export default function EditBuildingPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
+                    กำลังบันทึก...
                   </>
                 ) : (
-                  "Update Building"
+                  "บันทึกการแก้ไข"
                 )}
               </Button>
               <Button
@@ -236,7 +236,7 @@ export default function EditBuildingPage() {
                 onClick={() => router.back()}
                 disabled={isLoading}
               >
-                Cancel
+                ยกเลิก
               </Button>
             </div>
           </form>

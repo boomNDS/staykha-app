@@ -71,9 +71,9 @@ export function FloorPlanView({
   };
 
   const statusLabels: Record<Room["status"], string> = {
-    occupied: "Occupied",
-    vacant: "Vacant",
-    maintenance: "Maintenance",
+    occupied: "มีผู้เช่า",
+    vacant: "ว่าง",
+    maintenance: "ซ่อมบำรุง",
   };
 
   return (
@@ -84,18 +84,18 @@ export function FloorPlanView({
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
+      <div className="flex flex-wrap gap-4 rounded-lg bg-muted/50 p-4">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-emerald-500/30 border border-emerald-500/50" />
-          <span className="text-sm text-muted-foreground">Occupied</span>
+          <span className="text-sm text-muted-foreground">มีผู้เช่า</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-blue-500/30 border border-blue-500/50" />
-          <span className="text-sm text-muted-foreground">Vacant</span>
+          <span className="text-sm text-muted-foreground">ว่าง</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-amber-500/30 border border-amber-500/50" />
-          <span className="text-sm text-muted-foreground">Maintenance</span>
+          <span className="text-sm text-muted-foreground">ซ่อมบำรุง</span>
         </div>
       </div>
 
@@ -104,9 +104,9 @@ export function FloorPlanView({
         {roomsByFloor.map(({ floor, rooms: floorRooms }) => (
           <div key={floor} className="space-y-3">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-foreground">{`Floor ${floor}`}</h3>
+              <h3 className="text-lg font-semibold text-foreground">{`ชั้น ${floor}`}</h3>
               <span className="text-sm text-muted-foreground">
-                {`(${floorRooms.filter((r) => r.status === "occupied").length}/${floorRooms.length} occupied)`}
+                {`(${floorRooms.filter((r) => r.status === "occupied").length}/${floorRooms.length} ห้องมีผู้เช่า)`}
               </span>
             </div>
 
@@ -124,7 +124,7 @@ export function FloorPlanView({
                           getStatusColor(room.status),
                           onRoomClick && "cursor-pointer",
                         )}
-                        aria-label={`Room ${room.roomNumber} - ${room.status}`}
+                        aria-label={`ห้อง ${room.roomNumber} - ${statusLabels[room.status]}`}
                       >
                         <div className="absolute top-2 right-2">
                           {getStatusIcon(room.status)}
@@ -135,7 +135,7 @@ export function FloorPlanView({
                           </p>
                           {room.size && (
                             <p className="text-xs text-muted-foreground">
-                              {room.size} m²
+                              {room.size} ตร.ม.
                             </p>
                           )}
                         </div>
@@ -143,19 +143,19 @@ export function FloorPlanView({
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">
                       <div className="space-y-1">
-                        <p className="font-semibold">{`Room ${room.roomNumber}`}</p>
+                        <p className="font-semibold">{`ห้อง ${room.roomNumber}`}</p>
                         <p className="text-sm">
-                          Status:{" "}
+                          สถานะ:{" "}
                           <span className="capitalize">
                             {statusLabels[room.status]}
                           </span>
                         </p>
                         {room.size && (
-                          <p className="text-sm">{`Size: ${room.size} m²`}</p>
+                          <p className="text-sm">{`ขนาด: ${room.size} ตร.ม.`}</p>
                         )}
                         {room.monthlyRent && (
                           <p className="text-sm">
-                            {`Rent: ฿${room.monthlyRent.toLocaleString()}/month`}
+                            {`ค่าเช่า: ฿${room.monthlyRent.toLocaleString()}/เดือน`}
                           </p>
                         )}
                       </div>

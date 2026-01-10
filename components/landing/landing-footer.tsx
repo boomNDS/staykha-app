@@ -24,19 +24,18 @@ export function LandingFooter() {
                   StayKha
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Owner operations suite
+                  ระบบจัดการที่พักครบวงจรสำหรับเจ้าของ
                 </p>
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              Complete property management for dormitories and rentals. Manage
-              buildings, tenants, meter readings, and billing with multi-admin
-              support and automated workflows.
+              ระบบบริหารจัดการที่พักสำหรับหอพักและบ้านเช่า จัดการอาคาร ห้องพัก ผู้เช่า
+              การอ่านมิเตอร์ และการออกบิล รองรับหลายผู้ดูแลและเวิร์กโฟลว์อัตโนมัติ
             </p>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Account</h3>
+            <h3 className="text-sm font-semibold text-foreground">บัญชีผู้ใช้</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link
@@ -66,14 +65,14 @@ export function LandingFooter() {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Legal</h3>
+            <h3 className="text-sm font-semibold text-foreground">ข้อกฎหมาย</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link
                   to="/terms"
                   className="hover:text-foreground transition-colors"
                 >
-                  Terms & Privacy
+                  ข้อกำหนดและความเป็นส่วนตัว
                 </Link>
               </li>
             </ul>
@@ -83,21 +82,21 @@ export function LandingFooter() {
         <div className="mt-8 border-t border-border/60 pt-6">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} StayKha. All rights reserved.
+              © {new Date().getFullYear()} StayKha สงวนลิขสิทธิ์
             </p>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <Link
                 to="/terms"
                 className="hover:text-foreground transition-colors"
               >
-                Terms of Service
+                ข้อกำหนดการใช้งาน
               </Link>
               <span>•</span>
               <Link
                 to="/terms"
                 className="hover:text-foreground transition-colors"
               >
-                Privacy Policy
+                นโยบายความเป็นส่วนตัว
               </Link>
             </div>
           </div>

@@ -8,7 +8,7 @@ interface LoadingStateProps {
 }
 
 export function LoadingState({
-  message = "Loading...",
+  message = "กำลังโหลด...",
   fullScreen = false,
   className = "",
   size = "md",

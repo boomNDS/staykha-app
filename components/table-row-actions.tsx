@@ -33,7 +33,7 @@ interface TableRowActionsProps {
 export function TableRowActions({
   primary,
   items,
-  menuLabel = "Actions",
+  menuLabel = "การดำเนินการ",
   className,
 }: TableRowActionsProps) {
   const hasMenu = items.length > 0;
@@ -58,7 +58,7 @@ export function TableRowActions({
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              aria-label="More actions"
+              aria-label="การดำเนินการเพิ่มเติม"
             >
               <MoreHorizontal className="h-4 w-4" />
             </Button>

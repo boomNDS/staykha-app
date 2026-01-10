@@ -19,7 +19,7 @@ import { useRouter } from "@/lib/router";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function JoinTeamPage() {
-  usePageTitle("Join Team");
+  usePageTitle("เข้าร่วมทีม");
 
   const router = useRouter();
   const { toast } = useToast();
@@ -40,12 +40,12 @@ export default function JoinTeamPage() {
     setError("");
 
     if (!inviteCode.trim()) {
-      setError("Invite code is required");
+      setError("กรุณากรอกโค้ดคำเชิญ");
       return;
     }
 
     if (!user) {
-      setError("You must be logged in to join a team");
+      setError("คุณต้อง Sign in ก่อนเข้าร่วมทีม");
       return;
     }
 
@@ -66,17 +66,17 @@ export default function JoinTeamPage() {
       window.dispatchEvent(new Event("userUpdated"));
 
       toast({
-        title: "Successfully joined team",
+        title: "เข้าร่วมทีมสำเร็จ",
         description: `Welcome to ${team.name}!`,
       });
 
       router.push("/overview");
     } catch (error: any) {
       console.error("[Join Team] Error:", error);
-      setError(error.message || "Invalid or expired invitation code");
+      setError(error.message || "โค้ดคำเชิญไม่ถูกต้องหรือหมดอายุ");
       toast({
-        title: "Error",
-        description: error.message || "Invalid invitation code",
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "โค้ดคำเชิญไม่ถูกต้อง",
         variant: "destructive",
       });
     } finally {
@@ -85,7 +85,7 @@ export default function JoinTeamPage() {
   };
 
   if (!user || user.role !== "admin") {
-    return <LoadingState fullScreen message="Loading..." />;
+    return <LoadingState fullScreen message="กำลังโหลด..." />;
   }
 
   return (
@@ -97,11 +97,10 @@ export default function JoinTeamPage() {
             <Gauge className="h-7 w-7 text-primary-foreground" />
           </div>
           <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
-            Join a Team
+            เข้าร่วมทีม
           </CardTitle>
           <CardDescription>
-            Enter the invitation code you received from the team owner to join
-            their organization.
+            กรอกโค้ดคำเชิญที่ได้รับจากเจ้าของทีมเพื่อเข้าร่วมองค์กร
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -111,7 +110,7 @@ export default function JoinTeamPage() {
                 htmlFor="inviteCode"
                 className="text-sm font-medium text-foreground"
               >
-                Invitation Code
+                โค้ดคำเชิญ
               </label>
               <Input
                 id="inviteCode"
@@ -129,7 +128,7 @@ export default function JoinTeamPage() {
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
-                The invitation code should look like: INV-XXXXXX
+                รูปแบบโค้ดคำเชิญเช่น: INV-XXXXXX
               </p>
             </div>
 
@@ -137,10 +136,10 @@ export default function JoinTeamPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Joining team...
+                  กำลังเข้าร่วมทีม...
                 </>
               ) : (
-                "Join Team"
+                "เข้าร่วมทีม"
               )}
             </Button>
           </form>

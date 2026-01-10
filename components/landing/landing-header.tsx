@@ -22,7 +22,9 @@ export function LandingHeader() {
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary/80">
             StayKha
           </p>
-          <p className="text-xs text-muted-foreground">Owner operations suite</p>
+          <p className="text-xs text-muted-foreground">
+            ระบบจัดการที่พักครบวงจรสำหรับเจ้าของ
+          </p>
         </div>
       </div>
       <div className="flex items-center gap-3">
@@ -31,7 +33,7 @@ export function LandingHeader() {
         </Button>
         <Button asChild>
           <Link to="/overview">
-            Go to Overview
+            ไปที่ภาพรวม
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>

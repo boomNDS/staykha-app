@@ -31,7 +31,7 @@ import type { BulkRoomFormValues } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function BulkRoomPage() {
-  usePageTitle("Bulk Add Rooms");
+  usePageTitle("เพิ่มห้องแบบหลายรายการ");
 
   const router = useRouter();
   const { user } = useAuth();
@@ -45,7 +45,7 @@ export default function BulkRoomPage() {
     queryKey: ["settings", user?.teamId],
     queryFn: () => {
       if (!user?.teamId) {
-        throw new Error("Team ID is required to load settings");
+        throw new Error("จำเป็นต้องมี Team ID เพื่อโหลด Settings");
       }
       return settingsApi.get(user.teamId);
     },
@@ -70,10 +70,12 @@ export default function BulkRoomPage() {
   
   // Show settings required message if settings don't exist
   if (settingsQuery.isSuccess && !settings) {
-    return <SettingsRequired 
-      title="Settings Required"
-      description="You need to create settings for your team before you can bulk create rooms."
-    />;
+    return (
+      <SettingsRequired
+        title="ต้องตั้งค่า Settings ก่อนใช้งาน"
+        description="คุณต้องสร้าง Settings ของทีมก่อนจึงจะเพิ่มห้องแบบหลายรายการได้"
+      />
+    );
   }
   
   React.useEffect(() => {
@@ -150,17 +152,17 @@ export default function BulkRoomPage() {
         size: formData.size ? Number.parseFloat(formData.size) : undefined,
       });
       toast({
-        title: "Rooms created",
+        title: "สร้างห้องเรียบร้อย",
         description:
           response.skippedRooms.length > 0
-            ? `Created ${response.createdCount} rooms. Skipped ${response.skippedRooms.length} duplicates.`
-            : `Created ${response.createdCount} rooms.`,
+            ? `สร้างห้อง ${response.createdCount} ห้อง ข้ามข้อมูลซ้ำ ${response.skippedRooms.length} รายการ`
+            : `สร้างห้อง ${response.createdCount} ห้อง`,
       });
       router.push("/overview/rooms");
     } catch (error: any) {
       toast({
-        title: "Bulk creation failed",
-        description: error.message || "Could not create rooms.",
+        title: "สร้างห้องแบบหลายรายการไม่สำเร็จ",
+        description: error.message || "สร้างห้องไม่สำเร็จ",
         variant: "destructive",
       });
     } finally {
@@ -171,24 +173,24 @@ export default function BulkRoomPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Bulk Create Rooms"
-        description="Generate rooms per floor with automatic numbering."
+        title="เพิ่มห้องแบบหลายรายการ"
+        description="สร้างห้องตามชั้นพร้อมเลขห้องอัตโนมัติ"
         showBack
       />
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Room Generator</CardTitle>
-            <CardDescription>
-              Rooms will be created for every floor in the range.
-            </CardDescription>
+          <CardTitle>สร้างห้องแบบอัตโนมัติ</CardTitle>
+          <CardDescription>
+            ระบบจะสร้างห้องให้ทุกชั้นตามช่วงที่กำหนด
+          </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="buildingId">Building *</Label>
+                  <Label htmlFor="buildingId">อาคาร *</Label>
                   <Select
                     value={formData.buildingId}
                     onValueChange={(value) =>
@@ -199,7 +201,7 @@ export default function BulkRoomPage() {
                       id="buildingId"
                       className={errors.buildingId ? "border-destructive" : ""}
                     >
-                      <SelectValue placeholder="Select a building" />
+                      <SelectValue placeholder="เลือกอาคาร" />
                     </SelectTrigger>
                     <SelectContent>
                       {buildings.map((building) => (
@@ -217,7 +219,7 @@ export default function BulkRoomPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="status">Default Status</Label>
+                  <Label htmlFor="status">สถานะเริ่มต้น</Label>
                   <Select
                     value={formData.status}
                     onValueChange={(value) =>
@@ -228,15 +230,15 @@ export default function BulkRoomPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="vacant">Vacant</SelectItem>
-                      <SelectItem value="occupied">Occupied</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                    <SelectItem value="vacant">ว่าง</SelectItem>
+                    <SelectItem value="occupied">เข้าพัก</SelectItem>
+                    <SelectItem value="maintenance">ซ่อมบำรุง</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="floorStart">Floor Start *</Label>
+                  <Label htmlFor="floorStart">ชั้นเริ่มต้น *</Label>
                   <Input
                     id="floorStart"
                     type="number"
@@ -258,7 +260,7 @@ export default function BulkRoomPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="floorEnd">Floor End *</Label>
+                  <Label htmlFor="floorEnd">ชั้นสิ้นสุด *</Label>
                   <Input
                     id="floorEnd"
                     type="number"
@@ -277,7 +279,7 @@ export default function BulkRoomPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="roomsPerFloor">Rooms per Floor *</Label>
+                  <Label htmlFor="roomsPerFloor">จำนวนห้องต่อชั้น *</Label>
                   <Input
                     id="roomsPerFloor"
                     type="number"
@@ -299,7 +301,7 @@ export default function BulkRoomPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="startIndex">Room Start Index *</Label>
+                  <Label htmlFor="startIndex">เลขห้องเริ่มต้น *</Label>
                   <Input
                     id="startIndex"
                     type="number"
@@ -321,7 +323,7 @@ export default function BulkRoomPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="size">Room Size (sqm)</Label>
+                  <Label htmlFor="size">ขนาดห้อง (ตร.ม.)</Label>
                   <Input
                     id="size"
                     type="number"
@@ -338,7 +340,7 @@ export default function BulkRoomPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="monthlyRent">Monthly Rent (THB)</Label>
+                  <Label htmlFor="monthlyRent">ค่าเช่ารายเดือน (บาท)</Label>
                   <Input
                     id="monthlyRent"
                     type="number"
@@ -363,14 +365,14 @@ export default function BulkRoomPage() {
               <div className="flex gap-3">
                 <Button type="submit" disabled={isSubmitting}>
                   <Wand2 className="mr-2 h-4 w-4" />
-                  {isSubmitting ? "Creating..." : "Generate Rooms"}
+                  {isSubmitting ? "กำลังสร้าง..." : "สร้างห้อง"}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.back()}
                 >
-                  Cancel
+                  ยกเลิก
                 </Button>
               </div>
             </form>
@@ -381,14 +383,14 @@ export default function BulkRoomPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Calculator className="h-4 w-4 text-muted-foreground" />
-              Preview
+              ตัวอย่าง
             </CardTitle>
-            <CardDescription>Quick check before creation.</CardDescription>
+            <CardDescription>ตรวจสอบข้อมูลก่อนสร้างห้อง</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <div className="rounded-lg border bg-muted/20 p-3">
               <p className="text-xs text-muted-foreground">
-                Total rooms to be created
+                จำนวนห้องที่จะถูกสร้าง
               </p>
               <p className="mt-2 text-2xl font-semibold text-foreground">
                 {totalRooms}
@@ -396,11 +398,11 @@ export default function BulkRoomPage() {
             </div>
             <div className="rounded-lg border bg-muted/20 p-3">
               <p className="text-xs text-muted-foreground">
-                Sample room number
+                ตัวอย่างเลขห้อง
               </p>
               <p className="mt-2 font-semibold text-foreground">{sampleRoom}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Format: floor + two-digit index (e.g., 201, 202, 203)
+                รูปแบบ: ชั้น + เลขสองหลัก (เช่น 201, 202, 203)
               </p>
             </div>
           </CardContent>

@@ -21,7 +21,7 @@ import { useRouter } from "@/lib/router";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function NewBuildingPage() {
-  usePageTitle("New Building");
+  usePageTitle("เพิ่มอาคารใหม่");
 
   const router = useRouter();
   const { toast } = useToast();
@@ -32,14 +32,14 @@ export default function NewBuildingPage() {
     return (
       <div className="space-y-6">
         <PageHeader
-          title="New Building"
-          description="Create a new building property."
+          title="เพิ่มอาคารใหม่"
+          description="สร้างอาคารใหม่"
           showBack
         />
         <AdminRestrictionBanner
-          title="Owner Action Required"
-          message="Only owners can create buildings. Please contact your team owner to create a building first."
-          action="Once a building is created, you can create rooms and manage tenants."
+          title="ต้องให้เจ้าของดำเนินการ"
+          message="เฉพาะเจ้าของเท่านั้นที่สามารถสร้างอาคารได้ โปรดติดต่อเจ้าของทีมเพื่อสร้างอาคารก่อน"
+          action="เมื่อมีอาคารแล้ว คุณสามารถสร้างห้องและจัดการผู้เช่าได้"
         />
       </div>
     );
@@ -57,16 +57,16 @@ export default function NewBuildingPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) newErrors.name = "Building name is required";
-    if (!formData.address.trim()) newErrors.address = "Address is required";
+    if (!formData.name.trim()) newErrors.name = "กรุณากรอกชื่ออาคาร";
+    if (!formData.address.trim()) newErrors.address = "กรุณากรอกที่อยู่";
     if (
       !formData.totalFloors ||
       Number.parseInt(formData.totalFloors, 10) < 1
     ) {
-      newErrors.totalFloors = "Must be at least 1 floor";
+      newErrors.totalFloors = "ต้องมีอย่างน้อย 1 ชั้น";
     }
     if (!formData.totalRooms || Number.parseInt(formData.totalRooms, 10) < 1) {
-      newErrors.totalRooms = "Must be at least 1 room";
+      newErrors.totalRooms = "ต้องมีอย่างน้อย 1 ห้อง";
     }
 
     setErrors(newErrors);
@@ -102,15 +102,15 @@ export default function NewBuildingPage() {
       });
 
       toast({
-        title: "Success",
-        description: "Building created successfully",
+        title: "สำเร็จ",
+        description: "สร้างอาคารเรียบร้อย",
       });
 
       router.push("/overview/buildings");
     } catch (_error) {
       toast({
-        title: "Error",
-        description: "Failed to create building",
+        title: "เกิดข้อผิดพลาด",
+        description: "สร้างอาคารไม่สำเร็จ",
         variant: "destructive",
       });
     } finally {
@@ -121,27 +121,27 @@ export default function NewBuildingPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="New Building"
-        description="Create a new building property."
+        title="เพิ่มอาคารใหม่"
+        description="สร้างอาคารใหม่"
         showBack
       />
 
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Building Information</CardTitle>
+          <CardTitle>ข้อมูลอาคาร</CardTitle>
           <CardDescription>
-            Enter the details for the new building
+            กรอกรายละเอียดอาคาร
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium">
-                Building Name
+                ชื่ออาคาร
               </label>
               <Input
                 id="name"
-                placeholder="e.g., Building A"
+                placeholder="เช่น อาคาร A"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -155,11 +155,11 @@ export default function NewBuildingPage() {
 
             <div className="space-y-2">
               <label htmlFor="address" className="text-sm font-medium">
-                Address
+                ที่อยู่
               </label>
               <Input
                 id="address"
-                placeholder="e.g., 123 Sukhumvit Road, Bangkok 10110"
+                placeholder="เช่น 123 ถนนสุขุมวิท กรุงเทพฯ 10110"
                 value={formData.address}
                 onChange={(e) =>
                   setFormData({ ...formData, address: e.target.value })
@@ -174,13 +174,13 @@ export default function NewBuildingPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label htmlFor="totalFloors" className="text-sm font-medium">
-                  Total Floors
+                  จำนวนชั้น
                 </label>
                 <Input
                   id="totalFloors"
                   type="number"
                   min="1"
-                  placeholder="e.g., 3"
+                  placeholder="เช่น 3"
                   value={formData.totalFloors}
                   onChange={(e) =>
                     setFormData({ ...formData, totalFloors: e.target.value })
@@ -196,13 +196,13 @@ export default function NewBuildingPage() {
 
               <div className="space-y-2">
                 <label htmlFor="totalRooms" className="text-sm font-medium">
-                  Total Rooms
+                  จำนวนห้อง
                 </label>
                 <Input
                   id="totalRooms"
                   type="number"
                   min="1"
-                  placeholder="e.g., 15"
+                  placeholder="เช่น 15"
                   value={formData.totalRooms}
                   onChange={(e) =>
                     setFormData({ ...formData, totalRooms: e.target.value })
@@ -222,10 +222,10 @@ export default function NewBuildingPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
+                    กำลังสร้าง...
                   </>
                 ) : (
-                  "Create Building"
+                  "สร้างอาคาร"
                 )}
               </Button>
               <Button
@@ -234,7 +234,7 @@ export default function NewBuildingPage() {
                 onClick={() => router.back()}
                 disabled={isLoading}
               >
-                Cancel
+                ยกเลิก
               </Button>
             </div>
           </form>

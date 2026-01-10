@@ -21,7 +21,7 @@ export function TenantInlineForm({
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="space-y-2 sm:col-span-2">
-        <Label htmlFor="tenantName">Full Name</Label>
+        <Label htmlFor="tenantName">ชื่อ-นามสกุล</Label>
         <Input
           id="tenantName"
           value={value.name}
@@ -32,7 +32,7 @@ export function TenantInlineForm({
         )}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="tenantEmail">Email</Label>
+        <Label htmlFor="tenantEmail">อีเมล</Label>
         <Input
           id="tenantEmail"
           type="email"
@@ -44,7 +44,7 @@ export function TenantInlineForm({
         )}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="tenantPhone">Phone</Label>
+        <Label htmlFor="tenantPhone">โทรศัพท์</Label>
         <Input
           id="tenantPhone"
           value={value.phone}
@@ -55,7 +55,7 @@ export function TenantInlineForm({
         )}
       </div>
       <div className={showDeposit ? "space-y-2" : "space-y-2 sm:col-span-2"}>
-        <Label htmlFor="tenantMoveIn">Move-in Date</Label>
+        <Label htmlFor="tenantMoveIn">วันที่ย้ายเข้า</Label>
         <Input
           id="tenantMoveIn"
           type="date"
@@ -68,7 +68,7 @@ export function TenantInlineForm({
       </div>
       {showDeposit && (
         <div className="space-y-2">
-          <Label htmlFor="tenantDeposit">Deposit</Label>
+          <Label htmlFor="tenantDeposit">เงินประกัน</Label>
           <Input
             id="tenantDeposit"
             type="number"

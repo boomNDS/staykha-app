@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { Mail, Send } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
@@ -15,7 +16,7 @@ import { useRouter } from "@/lib/router";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function InviteAdminPage() {
-  usePageTitle("Invite Admin");
+  usePageTitle("เชิญผู้ดูแล");
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -43,7 +44,7 @@ export default function InviteAdminPage() {
       router.push("/overview/admins");
     } catch (error) {
       console.error("Failed to send invitation:", error);
-      toast.error("Failed to send invitation");
+      toast.error("ส่งคำเชิญไม่สำเร็จ");
     } finally {
       setIsSubmitting(false);
     }
@@ -52,8 +53,8 @@ export default function InviteAdminPage() {
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <PageHeader
-        title="Invite Admin"
-        description="Send an invitation to a new administrator."
+        title="เชิญผู้ดูแล"
+        description="ส่งคำเชิญไปยังผู้ดูแลคนใหม่"
         showBack
         backHref="/overview/admins"
       />
@@ -63,14 +64,13 @@ export default function InviteAdminPage() {
           <div className="mb-6 flex items-center gap-3 rounded-lg bg-muted p-4">
             <Mail className="h-5 w-5 text-primary" />
             <div className="text-sm text-muted-foreground">
-              The admin will receive an email with an invitation code and
-              instructions to access the system.
+              ผู้ดูแลจะได้รับอีเมลพร้อมโค้ดเชิญและขั้นตอนการเข้าระบบ
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address *</Label>
+              <Label htmlFor="email">อีเมล *</Label>
               <Input
                 id="email"
                 type="email"
@@ -84,11 +84,11 @@ export default function InviteAdminPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name *</Label>
+              <Label htmlFor="name">ชื่อ-นามสกุล *</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="สมชาย ใจดี"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -98,10 +98,10 @@ export default function InviteAdminPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="message">Personal Message (Optional)</Label>
+              <Label htmlFor="message">ข้อความเพิ่มเติม (ไม่บังคับ)</Label>
               <Textarea
                 id="message"
-                placeholder="Add a personal message to the invitation..."
+                placeholder="เพิ่มข้อความถึงผู้รับคำเชิญ..."
                 rows={4}
                 value={formData.message}
                 onChange={(e) =>
@@ -117,7 +117,7 @@ export default function InviteAdminPage() {
                 variant="outline"
                 className="flex-1 w-full bg-transparent"
               >
-                <Link to="/overview/admins">Cancel</Link>
+                <Link to="/overview/admins">ยกเลิก</Link>
               </Button>
               <Button
                 type="submit"
@@ -125,7 +125,7 @@ export default function InviteAdminPage() {
                 className="flex-1 gap-2"
               >
                 <Send className="h-4 w-4" />
-                {isSubmitting ? "Sending..." : "Send Invitation"}
+                {isSubmitting ? "กำลังส่ง..." : "ส่งคำเชิญ"}
               </Button>
             </div>
           </form>

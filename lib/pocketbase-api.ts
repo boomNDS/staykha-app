@@ -59,22 +59,20 @@ const pocketbaseUrl: string =
 // Helper function to get current user's teamId from localStorage
 function getCurrentUserTeamId(): string {
   if (typeof window === "undefined") {
-    throw new Error("Cannot access localStorage on server");
+    throw new Error("ไม่สามารถเข้าถึง localStorage บนเซิร์ฟเวอร์ได้");
   }
   const userData = localStorage.getItem("user");
   if (!userData) {
-    throw new Error("User not authenticated");
+    throw new Error("ยังไม่ได้ยืนยันตัวตน");
   }
   try {
     const user = JSON.parse(userData) as User;
     if (!user.teamId) {
-      throw new Error(
-        "User does not have a teamId. Please create or join a team first.",
-      );
+      throw new Error("ผู้ใช้ยังไม่มี teamId กรุณาสร้างหรือเข้าร่วมทีมก่อน");
     }
     return user.teamId;
   } catch (_error) {
-    throw new Error("Failed to parse user data or get teamId");
+    throw new Error("ไม่สามารถอ่านข้อมูลผู้ใช้หรือหา teamId ได้");
   }
 }
 
@@ -561,7 +559,7 @@ export const invoicesApi = {
     
     if (existingInvoicesForGroup.length > 0) {
       throw new Error(
-        "An invoice already exists for this reading group. Each reading group can only have one invoice.",
+        "มีใบแจ้งหนี้สำหรับกลุ่มการอ่านนี้แล้ว (แต่ละกลุ่มสร้างได้เพียง 1 ใบ)",
       );
     }
 
@@ -571,9 +569,7 @@ export const invoicesApi = {
     >("reading_groups", readingGroupId);
 
     if (!readingGroup.electric) {
-      throw new Error(
-        "Electric reading is required before generating an invoice.",
-      );
+      throw new Error("ต้องมีการอ่านมิเตอร์ไฟก่อนจึงจะสร้างใบแจ้งหนี้ได้");
     }
 
     // Get settings for the team
@@ -583,15 +579,13 @@ export const invoicesApi = {
       filter: `teamId = "${teamId}"`,
     });
     if (settingsItems.length === 0) {
-      throw new Error(`Settings not found for team ${teamId}`);
+      throw new Error(`ไม่พบ Settings ของทีม ${teamId}`);
     }
     const settings = mapSettingsRecord(settingsItems[0] as SettingsMapperInput);
 
     // Check water reading requirement
     if (settings.waterBillingMode !== "fixed" && !readingGroup.water) {
-      throw new Error(
-        "Complete both water and electric readings before generating an invoice.",
-      );
+      throw new Error("กรุณากรอกการอ่านมิเตอร์น้ำและไฟให้ครบก่อนสร้างใบแจ้งหนี้");
     }
 
     // Get room and tenant info
@@ -895,13 +889,13 @@ export const invitationsApi = {
       filter: `inviteCode = "${inviteCode}" && status = "pending"`,
     });
     if (items.length === 0) {
-      throw new Error("Invalid or expired invitation code");
+      throw new Error("โค้ดคำเชิญไม่ถูกต้องหรือหมดอายุ");
     }
     const invitation = items[0] as AdminInvitationRecord;
 
     // Check if expired
     if (new Date(invitation.expiresAt) < new Date()) {
-      throw new Error("Invitation code has expired");
+      throw new Error("โค้ดคำเชิญหมดอายุแล้ว");
     }
 
     // Update invitation status

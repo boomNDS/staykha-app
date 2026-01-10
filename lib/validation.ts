@@ -25,8 +25,7 @@ export function validateMeterReading({
   if (currentReading < previousReading) {
     errors.push({
       field: "currentReading",
-      message:
-        "Current reading must be greater than or equal to previous reading",
+      message: "เลขล่าสุดต้องมากกว่าหรือเท่ากับเลขก่อนหน้า",
     });
   }
 
@@ -34,7 +33,7 @@ export function validateMeterReading({
   if (currentReading === previousReading) {
     errors.push({
       field: "currentReading",
-      message: "Current and previous readings cannot be the same",
+      message: "เลขล่าสุดและเลขก่อนหน้าต้องไม่เท่ากัน",
     });
   }
 
@@ -42,7 +41,7 @@ export function validateMeterReading({
   if (lastBilledReading !== undefined && currentReading <= lastBilledReading) {
     errors.push({
       field: "currentReading",
-      message: `Current reading must be greater than the last billed reading (${lastBilledReading})`,
+      message: `เลขล่าสุดต้องมากกว่าเลขที่ออกบิลล่าสุด (${lastBilledReading})`,
     });
   }
 
@@ -50,7 +49,7 @@ export function validateMeterReading({
   if (meterType && meterType !== "water" && meterType !== "electric") {
     errors.push({
       field: "meterType",
-      message: "Meter type must be either 'water' or 'electric'",
+      message: "ประเภทมิเตอร์ต้องเป็น 'water' หรือ 'electric'",
     });
   }
 
@@ -98,14 +97,14 @@ export function validateImageFile(file: File): ValidationError | null {
   if (!allowedTypes.includes(file.type)) {
     return {
       field: "file",
-      message: "Only JPEG, PNG, and WebP images are allowed",
+      message: "รองรับเฉพาะไฟล์ JPEG, PNG และ WebP เท่านั้น",
     };
   }
 
   if (file.size > maxSize) {
     return {
       field: "file",
-      message: "File size must be less than 5MB",
+      message: "ขนาดไฟล์ต้องไม่เกิน 5MB",
     };
   }
 

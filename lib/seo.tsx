@@ -17,20 +17,29 @@ export interface SEOProps {
 }
 
 const defaultSEO = {
-  title: "StayKha - Property Management & Utility Billing System",
+  title: "StayKha - ระบบบริหารจัดการที่พักและออกบิลค่าน้ำไฟ",
   description:
-    "StayKha helps property owners manage buildings, rooms, tenants, and utility billing. Track meter readings, generate invoices, and streamline your property management workflow.",
+    "StayKha ช่วยเจ้าของที่พักจัดการอาคาร ห้องพัก ผู้เช่า และการออกบิลค่าน้ำไฟ ติดตามมิเตอร์ สร้างใบแจ้งหนี้ และทำงานได้เป็นระบบมากขึ้นในเวิร์กโฟลว์เดียว | StayKha is a property management system for rentals with building, room, tenant, meter, and billing workflows.",
   keywords: [
+    "ระบบบริหารที่พัก",
+    "ออกบิลค่าน้ำไฟ",
+    "อ่านมิเตอร์",
+    "ค่าน้ำ",
+    "ค่าไฟ",
+    "จัดการผู้เช่า",
+    "จัดการห้องพัก",
+    "ระบบจัดการหอพัก",
+    "ระบบจัดการบ้านเช่า",
+    "ซอฟต์แวร์จัดการที่พัก",
+    "ซอฟต์แวร์ออกบิล",
+    "สร้างใบแจ้งหนี้",
     "property management",
-    "utility billing",
-    "meter readings",
-    "water billing",
-    "electricity billing",
+    "rental management",
+    "apartment management",
     "tenant management",
-    "room management",
-    "property management software",
-    "billing software",
-    "invoice generation",
+    "meter reading",
+    "utility billing",
+    "invoice automation",
   ],
   image: "/placeholder-logo.png",
   url: typeof window !== "undefined" ? window.location.origin : "",
@@ -99,7 +108,7 @@ export function SEO({
     updateMetaTag("og:url", metaUrl, "property");
     updateMetaTag("og:image", metaImage, "property");
     updateMetaTag("og:site_name", "StayKha", "property");
-    updateMetaTag("og:locale", "en_US", "property");
+    updateMetaTag("og:locale", "th_TH", "property");
 
     // Twitter Card tags
     updateMetaTag("twitter:card", "summary_large_image");

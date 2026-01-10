@@ -31,7 +31,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 import { formatCurrency } from "@/lib/utils";
 
 export default function BillingPage() {
-  usePageTitle("Billing");
+  usePageTitle("บิล/ใบแจ้งหนี้");
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,15 +70,15 @@ export default function BillingPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       toast({
-        title: "Invoice created",
-        description: `Generated ${data.invoice.id} from monthly readings.`,
+        title: "สร้างใบแจ้งหนี้แล้ว",
+        description: `สร้าง ${data.invoice.id} จากการอ่านมิเตอร์รายเดือน`,
       });
       router.push(`/overview/billing/${data.invoice.id}`);
     },
     onError: (error: any) => {
       toast({
-        title: "Invoice failed",
-        description: error.message || "Could not generate invoice",
+        title: "สร้างใบแจ้งหนี้ไม่สำเร็จ",
+        description: error.message || "ไม่สามารถสร้างใบแจ้งหนี้ได้",
         variant: "destructive",
       });
     },
@@ -114,15 +114,15 @@ export default function BillingPage() {
   const handlePrintSelected = () => {
     if (selectedInvoices.length === 0) {
       toast({
-        title: "Select invoices",
-        description: "Choose at least one invoice to print.",
+        title: "เลือกใบแจ้งหนี้",
+        description: "โปรดเลือกใบแจ้งหนี้อย่างน้อย 1 รายการเพื่อพิมพ์",
         variant: "destructive",
       });
       return;
     }
     toast({
-      title: "Preparing print layout",
-      description: "The system will open the print dialog shortly.",
+      title: "กำลังเตรียมหน้าเอกสารสำหรับพิมพ์",
+      description: "ระบบจะเปิดหน้าพิมพ์ในอีกสักครู่",
     });
     window.print();
   };
@@ -130,8 +130,8 @@ export default function BillingPage() {
   const handleExportPng = async () => {
     if (selectedInvoices.length === 0) {
       toast({
-        title: "Select invoices",
-        description: "Choose at least one invoice to export.",
+        title: "เลือกใบแจ้งหนี้",
+        description: "โปรดเลือกใบแจ้งหนี้อย่างน้อย 1 รายการเพื่อส่งออก",
         variant: "destructive",
       });
       return;
@@ -150,8 +150,8 @@ export default function BillingPage() {
     } catch (error) {
       console.error("Failed to export PNG:", error);
       toast({
-        title: "Export failed",
-        description: "Could not generate PNG files.",
+        title: "ส่งออกไม่สำเร็จ",
+        description: "ไม่สามารถสร้างไฟล์ PNG ได้",
         variant: "destructive",
       });
     } finally {
@@ -162,8 +162,8 @@ export default function BillingPage() {
   const handleExportPdf = async () => {
     if (selectedInvoices.length === 0) {
       toast({
-        title: "Select invoices",
-        description: "Choose at least one invoice to export.",
+        title: "เลือกใบแจ้งหนี้",
+        description: "โปรดเลือกใบแจ้งหนี้อย่างน้อย 1 รายการเพื่อส่งออก",
         variant: "destructive",
       });
       return;
@@ -196,8 +196,8 @@ export default function BillingPage() {
     } catch (error) {
       console.error("Failed to export PDF:", error);
       toast({
-        title: "Export failed",
-        description: "Could not generate PDF.",
+        title: "ส่งออกไม่สำเร็จ",
+        description: "ไม่สามารถสร้างไฟล์ PDF ได้",
         variant: "destructive",
       });
     } finally {
@@ -235,6 +235,23 @@ export default function BillingPage() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "paid":
+        return "ชำระแล้ว";
+      case "pending":
+        return "รอชำระ";
+      case "sent":
+        return "ส่งแล้ว";
+      case "overdue":
+        return "ค้างชำระ";
+      case "draft":
+        return "ร่าง";
+      default:
+        return status;
+    }
+  };
+
   const totalRevenue = invoices.reduce((sum, inv) => sum + inv.total, 0);
   const paidInvoices = invoices.filter((inv) => inv.status === "paid");
   const paidAmount = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
@@ -248,7 +265,7 @@ export default function BillingPage() {
   const columns = [
     {
       key: "invoiceNumber",
-      header: "Invoice #",
+      header: "เลขที่ใบแจ้งหนี้",
       searchable: true,
       render: (invoice: Invoice) => (
         <span className="font-mono text-foreground">{invoice.id}</span>
@@ -256,7 +273,7 @@ export default function BillingPage() {
     },
     {
       key: "tenant",
-      header: "Tenant",
+      header: "ผู้เช่า",
       searchable: true,
       className: "hidden sm:table-cell",
       render: (invoice: Invoice) => (
@@ -267,7 +284,7 @@ export default function BillingPage() {
     },
     {
       key: "room",
-      header: "Room",
+      header: "ห้อง",
       searchable: true,
       render: (invoice: Invoice) => (
         <span className="text-muted-foreground">
@@ -277,7 +294,7 @@ export default function BillingPage() {
     },
     {
       key: "billingPeriod",
-      header: "Period",
+      header: "งวด",
       searchable: true,
       className: "hidden md:table-cell",
       render: (invoice: Invoice) => (
@@ -286,14 +303,14 @@ export default function BillingPage() {
     },
     {
       key: "usage",
-      header: "Usage",
+      header: "หน่วยใช้",
       className: "hidden lg:table-cell",
       render: (invoice: Invoice) => (
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Droplets className="h-3 w-3 text-blue-500" />
             {invoice.waterBillingMode === "fixed"
-              ? "Fixed fee"
+              ? "เหมาจ่าย"
               : `${invoice.waterUsage} m³`}
           </span>
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -305,7 +322,7 @@ export default function BillingPage() {
     },
     {
       key: "total",
-      header: "Amount",
+      header: "ยอดเงิน",
       render: (invoice: Invoice) => (
         <span className="font-semibold text-foreground">
           {formatCurrency(invoice.total)}
@@ -314,32 +331,32 @@ export default function BillingPage() {
     },
     {
       key: "status",
-      header: "Status",
+      header: "สถานะ",
       render: (invoice: Invoice) => {
-        const dueDateLabel = new Date(invoice.dueDate).toLocaleDateString();
+        const dueDateLabel = new Date(invoice.dueDate).toLocaleDateString("th-TH");
         return (
           <div className="space-y-1">
             <Badge variant={getStatusColor(invoice.status)}>
-              {invoice.status}
+              {getStatusLabel(invoice.status)}
             </Badge>
-            <p className="text-xs text-muted-foreground">Due {dueDateLabel}</p>
+            <p className="text-xs text-muted-foreground">ครบกำหนด {dueDateLabel}</p>
           </div>
         );
       },
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "การดำเนินการ",
       render: (invoice: Invoice) => (
         <TableRowActions
           primary={{
-            label: "View",
+            label: "ดูรายละเอียด",
             icon: FileText,
             onClick: () => router.push(`/overview/billing/${invoice.id}`),
           }}
           items={[
             {
-              label: invoice.status === "paid" ? "Mark pending" : "Mark paid",
+              label: invoice.status === "paid" ? "ทำเป็นรอชำระ" : "ทำเป็นชำระแล้ว",
               icon: invoice.status === "paid" ? Clock : CheckCircle2,
               onClick: () =>
                 updateInvoiceMutation.mutate({
@@ -351,7 +368,7 @@ export default function BillingPage() {
                 }),
             },
             {
-              label: "Download PDF",
+              label: "ดาวน์โหลด PDF",
               icon: FileDown,
               onClick: () => handleDownloadPdf(invoice.id),
             },
@@ -364,11 +381,11 @@ export default function BillingPage() {
   const filters = [
     {
       key: "status",
-      label: "Status",
+      label: "สถานะ",
       options: [
-        { value: "paid", label: "Paid" },
-        { value: "pending", label: "Pending" },
-        { value: "overdue", label: "Overdue" },
+        { value: "paid", label: "ชำระแล้ว" },
+        { value: "pending", label: "รอชำระ" },
+        { value: "overdue", label: "ค้างชำระ" },
       ],
       filterFn: (invoice: Invoice, value: string) => invoice.status === value,
     },
@@ -377,42 +394,42 @@ export default function BillingPage() {
   return (
     <div className="space-y-6 pb-8 sm:space-y-8">
       <PageHeader
-        title="Billing & Invoices"
-        description="Manage billing calculations and generate invoices for utility usage."
+        title="บิล/ใบแจ้งหนี้"
+        description="จัดการการคำนวณบิลและสร้างใบแจ้งหนี้ค่าน้ำ/ค่าไฟ"
         actions={
           <>
             <div className="text-xs text-muted-foreground">
-              {selectedInvoiceIds.size} selected
+              {selectedInvoiceIds.size} รายการที่เลือก
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={handlePrintSelected}
               disabled={isExporting || !selectionReady}
-              title={!selectionReady ? "Select invoices first" : undefined}
+              title={!selectionReady ? "โปรดเลือกใบแจ้งหนี้ก่อน" : undefined}
             >
               <Printer className="mr-2 h-4 w-4" />
-              Print 4/page
+              พิมพ์ 4/หน้า
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handleExportPng}
               disabled={isExporting || !selectionReady}
-              title={!selectionReady ? "Select invoices first" : undefined}
+              title={!selectionReady ? "โปรดเลือกใบแจ้งหนี้ก่อน" : undefined}
             >
               <Image className="mr-2 h-4 w-4" />
-              Export PNG
+              ส่งออก PNG
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handleExportPdf}
               disabled={isExporting || !selectionReady}
-              title={!selectionReady ? "Select invoices first" : undefined}
+              title={!selectionReady ? "โปรดเลือกใบแจ้งหนี้ก่อน" : undefined}
             >
               <FileDown className="mr-2 h-4 w-4" />
-              Export PDF
+              ส่งออก PDF
             </Button>
             <Button
               variant="ghost"
@@ -420,7 +437,7 @@ export default function BillingPage() {
               onClick={() => setSelectedInvoiceIds(new Set())}
               disabled={selectedInvoiceIds.size === 0}
             >
-              Clear
+              ล้าง
             </Button>
           </>
         }
@@ -430,7 +447,7 @@ export default function BillingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Revenue
+              รายรับรวม
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -438,7 +455,7 @@ export default function BillingPage() {
               {formatCurrency(totalRevenue)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {invoices.length} invoices this month
+              {invoices.length} ใบแจ้งหนี้เดือนนี้
             </p>
           </CardContent>
         </Card>
@@ -446,7 +463,7 @@ export default function BillingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Paid
+              ชำระแล้ว
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -454,7 +471,7 @@ export default function BillingPage() {
               {formatCurrency(paidAmount)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {paidInvoices.length} paid invoices
+              {paidInvoices.length} ใบแจ้งหนี้ที่ชำระแล้ว
             </p>
           </CardContent>
         </Card>
@@ -462,7 +479,7 @@ export default function BillingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Pending
+              รอชำระ
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -475,7 +492,7 @@ export default function BillingPage() {
                   (inv) => inv.status === "pending" || inv.status === "sent",
                 ).length
               }{" "}
-              pending
+              รอชำระ
             </p>
           </CardContent>
         </Card>
@@ -483,7 +500,7 @@ export default function BillingPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Overdue
+              ค้างชำระ
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -492,7 +509,7 @@ export default function BillingPage() {
             </div>
             <p className="text-xs text-muted-foreground">
               {invoices.filter((inv) => inv.status === "overdue").length}{" "}
-              overdue
+              ค้างชำระ
             </p>
           </CardContent>
         </Card>
@@ -500,31 +517,31 @@ export default function BillingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Invoices</CardTitle>
+          <CardTitle>รายการใบแจ้งหนี้ทั้งหมด</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <LoadingState message="Loading invoices..." />
+            <LoadingState message="กำลังโหลดใบแจ้งหนี้..." />
           ) : invoices.length === 0 ? (
             <EmptyState
               icon={<FileText className="h-8 w-8 text-muted-foreground" />}
-              title="No invoices yet"
-              description="Invoices will appear here once you process meter readings"
-              actionLabel="View Readings"
+              title="ยังไม่มีใบแจ้งหนี้"
+              description="ใบแจ้งหนี้จะแสดงเมื่อมีการประมวลผลการอ่านมิเตอร์"
+              actionLabel="ดูการอ่านมิเตอร์"
               actionHref="/overview/readings"
             />
           ) : (
             <DataTable
               data={invoices}
               columns={columns}
-              searchPlaceholder="Search by invoice #, tenant, room, or period..."
+              searchPlaceholder="ค้นหาตามเลขใบแจ้งหนี้ ผู้เช่า ห้อง หรือรอบบิล..."
               filters={filters}
               pageSize={10}
               forcePagination
               getRowId={(invoice) => invoice.id}
               selectedRowIds={selectedInvoiceIds}
               onSelectionChange={setSelectedInvoiceIds}
-              selectionLabel="Select invoice"
+              selectionLabel="เลือกใบแจ้งหนี้"
             />
           )}
         </CardContent>
@@ -549,7 +566,7 @@ export default function BillingPage() {
         ) : (
           <div className="print-page">
             <div className="print-grid">
-              <p>No invoices selected for printing</p>
+              <p>ยังไม่ได้เลือกใบแจ้งหนี้สำหรับพิมพ์</p>
             </div>
           </div>
         )}

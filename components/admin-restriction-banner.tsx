@@ -10,8 +10,8 @@ interface AdminRestrictionBannerProps {
 }
 
 export function AdminRestrictionBanner({
-  title = "Owner Action Required",
-  message = "Only owners can perform this action. Please contact your team owner to complete this setup.",
+  title = "ต้องให้เจ้าของดำเนินการ",
+  message = "เฉพาะเจ้าของเท่านั้นที่สามารถทำรายการนี้ได้ โปรดติดต่อเจ้าของทีมเพื่อดำเนินการตั้งค่านี้",
   action,
 }: AdminRestrictionBannerProps) {
   return (

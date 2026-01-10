@@ -22,7 +22,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 export default function LoginPage() {
   usePageTitle(
     "Sign in",
-    "Sign in to StayKha to manage your properties, track meter readings, and generate utility bills.",
+    "ลงชื่อเข้าใช้เพื่อจัดการอาคาร ติดตามการอ่านมิเตอร์ และออกใบแจ้งหนี้",
   );
 
   const router = useRouter();
@@ -62,16 +62,16 @@ export default function LoginPage() {
       console.log("[Login Page] Login successful, redirecting...");
 
       toast({
-        title: "Login successful",
-        description: "Welcome back!",
+        title: "Login สำเร็จ",
+        description: "ยินดีต้อนรับกลับมา",
       });
 
       router.push("/overview");
     } catch (error: any) {
       console.error("[Login Page] Login error:", error);
       toast({
-        title: "Login failed",
-        description: error.message || "Invalid credentials",
+        title: "Login ไม่สำเร็จ",
+        description: error.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
         variant: "destructive",
       });
     } finally {
@@ -87,7 +87,7 @@ export default function LoginPage() {
     <>
       <SEO
         title="Sign in"
-        description="Sign in to StayKha to manage your properties, track meter readings, and generate utility bills."
+        description="ลงชื่อเข้าใช้เพื่อจัดการอาคาร ติดตามการอ่านมิเตอร์ และออกใบแจ้งหนี้"
         noindex={true}
       />
       <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-10">
@@ -99,28 +99,27 @@ export default function LoginPage() {
             </div>
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary/80">
-                StayKha Admin
+                ผู้ดูแล StayKha
               </p>
               <h1 className="font-heading mt-3 text-3xl font-semibold tracking-tight text-foreground">
-                StayKha, distilled.
+                StayKha ที่เรียบง่ายแต่ครบถ้วน
               </h1>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                Track readings, manage tenants, and issue invoices with a calm,
-                data-dense workflow built for daily ops.
+                ติดตามการอ่านมิเตอร์ จัดการผู้เช่า และออกใบแจ้งหนี้ ด้วยเวิร์กโฟลว์ที่ชัดเจนสำหรับงานประจำวัน
               </p>
             </div>
             <div className="grid gap-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
                 <span className="h-2 w-2 rounded-full bg-primary" />
-                Real-time occupancy and billing insights
+                ภาพรวมสถานะห้องและบิลแบบเรียลไทม์
               </div>
               <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
                 <span className="h-2 w-2 rounded-full bg-primary" />
-                Smart meter reading capture with OCR
+                อ่านค่ามิเตอร์อัตโนมัติด้วย OCR
               </div>
               <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/70 px-4 py-3">
                 <span className="h-2 w-2 rounded-full bg-primary" />
-                Export-ready invoices and audit trails
+                ใบแจ้งหนี้พร้อมส่งออกและตรวจสอบย้อนหลัง
               </div>
             </div>
           </div>
@@ -134,7 +133,7 @@ export default function LoginPage() {
                 StayKha
               </CardTitle>
               <CardDescription>
-                Enter your credentials to access the admin portal
+                กรอกข้อมูลเพื่อเข้าสู่พอร์ทัลผู้ดูแล
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -144,7 +143,7 @@ export default function LoginPage() {
                     htmlFor="email"
                     className="text-sm font-medium text-foreground"
                   >
-                    Email
+                    อีเมล
                   </label>
                   <Input
                     id="email"
@@ -169,7 +168,7 @@ export default function LoginPage() {
                     htmlFor="password"
                     className="text-sm font-medium text-foreground"
                   >
-                    Password
+                    รหัสผ่าน
                   </label>
                   <Input
                     id="password"
@@ -190,27 +189,27 @@ export default function LoginPage() {
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    "Sign in"
-                  )}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    กำลังเข้าสู่ระบบ...
+                  </>
+                ) : (
+                  "Sign in"
+                )}
                 </Button>
               </form>
 
               <div className="mt-4 flex items-center justify-between text-sm">
                 <Link
-                  to="/forgot-password"
-                  className="font-medium text-primary hover:underline"
-                >
-                  Forgot password?
-                </Link>
+                to="/forgot-password"
+                className="font-medium text-primary hover:underline"
+              >
+                ลืมรหัสผ่าน?
+              </Link>
                 <div>
                   <span className="text-muted-foreground">
-                    Don't have an account?{" "}
+                    ยังไม่มีบัญชีใช่ไหม?{" "}
                   </span>
                   <Link
                     to="/register"
@@ -223,7 +222,7 @@ export default function LoginPage() {
 
               <div className="mt-6 space-y-3">
                 <p className="text-center text-sm font-medium text-muted-foreground">
-                  Demo Accounts:
+                  บัญชีตัวอย่าง:
                 </p>
                 <div className="grid gap-2">
                   <Button
@@ -233,7 +232,7 @@ export default function LoginPage() {
                     className="w-full justify-start text-left"
                     type="button"
                   >
-                    <span className="flex-1">Owner - Full Access</span>
+                    <span className="flex-1">เจ้าของ - สิทธิ์เต็ม</span>
                     <span className="text-xs text-muted-foreground">
                       owner@example.com
                     </span>
@@ -245,14 +244,14 @@ export default function LoginPage() {
                     className="w-full justify-start text-left"
                     type="button"
                   >
-                    <span className="flex-1">Admin - Manager Access</span>
+                    <span className="flex-1">ผู้ดูแล - สิทธิ์ผู้จัดการ</span>
                     <span className="text-xs text-muted-foreground">
                       admin@example.com
                     </span>
                   </Button>
                 </div>
                 <p className="text-center text-xs text-muted-foreground">
-                  Password: password123, owner123, or admin123
+                  รหัสผ่าน: password123, owner123 หรือ admin123
                 </p>
               </div>
             </CardContent>

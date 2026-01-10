@@ -28,7 +28,7 @@ export function LandingHero() {
           className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary"
         >
           <Sparkles className="h-3.5 w-3.5" />
-          Built for owner workflows
+          เวิร์กโฟลว์สำหรับเจ้าของหอพัก
         </motion.div>
         <motion.h1
           variants={fadeUp}
@@ -36,9 +36,9 @@ export function LandingHero() {
         >
           <Typewriter
             text={[
-              "Property management made simple.",
-              "Automated billing workflows.",
-              "Multi-admin collaboration.",
+              "จัดการที่พักได้ง่ายขึ้น",
+              "เวิร์กโฟลว์ออกบิลอัตโนมัติ",
+              "ทำงานร่วมกับหลายผู้ดูแล",
             ]}
             speed={50}
             initialDelay={500}
@@ -55,18 +55,17 @@ export function LandingHero() {
           variants={fadeUp}
           className="text-pretty text-base text-muted-foreground sm:text-lg"
         >
-          Manage buildings, tenants, meter readings, and billing in one
-          streamlined workflow.
+          จัดการอาคาร ห้องพัก ผู้เช่า การอ่านมิเตอร์ และการออกบิลแบบอัตโนมัติในเวิร์กโฟลว์เดียว
         </motion.p>
         <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
           <Button asChild size="lg">
             <Link to="/login">
-              Start managing
+              เริ่มจัดการ
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
           <Button asChild size="lg" variant="outline">
-            <Link to="/overview">View demo overview</Link>
+            <Link to="/overview">ดูตัวอย่างระบบ</Link>
           </Button>
         </motion.div>
       </motion.div>
@@ -78,40 +77,39 @@ export function LandingHero() {
         <div className="space-y-4">
           <div className="rounded-2xl border border-border bg-background/70 p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Monthly snapshot
+              สรุปรายเดือน
             </p>
             <p className="mt-2 text-2xl font-semibold text-foreground">
-              ฿48,320 collected
+              เก็บแล้ว ฿48,320
             </p>
             <p className="text-sm text-muted-foreground">
-              12 invoices paid • 3 pending
+              ชำระแล้ว 12 • ค้างชำระ 3
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl border border-border bg-background/70 p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                Occupancy
+                การเข้าพัก
               </p>
               <p className="mt-2 text-xl font-semibold text-foreground">
                 48 / 52
               </p>
-              <p className="text-xs text-muted-foreground">92% full</p>
+              <p className="text-xs text-muted-foreground">เต็ม 92%</p>
             </div>
             <div className="rounded-2xl border border-border bg-background/70 p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                Readings
+                การอ่านมิเตอร์
               </p>
               <p className="mt-2 text-xl font-semibold text-foreground">
-                52 rooms
+                52 ห้อง
               </p>
               <p className="text-xs text-muted-foreground">
-                4 missing meters
+                ขาด 4 ห้อง
               </p>
             </div>
           </div>
           <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-primary">
-            Track utilities in one pass, and auto-build invoices for every
-            room.
+            บันทึกค่าน้ำ/ไฟในครั้งเดียว และสร้างใบแจ้งหนี้อัตโนมัติสำหรับทุกห้อง
           </div>
         </div>
       </motion.div>

@@ -19,7 +19,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 import { formatDate } from "@/lib/utils";
 
 export default function AdminsPage() {
-  usePageTitle("Admin Management");
+  usePageTitle("ผู้ดูแลระบบ");
 
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -62,10 +62,10 @@ export default function AdminsPage() {
   const handleDelete = (id: string) => {
     setConfirmState({
       open: true,
-      title: "Remove admin?",
-      description: "This admin will lose access immediately.",
-      confirmLabel: "Remove",
-      cancelLabel: "Cancel",
+      title: "ลบผู้ดูแลหรือไม่?",
+      description: "ผู้ดูแลรายนี้จะถูกตัดสิทธิ์ทันที",
+      confirmLabel: "ลบ",
+      cancelLabel: "ยกเลิก",
       onConfirm: async () => {
         try {
           await deleteAdminMutation.mutateAsync(id);
@@ -79,10 +79,10 @@ export default function AdminsPage() {
   const handleRevokeInvitation = (id: string) => {
     setConfirmState({
       open: true,
-      title: "Revoke invitation?",
-      description: "The invited user will no longer be able to join.",
-      confirmLabel: "Revoke",
-      cancelLabel: "Cancel",
+      title: "เพิกถอนคำเชิญหรือไม่?",
+      description: "ผู้ที่ถูกเชิญจะไม่สามารถเข้าร่วมได้อีก",
+      confirmLabel: "เพิกถอน",
+      cancelLabel: "ยกเลิก",
       onConfirm: async () => {
         try {
           await revokeInvitationMutation.mutateAsync(id);
@@ -96,7 +96,7 @@ export default function AdminsPage() {
   const adminColumns = [
     {
       key: "name",
-      header: "Name",
+      header: "ชื่อ",
       searchable: true,
       render: (admin: User) => (
         <span className="font-medium text-foreground">{admin.name}</span>
@@ -104,7 +104,7 @@ export default function AdminsPage() {
     },
     {
       key: "email",
-      header: "Email",
+      header: "อีเมล",
       searchable: true,
       render: (admin: User) => (
         <span className="text-muted-foreground">{admin.email}</span>
@@ -112,7 +112,7 @@ export default function AdminsPage() {
     },
     {
       key: "createdAt",
-      header: "Joined Date",
+      header: "วันที่เข้าร่วม",
       render: (admin: User) => (
         <span className="text-muted-foreground">
           {formatDate(admin.createdAt || "")}
@@ -121,12 +121,12 @@ export default function AdminsPage() {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "การดำเนินการ",
       render: (admin: User) => (
         <TableRowActions
           items={[
             {
-              label: "Remove admin",
+              label: "ลบผู้ดูแล",
               icon: UserX,
               destructive: true,
               disabled: admin.id === user?.id,
@@ -141,7 +141,7 @@ export default function AdminsPage() {
   const invitationColumns = [
     {
       key: "email",
-      header: "Email",
+      header: "อีเมล",
       searchable: true,
       render: (invitation: AdminInvitation) => (
         <span className="font-medium text-foreground">{invitation.email}</span>
@@ -149,7 +149,7 @@ export default function AdminsPage() {
     },
     {
       key: "inviteCode",
-      header: "Invite Code",
+      header: "โค้ดเชิญ",
       render: (invitation: AdminInvitation) => (
         <span className="font-mono text-sm text-muted-foreground">
           {invitation.inviteCode}
@@ -158,7 +158,7 @@ export default function AdminsPage() {
     },
     {
       key: "status",
-      header: "Status",
+      header: "สถานะ",
       render: (invitation: AdminInvitation) => (
         <Badge
           variant={
@@ -169,13 +169,17 @@ export default function AdminsPage() {
                 : "outline"
           }
         >
-          {invitation.status}
+          {invitation.status === "accepted"
+            ? "ตอบรับแล้ว"
+            : invitation.status === "expired"
+              ? "หมดอายุ"
+              : "รอดำเนินการ"}
         </Badge>
       ),
     },
     {
       key: "expiresAt",
-      header: "Expires",
+      header: "หมดอายุ",
       render: (invitation: AdminInvitation) => (
         <span className="text-muted-foreground">
           {formatDate(invitation.expiresAt)}
@@ -184,12 +188,12 @@ export default function AdminsPage() {
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "การดำเนินการ",
       render: (invitation: AdminInvitation) => (
         <TableRowActions
           items={[
             {
-              label: "Revoke invite",
+              label: "เพิกถอนคำเชิญ",
               icon: Trash2,
               destructive: true,
               onClick: () => handleRevokeInvitation(invitation.id),
@@ -201,19 +205,19 @@ export default function AdminsPage() {
   ];
 
   if (isLoading) {
-    return <LoadingState fullScreen message="Loading admins..." />;
+    return <LoadingState fullScreen message="กำลังโหลดผู้ดูแล..." />;
   }
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <PageHeader
-        title="Admin Management"
-        description="Manage administrators and invitations."
+        title="จัดการผู้ดูแลระบบ"
+        description="จัดการผู้ดูแลระบบและคำเชิญ"
         actions={
           <Button asChild className="gap-2">
             <Link to="/overview/admins/invite">
               <Mail className="h-4 w-4" />
-              Invite Admin
+              เชิญผู้ดูแล
             </Link>
           </Button>
         }
@@ -224,7 +228,7 @@ export default function AdminsPage() {
           <div className="border-b border-border p-4">
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold">Active Admins</h2>
+              <h2 className="text-lg font-semibold">ผู้ดูแลที่ใช้งานอยู่</h2>
               <Badge variant="secondary">{admins.length}</Badge>
             </div>
           </div>
@@ -234,17 +238,17 @@ export default function AdminsPage() {
                 columns={adminColumns}
                 data={admins}
                 hideSearch={false}
-                searchPlaceholder="Search admins..."
+                searchPlaceholder="ค้นหาผู้ดูแล..."
                 forcePagination
               />
             ) : (
               <EmptyState
                 icon={<UserCog className="h-8 w-8 text-muted-foreground" />}
-                title="No admins yet"
-                description="Invite your first admin to help manage the system"
+                title="ยังไม่มีผู้ดูแล"
+                description="เชิญผู้ดูแลคนแรกเพื่อช่วยจัดการระบบ"
                 action={
                   <Button asChild>
-                    <Link to="/overview/admins/invite">Invite Admin</Link>
+                    <Link to="/overview/admins/invite">เชิญผู้ดูแล</Link>
                   </Button>
                 }
               />
@@ -256,7 +260,7 @@ export default function AdminsPage() {
           <div className="border-b border-border p-4">
             <div className="flex items-center gap-2">
               <Mail className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Pending Invitations</h2>
+              <h2 className="text-lg font-semibold">คำเชิญที่รออยู่</h2>
               <Badge variant="outline">{invitations.length}</Badge>
             </div>
           </div>
@@ -266,14 +270,14 @@ export default function AdminsPage() {
                 columns={invitationColumns}
                 data={invitations}
                 hideSearch={false}
-                searchPlaceholder="Search invitations..."
+                searchPlaceholder="ค้นหาคำเชิญ..."
                 forcePagination
               />
             ) : (
               <EmptyState
                 icon={<Mail className="h-8 w-8 text-muted-foreground" />}
-                title="No pending invitations"
-                description="All invitations have been accepted or expired"
+                title="ไม่มีคำเชิญค้างอยู่"
+                description="คำเชิญทั้งหมดถูกตอบรับหรือหมดอายุแล้ว"
               />
             )}
           </div>
@@ -283,7 +287,7 @@ export default function AdminsPage() {
         open={confirmState.open}
         title={confirmState.title}
         description={confirmState.description}
-        confirmLabel="Confirm"
+        confirmLabel="ยืนยัน"
         onConfirm={() => {
           const action = confirmState.onConfirm;
           setConfirmState((prev) => ({ ...prev, open: false }));

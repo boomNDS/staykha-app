@@ -22,43 +22,43 @@ import { cn } from "@/lib/utils";
 
 const navigation = [
   {
-    name: "Overview",
+    name: "ภาพรวม",
     href: "/overview",
     icon: LayoutDashboard,
     roles: ["owner", "admin"],
   },
   {
-    name: "Buildings",
+    name: "อาคาร",
     href: "/overview/buildings",
     icon: Home,
     roles: ["owner"],
   },
   {
-    name: "Rooms",
+    name: "ห้องพัก",
     href: "/overview/rooms",
     icon: Building2,
     roles: ["owner", "admin"],
   },
   {
-    name: "Tenants",
+    name: "ผู้เช่า",
     href: "/overview/tenants",
     icon: Users,
     roles: ["owner", "admin"],
   },
   {
-    name: "Meter Readings",
+    name: "อ่านมิเตอร์",
     href: "/overview/readings",
     icon: Gauge,
     roles: ["owner", "admin"],
   },
   {
-    name: "Billing",
+    name: "บิล/ใบแจ้งหนี้",
     href: "/overview/billing",
     icon: FileText,
     roles: ["owner", "admin"],
   },
   {
-    name: "Admin Management",
+    name: "ผู้ดูแลระบบ",
     href: "/overview/admins",
     icon: Users,
     roles: ["owner"],
@@ -80,6 +80,7 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
   const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const roleLabel = user?.role === "owner" ? "เจ้าของ" : "ผู้ดูแล";
 
   // Fetch team data if user has teamId but no team object
   const teamQuery = useQuery({
@@ -116,7 +117,7 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
                 StayKha
               </span>
               <span className="text-xs text-sidebar-foreground/60">
-                {team?.name || "Admin Portal"}
+                {team?.name || "พอร์ทัลผู้ดูแล"}
               </span>
             </div>
           </div>
@@ -143,7 +144,7 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
                   variant={user.role === "owner" ? "default" : "secondary"}
                   className="text-xs capitalize"
                 >
-                  {user.role}
+                  {roleLabel}
                 </Badge>
                 {team && (
                   <span className="text-xs text-sidebar-foreground/60 truncate">
@@ -195,7 +196,7 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
           )}
         >
           <LogOut className="h-5 w-5 shrink-0" />
-          {!isCollapsed && <span>Logout</span>}
+          {!isCollapsed && <span>ออกจากระบบ</span>}
         </Button>
       </div>
 
@@ -204,7 +205,7 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
         type="button"
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar shadow-sm hover:bg-sidebar-accent"
-        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-label={isCollapsed ? "ขยายแถบเมนู" : "ย่อแถบเมนู"}
       >
         <ChevronRight
           className={cn(

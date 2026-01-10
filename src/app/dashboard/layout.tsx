@@ -40,7 +40,7 @@ export default function DashboardLayout({
   }, [user, isLoading, router]);
 
   if (isLoading) {
-    return <LoadingState fullScreen message="Loading..." />;
+    return <LoadingState fullScreen message="กำลังโหลด..." />;
   }
 
   if (!user) {

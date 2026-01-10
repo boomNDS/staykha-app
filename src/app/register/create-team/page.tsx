@@ -19,7 +19,7 @@ import { useRouter } from "@/lib/router";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function CreateTeamPage() {
-  usePageTitle("Create Your Team");
+  usePageTitle("สร้างทีมของคุณ");
 
   const router = useRouter();
   const { toast } = useToast();
@@ -40,12 +40,12 @@ export default function CreateTeamPage() {
     setError("");
 
     if (!teamName.trim()) {
-      setError("Team name is required");
+      setError("กรุณากรอกชื่อทีม");
       return;
     }
 
     if (!user) {
-      setError("You must be logged in to create a team");
+      setError("คุณต้อง Sign in ก่อนจึงจะสร้างทีมได้");
       return;
     }
 
@@ -60,7 +60,7 @@ export default function CreateTeamPage() {
         import.meta.env.VITE_POCKETBASE_URL || "http://127.0.0.1:8090";
       const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error("Authentication required");
+        throw new Error("ต้องยืนยันตัวตนก่อน");
       }
 
       const response = await fetch(
@@ -77,7 +77,7 @@ export default function CreateTeamPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to update user with team");
+        throw new Error(error.message || "ไม่สามารถอัปเดตผู้ใช้กับทีมได้");
       }
 
       // Update user in context and localStorage
@@ -88,18 +88,18 @@ export default function CreateTeamPage() {
       window.dispatchEvent(new Event("userUpdated"));
 
       toast({
-        title: "Team created successfully",
-        description: `Welcome to ${team.name}! Next, create your settings.`,
+        title: "สร้างทีมสำเร็จ",
+        description: `ยินดีต้อนรับสู่ ${team.name}! ขั้นต่อไปให้สร้าง Settings`,
       });
 
       // Redirect to settings to complete setup
       router.push("/overview/settings");
     } catch (error: any) {
       console.error("[Create Team] Error:", error);
-      setError(error.message || "Failed to create team. Please try again.");
+      setError(error.message || "ไม่สามารถสร้างทีมได้ กรุณาลองใหม่อีกครั้ง");
       toast({
-        title: "Error",
-        description: error.message || "Failed to create team",
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถสร้างทีมได้",
         variant: "destructive",
       });
     } finally {
@@ -108,7 +108,7 @@ export default function CreateTeamPage() {
   };
 
   if (!user || user.role !== "owner") {
-    return <LoadingState fullScreen message="Loading..." />;
+    return <LoadingState fullScreen message="กำลังโหลด..." />;
   }
 
   return (
@@ -120,11 +120,10 @@ export default function CreateTeamPage() {
             <Gauge className="h-7 w-7 text-primary-foreground" />
           </div>
           <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
-            Create Your Team
+            สร้างทีมของคุณ
           </CardTitle>
           <CardDescription>
-            As an owner, you need to create a team to get started. This will be
-            your organization.
+            ในฐานะเจ้าของ คุณต้องสร้างทีมเพื่อเริ่มต้นใช้งาน ทีมนี้จะเป็นองค์กรของคุณ
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -134,12 +133,12 @@ export default function CreateTeamPage() {
                 htmlFor="teamName"
                 className="text-sm font-medium text-foreground"
               >
-                Team/Organization Name
+                ชื่อทีม/องค์กร
               </label>
               <Input
                 id="teamName"
                 type="text"
-                placeholder="My Property Management"
+                placeholder="ทีมบริหารหอพักของฉัน"
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
                 disabled={isLoading}
@@ -157,10 +156,10 @@ export default function CreateTeamPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating team...
+                  กำลังสร้างทีม...
                 </>
               ) : (
-                "Create Team"
+                "สร้างทีม"
               )}
             </Button>
           </form>

@@ -25,7 +25,7 @@ import { usePageTitle } from "@/lib/use-page-title";
 import { formatDate } from "@/lib/utils";
 
 export default function TenantsPage() {
-  usePageTitle("Tenants");
+  usePageTitle("ผู้เช่า");
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -64,14 +64,26 @@ export default function TenantsPage() {
     return room ? `${room.roomNumber} (${room.buildingName})` : "—";
   };
 
+  const getTenantStatusLabel = (status: Tenant["status"]) => {
+    switch (status) {
+      case "active":
+        return "ใช้งาน";
+      case "inactive":
+        return "ไม่ใช้งาน";
+      case "expired":
+        return "หมดสัญญา";
+      default:
+        return status;
+    }
+  };
+
   const handleDelete = (id: string) => {
     setConfirmState({
       open: true,
-      title: "Delete tenant?",
-      description:
-        "This will permanently remove the tenant and cannot be undone.",
-      confirmLabel: "Delete",
-      cancelLabel: "Cancel",
+      title: "ยืนยันการลบผู้เช่า?",
+      description: "การลบผู้เช่านี้จะไม่สามารถกู้คืนได้",
+      confirmLabel: "ลบ",
+      cancelLabel: "ยกเลิก",
       onConfirm: async () => {
         try {
           await deleteTenantMutation.mutateAsync(id);
@@ -85,7 +97,7 @@ export default function TenantsPage() {
   const columns = [
     {
       key: "name",
-      header: "Tenant Name",
+      header: "ชื่อผู้เช่า",
       render: (tenant: Tenant) => (
         <div>
           <div className="font-medium text-foreground">{tenant.name}</div>
@@ -100,7 +112,7 @@ export default function TenantsPage() {
     },
     {
       key: "roomNumber",
-      header: "Room",
+      header: "ห้อง",
       render: (tenant: Tenant) => (
         <div className="flex items-center gap-2">
           <Home className="h-4 w-4 text-muted-foreground" />
@@ -113,7 +125,7 @@ export default function TenantsPage() {
     },
     {
       key: "email",
-      header: "Contact",
+      header: "ติดต่อ",
       render: (tenant: Tenant) => (
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm">
@@ -129,7 +141,7 @@ export default function TenantsPage() {
     },
     {
       key: "moveInDate",
-      header: "Move-in Date",
+      header: "วันที่ย้ายเข้า",
       render: (tenant: Tenant) => (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="h-3.5 w-3.5" />
@@ -139,7 +151,7 @@ export default function TenantsPage() {
     },
     {
       key: "status",
-      header: "Status",
+      header: "สถานะ",
       render: (tenant: Tenant) => (
         <span
           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -148,28 +160,28 @@ export default function TenantsPage() {
               : "bg-yellow-500/10 text-yellow-500"
           }`}
         >
-          {tenant.status}
+          {getTenantStatusLabel(tenant.status)}
         </span>
       ),
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "การดำเนินการ",
       render: (tenant: Tenant) => (
         <TableRowActions
           primary={{
-            label: "View",
+            label: "ดูรายละเอียด",
             icon: Eye,
             onClick: () => router.push(`/overview/tenants/${tenant.id}/edit`),
           }}
           items={[
             {
-              label: "Edit tenant",
+              label: "แก้ไขผู้เช่า",
               icon: Edit,
               onClick: () => router.push(`/overview/tenants/${tenant.id}/edit`),
             },
             {
-              label: "Remove tenant",
+              label: "ลบผู้เช่า",
               icon: Trash2,
               destructive: true,
               onClick: () => handleDelete(tenant.id),
@@ -183,32 +195,32 @@ export default function TenantsPage() {
   const filters = [
     {
       key: "status",
-      label: "Status",
+      label: "สถานะ",
       options: [
-        { label: "Active", value: "active" },
-        { label: "Inactive", value: "inactive" },
-        { label: "Expired", value: "expired" },
+        { label: "ใช้งาน", value: "active" },
+        { label: "ไม่ใช้งาน", value: "inactive" },
+        { label: "หมดสัญญา", value: "expired" },
       ],
       filterFn: (tenant: Tenant, value: string) => tenant.status === value,
     },
   ];
 
   if (loading) {
-    return <LoadingState fullScreen message="Loading tenants..." />;
+    return <LoadingState fullScreen message="กำลังโหลดผู้เช่า..." />;
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Tenants"
-        description="Manage tenant information and assignments."
+        title="ผู้เช่า"
+        description="จัดการข้อมูลผู้เช่าและการผูกห้อง"
         actions={
           <Button
             onClick={() => router.push("/overview/tenants/new")}
             className="gap-2"
           >
             <Plus className="h-4 w-4" />
-            Add Tenant
+            เพิ่มผู้เช่า
           </Button>
         }
       />
@@ -218,7 +230,7 @@ export default function TenantsPage() {
           data={tenants}
           columns={columns}
           filters={filters}
-          searchPlaceholder="Search tenants..."
+          searchPlaceholder="ค้นหาผู้เช่า..."
           pageSize={10}
           forcePagination
         />
@@ -227,7 +239,7 @@ export default function TenantsPage() {
         open={confirmState.open}
         title={confirmState.title}
         description={confirmState.description}
-        confirmLabel="Confirm"
+        confirmLabel="ยืนยัน"
         onConfirm={() => {
           const action = confirmState.onConfirm;
           setConfirmState((prev) => ({ ...prev, open: false }));

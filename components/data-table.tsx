@@ -61,7 +61,7 @@ interface DataTableProps<T> {
 export function DataTable<T>({
   data,
   columns,
-  searchPlaceholder = "Search...",
+  searchPlaceholder = "ค้นหา...",
   filters = [],
   pageSize = 10,
   hideSearch = false,
@@ -69,7 +69,7 @@ export function DataTable<T>({
   getRowId,
   selectedRowIds,
   onSelectionChange,
-  selectionLabel = "Select row",
+  selectionLabel = "เลือกแถว",
   rowClassName,
   forcePagination = false,
   className,
@@ -181,7 +181,7 @@ export function DataTable<T>({
                     <SelectValue placeholder={filter.label} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All {filter.label}</SelectItem>
+                    <SelectItem value="all">ทั้งหมด {filter.label}</SelectItem>
                     {filter.options.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -238,7 +238,7 @@ export function DataTable<T>({
                 colSpan={columns.length + (selectionEnabled ? 1 : 0)}
                 className="text-center py-8"
               >
-                No results found
+                ไม่พบข้อมูล
               </TableCell>
             </TableRow>
           ) : (
@@ -284,9 +284,8 @@ export function DataTable<T>({
       {!hidePagination && (forcePagination || totalPages > 1) && (
         <div className="flex flex-col gap-2">
           <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to{" "}
-            {Math.min(endIndex, filteredData.length)} of {filteredData.length}{" "}
-            results
+            แสดง {startIndex + 1} ถึง {Math.min(endIndex, filteredData.length)} จากทั้งหมด{" "}
+            {filteredData.length} รายการ
           </div>
           <Pagination className="justify-end">
             <PaginationContent>

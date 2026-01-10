@@ -33,7 +33,7 @@ import type { Invoice, MeterReadingGroup, Room } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function ReadingsPage() {
-  usePageTitle("Meter Readings");
+  usePageTitle("อ่านมิเตอร์");
 
   const router = useRouter();
   const { user } = useAuth();
@@ -46,7 +46,7 @@ export default function ReadingsPage() {
     queryKey: ["settings", user?.teamId],
     queryFn: () => {
       if (!user?.teamId) {
-        throw new Error("Team ID is required to load settings");
+        throw new Error("จำเป็นต้องมี Team ID เพื่อโหลด Settings");
       }
       return settingsApi.get(user.teamId);
     },
@@ -133,10 +133,12 @@ export default function ReadingsPage() {
 
   // Show settings required message if settings don't exist (AFTER all hooks)
   if (settingsQuery.isSuccess && !settings) {
-    return <SettingsRequired 
-      title="Settings Required"
-      description="You need to create settings for your team before you can view meter readings."
-    />;
+    return (
+      <SettingsRequired
+        title="ต้องตั้งค่า Settings ก่อนใช้งาน"
+        description="คุณต้องสร้าง Settings ของทีมก่อนจึงจะดูการอ่านมิเตอร์ได้"
+      />
+    );
   }
 
   const getStatusColor = (status: string) => {
@@ -154,7 +156,7 @@ export default function ReadingsPage() {
     }
   };
 
-  const monthLabel = new Date().toLocaleString("default", {
+  const monthLabel = new Date().toLocaleString("th-TH", {
     month: "long",
     year: "numeric",
   });
@@ -168,7 +170,7 @@ export default function ReadingsPage() {
   });
 
   const selectedGroupMonthLabel = selectedGroup
-    ? new Date(selectedGroup.readingDate).toLocaleString("default", {
+    ? new Date(selectedGroup.readingDate).toLocaleString("th-TH", {
         month: "long",
         year: "numeric",
       })
@@ -190,8 +192,8 @@ export default function ReadingsPage() {
     setReminderHistory((prev) => {
       const next = { ...prev, [key]: timestamp };
       toast({
-        title: "Reminder queued",
-        description: `Sent ${type} reminder for room ${roomId}`,
+        title: "ตั้งค่าการแจ้งเตือนแล้ว",
+        description: `ส่งการแจ้งเตือน${type === "water" ? "มิเตอร์น้ำ" : "มิเตอร์ไฟ"}ให้ห้อง ${roomId}`,
       });
       return next;
     });
@@ -200,8 +202,8 @@ export default function ReadingsPage() {
   const _handleScheduleFollowUp = (roomId: string) => {
     if (followUps[roomId]) {
       toast({
-        title: "Already scheduled",
-        description: "A follow-up reminder is already queued for this room.",
+        title: "ตั้งเวลาไว้แล้ว",
+        description: "มีการตั้งเตือนติดตามสำหรับห้องนี้แล้ว",
       });
       return;
     }
@@ -209,8 +211,8 @@ export default function ReadingsPage() {
     setFollowUps((prev) => {
       const next = { ...prev, [roomId]: timestamp };
       toast({
-        title: "Follow-up scheduled",
-        description: `Will notify room ${roomId} to provide missing meters.`,
+        title: "ตั้งการติดตามแล้ว",
+        description: `ระบบจะแจ้งเตือนห้อง ${roomId} เพื่อส่งข้อมูลมิเตอร์ที่ขาด`,
       });
       return next;
     });
@@ -236,7 +238,7 @@ export default function ReadingsPage() {
   const columns = [
     {
       key: "type",
-      header: "Type",
+      header: "ประเภท",
       render: (group: MeterReadingGroup) => (
         <div className="flex items-center gap-2">
           {group.water ? <Droplets className="h-4 w-4 text-blue-500" /> : null}
@@ -249,17 +251,17 @@ export default function ReadingsPage() {
     },
     {
       key: "readingDate",
-      header: "Date",
+      header: "วันที่",
       searchable: true,
       render: (group: MeterReadingGroup) => (
         <span className="text-muted-foreground">
-          {new Date(group.readingDate).toLocaleDateString()}
+          {new Date(group.readingDate).toLocaleDateString("th-TH")}
         </span>
       ),
     },
     {
       key: "tenantName",
-      header: "Tenant",
+      header: "ผู้เช่า",
       searchable: true,
       className: "hidden sm:table-cell",
       render: (group: MeterReadingGroup) => (
@@ -270,7 +272,7 @@ export default function ReadingsPage() {
     },
     {
       key: "roomNumber",
-      header: "Room",
+      header: "ห้อง",
       searchable: true,
       render: (group: MeterReadingGroup) => (
         <span className="text-foreground">{group.roomNumber || "—"}</span>
@@ -278,46 +280,46 @@ export default function ReadingsPage() {
     },
     {
       key: "previousReading",
-      header: "Previous",
+      header: "ก่อนหน้า",
       className: "hidden md:table-cell",
       render: (group: MeterReadingGroup) => (
         <div className="space-y-1 text-sm text-muted-foreground">
           <div>
-            W:{" "}
+            น้ำ:{" "}
             {group.water?.previousReading?.toLocaleString() ??
-              (isWaterFixed ? "Fixed" : "—")}
+              (isWaterFixed ? "เหมาจ่าย" : "—")}
           </div>
           <div>
-            E: {group.electric?.previousReading?.toLocaleString() ?? "—"}
+            ไฟ: {group.electric?.previousReading?.toLocaleString() ?? "—"}
           </div>
         </div>
       ),
     },
     {
       key: "currentReading",
-      header: "Current",
+      header: "ล่าสุด",
       className: "hidden md:table-cell",
       render: (group: MeterReadingGroup) => (
         <div className="space-y-1 text-sm text-foreground">
           <div>
-            W:{" "}
+            น้ำ:{" "}
             {group.water?.currentReading?.toLocaleString() ??
-              (isWaterFixed ? "Fixed" : "—")}
+              (isWaterFixed ? "เหมาจ่าย" : "—")}
           </div>
           <div>
-            E: {group.electric?.currentReading?.toLocaleString() ?? "—"}
+            ไฟ: {group.electric?.currentReading?.toLocaleString() ?? "—"}
           </div>
         </div>
       ),
     },
     {
       key: "consumption",
-      header: "Usage",
+      header: "หน่วยใช้",
       render: (group: MeterReadingGroup) => (
         <div className="space-y-1 text-sm">
           <div className="font-semibold text-primary">
             {group.water?.consumption?.toLocaleString() ??
-              (isWaterFixed ? "Fixed" : "—")}{" "}
+              (isWaterFixed ? "เหมาจ่าย" : "—")}{" "}
             m³
           </div>
           <div className="font-semibold text-primary">
@@ -328,19 +330,29 @@ export default function ReadingsPage() {
     },
     {
       key: "status",
-      header: "Status",
+      header: "สถานะ",
       render: (group: MeterReadingGroup) => (
-        <Badge variant={getStatusColor(group.status)}>{group.status}</Badge>
+        <Badge variant={getStatusColor(group.status)}>
+          {group.status === "pending"
+            ? "รอออกบิล"
+            : group.status === "incomplete"
+              ? "ไม่ครบ"
+              : group.status === "billed"
+                ? "ออกบิลแล้ว"
+                : group.status === "paid"
+                  ? "ชำระแล้ว"
+                  : group.status}
+        </Badge>
       ),
     },
     {
       key: "actions",
-      header: "Actions",
+      header: "การดำเนินการ",
       render: (group: MeterReadingGroup) => {
         const items = [
           !group.water && !isWaterFixed
             ? {
-                label: "Add water",
+                label: "เพิ่มมิเตอร์น้ำ",
                 icon: Droplets,
                 onClick: () =>
                   router.push(
@@ -350,7 +362,7 @@ export default function ReadingsPage() {
             : null,
           !group.electric
             ? {
-                label: "Add electric",
+                label: "เพิ่มมิเตอร์ไฟ",
                 icon: Zap,
                 onClick: () =>
                   router.push(
@@ -362,7 +374,7 @@ export default function ReadingsPage() {
           group.electric &&
           (group.water || isWaterFixed)
             ? {
-                label: "Generate invoice",
+                label: "สร้างใบแจ้งหนี้",
                 icon: FileText,
                 onClick: () =>
                   router.push(`/overview/billing?readingId=${group.id}`),
@@ -377,7 +389,7 @@ export default function ReadingsPage() {
         return (
           <TableRowActions
             primary={{
-              label: "View",
+              label: "ดูรายละเอียด",
               icon: Gauge,
               onClick: () => router.push(`/overview/readings/${group.id}`),
             }}
@@ -391,22 +403,22 @@ export default function ReadingsPage() {
   const filters = [
     {
       key: "meterType",
-      label: "Type",
+      label: "ประเภท",
       options: [
-        { value: "water", label: "Water" },
-        { value: "electric", label: "Electric" },
+        { value: "water", label: "น้ำ" },
+        { value: "electric", label: "ไฟ" },
       ],
       filterFn: (group: MeterReadingGroup, value: string) =>
         value === "water" ? Boolean(group.water) : Boolean(group.electric),
     },
     {
       key: "status",
-      label: "Status",
+      label: "สถานะ",
       options: [
-        { value: "incomplete", label: "Incomplete" },
-        { value: "pending", label: "Pending" },
-        { value: "billed", label: "Billed" },
-        { value: "paid", label: "Paid" },
+        { value: "incomplete", label: "ไม่ครบ" },
+        { value: "pending", label: "รอออกบิล" },
+        { value: "billed", label: "ออกบิลแล้ว" },
+        { value: "paid", label: "ชำระแล้ว" },
       ],
       filterFn: (group: MeterReadingGroup, value: string) =>
         group.status === value,
@@ -416,15 +428,15 @@ export default function ReadingsPage() {
   return (
     <div className="space-y-6 pb-8 sm:space-y-8">
       <PageHeader
-        title="Meter Readings"
-        description="Capture water and electric readings together or complete one meter at a time."
+        title="อ่านมิเตอร์"
+        description="บันทึกค่าน้ำและค่าไฟพร้อมกัน หรืออัปเดตทีละมิเตอร์ภายหลังได้"
         actions={
           <Button
             onClick={() => router.push("/overview/readings/new")}
             className="w-full sm:w-auto"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Reading
+            เพิ่มการอ่านมิเตอร์
           </Button>
         }
       />
@@ -433,20 +445,20 @@ export default function ReadingsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Readings
+              รายการอ่านมิเตอร์ทั้งหมด
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
               {groupedReadings.length}
             </div>
-            <p className="text-xs text-muted-foreground">This month</p>
+            <p className="text-xs text-muted-foreground">เดือนนี้</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Pending
+              รอออกบิล
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -456,13 +468,13 @@ export default function ReadingsPage() {
                   .length
               }
             </div>
-            <p className="text-xs text-muted-foreground">Awaiting billing</p>
+            <p className="text-xs text-muted-foreground">รอสร้างบิล</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Incomplete
+              ไม่ครบ
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -472,13 +484,13 @@ export default function ReadingsPage() {
                   .length
               }
             </div>
-            <p className="text-xs text-muted-foreground">Missing a meter</p>
+            <p className="text-xs text-muted-foreground">ขาดมิเตอร์บางรายการ</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Billed
+              ออกบิลแล้ว
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -488,7 +500,7 @@ export default function ReadingsPage() {
                   .length
               }
             </div>
-            <p className="text-xs text-muted-foreground">Completed</p>
+            <p className="text-xs text-muted-foreground">เสร็จสิ้น</p>
           </CardContent>
         </Card>
       </div>
@@ -496,9 +508,9 @@ export default function ReadingsPage() {
       <Card>
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <CardTitle>Group detail</CardTitle>
+            <CardTitle>รายละเอียดกลุ่ม</CardTitle>
             <CardDescription>
-              Review the room/month combination before generating billing
+              ตรวจสอบห้องและรอบบิลก่อนสร้างใบแจ้งหนี้
             </CardDescription>
           </div>
           <div className="min-w-[200px]">
@@ -507,13 +519,13 @@ export default function ReadingsPage() {
               onValueChange={(value) => setSelectedGroupId(value)}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select room" />
+                <SelectValue placeholder="เลือกห้อง" />
               </SelectTrigger>
               <SelectContent>
                 {groupedReadings.map((group) => (
                   <SelectItem key={group.id} value={group.id}>
                     {group.roomNumber} •{" "}
-                    {new Date(group.readingDate).toLocaleString("default", {
+                    {new Date(group.readingDate).toLocaleString("th-TH", {
                       month: "short",
                       year: "numeric",
                     })}
@@ -528,10 +540,10 @@ export default function ReadingsPage() {
             <div className="grid gap-4 lg:grid-cols-4">
               <div className="rounded-2xl border border-border bg-muted/20 p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Room & period
+                  ห้องและงวด
                 </p>
                 <p className="text-lg font-semibold text-foreground">
-                  Room {selectedGroupRoomLabel}
+                  ห้อง {selectedGroupRoomLabel}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {selectedGroupMonthLabel}
@@ -540,47 +552,55 @@ export default function ReadingsPage() {
                   variant={getStatusColor(selectedGroupStatus)}
                   className="mt-3"
                 >
-                  {selectedGroupStatus}
+                  {selectedGroupStatus === "pending"
+                    ? "รอออกบิล"
+                    : selectedGroupStatus === "incomplete"
+                      ? "ไม่ครบ"
+                      : selectedGroupStatus === "billed"
+                        ? "ออกบิลแล้ว"
+                        : selectedGroupStatus === "paid"
+                          ? "ชำระแล้ว"
+                          : selectedGroupStatus}
                 </Badge>
               </div>
               <div className="rounded-2xl border border-border p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Water
+                  น้ำ
                 </p>
                 <p className="text-2xl font-semibold text-blue-600">
                   {selectedGroup.water
                     ? `${selectedGroup.water.consumption.toLocaleString()} m³`
                     : isWaterFixed
-                      ? "Fixed"
-                      : "Missing"}
+                      ? "เหมาจ่าย"
+                      : "ยังไม่บันทึก"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {selectedGroup.water
-                    ? `Prev ${selectedGroup.water.previousReading} • Curr ${selectedGroup.water.currentReading}`
+                    ? `ก่อนหน้า ${selectedGroup.water.previousReading} • ล่าสุด ${selectedGroup.water.currentReading}`
                     : isWaterFixed
-                      ? "Fixed monthly fee"
-                      : "Waiting for reading"}
+                      ? "เหมาจ่ายรายเดือน"
+                      : "รอการอ่านมิเตอร์"}
                 </p>
               </div>
               <div className="rounded-2xl border border-border p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Electric
+                  ไฟ
                 </p>
                 <p className="text-2xl font-semibold text-amber-600">
                   {selectedGroup.electric
                     ? `${selectedGroup.electric.consumption.toLocaleString()} kWh`
-                    : "Missing"}
+                    : "ยังไม่บันทึก"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {selectedGroup.electric
-                    ? `Prev ${selectedGroup.electric.previousReading} • Curr ${selectedGroup.electric.currentReading}`
-                    : "Awaiting electric meter"}
+                    ? `ก่อนหน้า ${selectedGroup.electric.previousReading} • ล่าสุด ${selectedGroup.electric.currentReading}`
+                    : "รอการอ่านมิเตอร์ไฟ"}
                 </p>
               </div>
               <div className="rounded-2xl border border-border p-4 flex flex-col justify-between">
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Actions
+                    การดำเนินการ
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -590,7 +610,7 @@ export default function ReadingsPage() {
                         router.push(`/overview/readings/${selectedGroup.id}`)
                       }
                     >
-                      View details
+                      ดูรายละเอียด
                     </Button>
                     <Button
                       size="sm"
@@ -602,25 +622,25 @@ export default function ReadingsPage() {
                       disabled={!isInvoiceReady || hasExistingInvoice}
                       title={
                         hasExistingInvoice
-                          ? "An invoice already exists for this reading group"
+                          ? "มีใบแจ้งหนี้แล้วสำหรับกลุ่มนี้"
                           : !isInvoiceReady
-                            ? "Complete all required readings first"
+                            ? "กรุณากรอกการอ่านให้ครบก่อน"
                             : undefined
                       }
                     >
-                      {hasExistingInvoice ? "Invoice exists" : "Generate invoice"}
+                      {hasExistingInvoice ? "มีใบแจ้งหนี้แล้ว" : "สร้างใบแจ้งหนี้"}
                     </Button>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Grouped reading ID:{" "}
+                  รหัสกลุ่มการอ่าน:{" "}
                   <span className="font-mono">{selectedGroup.id}</span>
                 </p>
               </div>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No meter readings yet to summarize.
+              ยังไม่มีข้อมูลการอ่านมิเตอร์สำหรับสรุป
             </p>
           )}
         </CardContent>
@@ -628,12 +648,12 @@ export default function ReadingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Missing Readings • {monthLabel}</CardTitle>
+          <CardTitle>รายการอ่านที่ขาด • {monthLabel}</CardTitle>
         </CardHeader>
         <CardContent>
           {missingReadings.length === 0 ? (
             <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              All rooms are up to date this month.
+              ทุกห้องอัปเดตครบสำหรับเดือนนี้
             </div>
           ) : (
             <DataTable
@@ -641,12 +661,12 @@ export default function ReadingsPage() {
               columns={[
                 {
                   key: "room",
-                  header: "Room",
+                  header: "ห้อง",
                   searchable: true,
                   render: (item) => (
                     <div>
                       <p className="text-sm font-medium text-foreground">
-                        Room {item.room.roomNumber}
+                        ห้อง {item.room.roomNumber}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {item.room.buildingName}
@@ -656,21 +676,21 @@ export default function ReadingsPage() {
                 },
                 {
                   key: "missing",
-                  header: "Missing",
+                  header: "ที่ขาด",
                   render: (item) => (
                     <div className="flex flex-wrap gap-2">
                       {item.missingWater && (
-                        <Badge variant="outline">Water</Badge>
+                        <Badge variant="outline">น้ำ</Badge>
                       )}
                       {item.missingElectric && (
-                        <Badge variant="outline">Electric</Badge>
+                        <Badge variant="outline">ไฟ</Badge>
                       )}
                     </div>
                   ),
                 },
                 {
                   key: "actions",
-                  header: "Actions",
+                  header: "การดำเนินการ",
                   render: (item) => (
                     <div className="flex flex-wrap gap-2">
                       {item.missingWater && (
@@ -683,7 +703,7 @@ export default function ReadingsPage() {
                             )
                           }
                         >
-                          Add Water
+                          เพิ่มมิเตอร์น้ำ
                         </Button>
                       )}
                       {item.missingElectric && (
@@ -696,14 +716,14 @@ export default function ReadingsPage() {
                             )
                           }
                         >
-                          Add Electric
+                          เพิ่มมิเตอร์ไฟ
                         </Button>
                       )}
                     </div>
                   ),
                 },
               ]}
-              searchPlaceholder="Search rooms..."
+              searchPlaceholder="ค้นหาห้อง..."
               pageSize={5}
               forcePagination
             />
@@ -713,24 +733,24 @@ export default function ReadingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Readings</CardTitle>
+          <CardTitle>รายการอ่านทั้งหมด</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <LoadingState message="Loading readings..." />
+            <LoadingState message="กำลังโหลดรายการอ่านมิเตอร์..." />
           ) : groupedReadings.length === 0 ? (
             <EmptyState
               icon={<Gauge className="h-8 w-8 text-muted-foreground" />}
-              title="No meter readings yet"
-              description="Start tracking utility usage by adding your first meter reading"
-              actionLabel="Add First Reading"
+              title="ยังไม่มีการอ่านมิเตอร์"
+              description="เริ่มติดตามการใช้สาธารณูปโภคด้วยการเพิ่มการอ่านครั้งแรก"
+              actionLabel="เพิ่มการอ่านครั้งแรก"
               actionHref="/overview/readings/new"
             />
           ) : (
             <DataTable
               data={groupedReadings}
               columns={columns}
-              searchPlaceholder="Search by tenant, room, or date..."
+              searchPlaceholder="ค้นหาตามผู้เช่า ห้อง หรือวันที่..."
               filters={filters}
               pageSize={10}
               forcePagination

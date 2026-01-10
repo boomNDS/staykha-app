@@ -20,7 +20,7 @@ export default function ReadingDetailPage() {
   const params = useParams();
   const { user } = useAuth();
   const readingId = params.id as string;
-  usePageTitle(`Reading ${readingId}`);
+  usePageTitle(`การอ่านมิเตอร์ ${readingId}`);
 
   const readingQuery = useQuery({
     queryKey: ["readings", readingId],
@@ -31,7 +31,7 @@ export default function ReadingDetailPage() {
     queryKey: ["settings", user?.teamId],
     queryFn: () => {
       if (!user?.teamId) {
-        throw new Error("Team ID is required to load settings");
+        throw new Error("จำเป็นต้องมี Team ID เพื่อโหลด Settings");
       }
       return settingsApi.get(user.teamId);
     },
@@ -39,13 +39,13 @@ export default function ReadingDetailPage() {
   });
 
   if (readingQuery.isLoading) {
-    return <LoadingState fullScreen message="Loading reading..." />;
+    return <LoadingState fullScreen message="กำลังโหลดการอ่านมิเตอร์..." />;
   }
 
   const reading = readingQuery.data?.reading as MeterReadingGroup | undefined;
 
   if (!reading) {
-    return <div className="text-center py-12">Reading not found</div>;
+    return <div className="py-12 text-center">ไม่พบการอ่านมิเตอร์</div>;
   }
 
   const statusVariant =
@@ -58,10 +58,12 @@ export default function ReadingDetailPage() {
   
   // Show settings required message if settings don't exist
   if (settingsQuery.isSuccess && !settings) {
-    return <SettingsRequired 
-      title="Settings Required"
-      description="You need to create settings for your team before you can view reading details."
-    />;
+    return (
+      <SettingsRequired
+        title="ต้องตั้งค่า Settings ก่อนใช้งาน"
+        description="คุณต้องสร้าง Settings ของทีมก่อนจึงจะดูรายละเอียดการอ่านได้"
+      />
+    );
   }
   
   const isWaterFixed = settings?.waterBillingMode === "fixed";
@@ -69,25 +71,37 @@ export default function ReadingDetailPage() {
   return (
     <div className="space-y-6 pb-8">
       <PageHeader
-        title="Monthly Readings"
-        description={`Room ${reading.roomNumber} • ${new Date(reading.readingDate).toLocaleDateString()}`}
+        title="การอ่านรายเดือน"
+        description={`ห้อง ${reading.roomNumber} • ${new Date(reading.readingDate).toLocaleDateString("th-TH")}`}
         showBack
-        actions={<Badge variant={statusVariant}>{reading.status}</Badge>}
+        actions={
+          <Badge variant={statusVariant}>
+            {reading.status === "pending"
+              ? "รอออกบิล"
+              : reading.status === "incomplete"
+                ? "ไม่ครบ"
+                : reading.status === "billed"
+                  ? "ออกบิลแล้ว"
+                  : reading.status === "paid"
+                    ? "ชำระแล้ว"
+                    : reading.status}
+          </Badge>
+        }
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Tenant & Room</CardTitle>
+          <CardTitle>ผู้เช่าและห้อง</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-center justify-between">
-            <span>Tenant</span>
+            <span>ผู้เช่า</span>
             <span className="font-medium text-foreground">
               {reading.tenantName || "—"}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span>Room</span>
+            <span>ห้อง</span>
             <span className="font-medium text-foreground">
               {reading.roomNumber || reading.roomId}
             </span>
@@ -99,7 +113,7 @@ export default function ReadingDetailPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Droplets className="h-5 w-5 text-blue-500" /> Water Meter
+              <Droplets className="h-5 w-5 text-blue-500" /> มิเตอร์น้ำ
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -107,19 +121,19 @@ export default function ReadingDetailPage() {
               <>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Previous</p>
+                    <p className="text-muted-foreground">ก่อนหน้า</p>
                     <p className="font-semibold text-foreground">
                       {reading.water.previousReading} m³
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Current</p>
+                    <p className="text-muted-foreground">ล่าสุด</p>
                     <p className="font-semibold text-foreground">
                       {reading.water.currentReading} m³
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Consumption</p>
+                    <p className="text-muted-foreground">การใช้</p>
                     <p className="font-semibold text-foreground">
                       {reading.water.consumption} m³
                     </p>
@@ -130,14 +144,14 @@ export default function ReadingDetailPage() {
                   <div className="overflow-hidden rounded-lg border border-border">
                     <img
                       src={reading.water.previousPhotoUrl}
-                      alt="Previous water reading"
+                      alt="รูปมิเตอร์น้ำก่อนหน้า"
                       className="h-36 w-full object-cover"
                     />
                   </div>
                   <div className="overflow-hidden rounded-lg border border-border">
                     <img
                       src={reading.water.currentPhotoUrl}
-                      alt="Current water reading"
+                      alt="รูปมิเตอร์น้ำล่าสุด"
                       className="h-36 w-full object-cover"
                     />
                   </div>
@@ -146,13 +160,13 @@ export default function ReadingDetailPage() {
             ) : isWaterFixed ? (
               <div className="space-y-3 text-sm">
                 <p className="text-muted-foreground">
-                  Water is billed as a fixed monthly fee.
+                  ค่าน้ำคิดแบบเหมาจ่ายรายเดือน
                 </p>
               </div>
             ) : (
               <div className="space-y-3 text-sm">
                 <p className="text-muted-foreground">
-                  Water reading is missing for this month.
+                  ยังไม่มีการอ่านมิเตอร์น้ำสำหรับเดือนนี้
                 </p>
                 <Button
                   variant="outline"
@@ -162,7 +176,7 @@ export default function ReadingDetailPage() {
                     )
                   }
                 >
-                  Add Water Reading
+                  เพิ่มมิเตอร์น้ำ
                 </Button>
               </div>
             )}
@@ -172,7 +186,7 @@ export default function ReadingDetailPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-amber-500" /> Electric Meter
+              <Zap className="h-5 w-5 text-amber-500" /> มิเตอร์ไฟ
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -180,19 +194,19 @@ export default function ReadingDetailPage() {
               <>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground">Previous</p>
+                    <p className="text-muted-foreground">ก่อนหน้า</p>
                     <p className="font-semibold text-foreground">
                       {reading.electric.previousReading} kWh
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Current</p>
+                    <p className="text-muted-foreground">ล่าสุด</p>
                     <p className="font-semibold text-foreground">
                       {reading.electric.currentReading} kWh
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Consumption</p>
+                    <p className="text-muted-foreground">การใช้</p>
                     <p className="font-semibold text-foreground">
                       {reading.electric.consumption} kWh
                     </p>
@@ -203,14 +217,14 @@ export default function ReadingDetailPage() {
                   <div className="overflow-hidden rounded-lg border border-border">
                     <img
                       src={reading.electric.previousPhotoUrl}
-                      alt="Previous electric reading"
+                      alt="รูปมิเตอร์ไฟก่อนหน้า"
                       className="h-36 w-full object-cover"
                     />
                   </div>
                   <div className="overflow-hidden rounded-lg border border-border">
                     <img
                       src={reading.electric.currentPhotoUrl}
-                      alt="Current electric reading"
+                      alt="รูปมิเตอร์ไฟล่าสุด"
                       className="h-36 w-full object-cover"
                     />
                   </div>
@@ -219,7 +233,7 @@ export default function ReadingDetailPage() {
             ) : (
               <div className="space-y-3 text-sm">
                 <p className="text-muted-foreground">
-                  Electric reading is missing for this month.
+                  ยังไม่มีการอ่านมิเตอร์ไฟสำหรับเดือนนี้
                 </p>
                 <Button
                   variant="outline"
@@ -229,7 +243,7 @@ export default function ReadingDetailPage() {
                     )
                   }
                 >
-                  Add Electric Reading
+                  เพิ่มมิเตอร์ไฟ
                 </Button>
               </div>
             )}
