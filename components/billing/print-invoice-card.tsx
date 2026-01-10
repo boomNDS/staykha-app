@@ -34,202 +34,159 @@ export function PrintInvoiceCard({
   const isWaterFixed = invoice.waterBillingMode === "fixed";
   const taxRate = settings?.taxRate ?? 0;
 
-  // Thai labels with fallbacks
   const labelInvoice = settings?.labelInvoice || "ใบแจ้งหนี้";
   const labelRoomRent = settings?.labelRoomRent || "ค่าเช่าห้อง";
   const labelWater = settings?.labelWater || "ค่าน้ำประปา";
   const labelElectricity = settings?.labelElectricity || "ค่าไฟฟ้า";
   const labelTotal = "จำนวนเงินรวม";
 
-  // Payment details
   const bankName = settings?.bankName || "";
   const bankAccountNumber = settings?.bankAccountNumber || "";
   const lineId = settings?.lineId || "";
   const latePaymentPenalty = settings?.latePaymentPenaltyPerDay || 0;
   const dueDateDay = settings?.dueDateDayOfMonth || 5;
 
-  // Format due date message
   const dueDateMessage = `ภายในวันที่ ${dueDateDay} ของทุกเดือน`;
   const penaltyMessage =
     latePaymentPenalty > 0
-      ? `หากเกินกำหนด ชำระค่าปรับวันละ ${formatCurrency(latePaymentPenalty, settings?.currency || "THB")}`
+      ? `หากเกินกำหนด ชำระค่าปรับวันละ ${formatCurrency(
+          latePaymentPenalty,
+          settings?.currency || "THB",
+        )}`
       : "";
+
+  const issueDate = new Date(
+    invoice.issueDate || invoice.createdAt || new Date(),
+  );
+  const formattedIssueDate = issueDate.toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
     <div className={className}>
-      <div className="w-full max-w-full space-y-3 rounded-lg border border-border bg-white p-3 text-xs text-slate-900 shadow-sm print:p-4 print:max-w-none print:text-sm">
-        {/* Header */}
-        <div className="text-center">
-          <p className="text-lg font-bold print:text-xl">{labelInvoice}</p>
-          <p className="mt-1 text-sm font-semibold print:text-base">
+      <div className="flex h-full w-full flex-col gap-6 rounded-xl border border-border bg-white p-6 text-slate-900 shadow-[0_18px_60px_rgba(15,23,42,0.08)] print:p-8">
+        <header className="space-y-2 text-center">
+          <p className="text-3xl font-black tracking-tight print:text-3xl">
+            {labelInvoice}
+          </p>
+          <p className="text-xl font-semibold text-slate-700 print:text-2xl">
             ห้องเลขที่ {roomLabel}
           </p>
-          <p className="mt-0.5 text-[10px] text-slate-500 print:text-xs">
-            {new Date(
-              invoice.issueDate || invoice.createdAt || new Date(),
-            ).toLocaleDateString("th-TH", {
-              month: "long",
-              year: "numeric",
-            })}
+          <p className="text-sm text-slate-500 print:text-base">
+            {formattedIssueDate}
           </p>
-        </div>
+        </header>
 
-        {/* Billing Table */}
-        <div className="overflow-x-auto rounded-md border-2 border-slate-300">
-          <table className="w-full min-w-full text-sm table-fixed">
-            <colgroup>
-              <col className="w-[25%]" />
-              <col className="w-[18%]" />
-              <col className="w-[18%]" />
-              <col className="w-[39%]" />
-            </colgroup>
-            <thead className="bg-slate-100 text-slate-700">
-              <tr>
-                <th className="px-1.5 py-1.5 text-left font-semibold text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                  รายการ
-                </th>
-                <th className="px-1.5 py-1.5 text-center font-semibold text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                  เลขมิเตอร์ก่อน
-                </th>
-                <th className="px-1.5 py-1.5 text-center font-semibold text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                  เลขมิเตอร์หลัง
-                </th>
-                <th className="px-1.5 py-1.5 text-right font-semibold text-[10px] print:px-2 print:py-1.5 print:text-xs whitespace-nowrap">
-                  จำนวนเงินรวม
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {/* Room Rent */}
-              {roomRent && roomRent > 0 && (
-                <tr>
-                  <td className="px-1.5 py-1.5 font-medium text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                    {labelRoomRent}
-                  </td>
-                  <td className="px-1.5 py-1.5 text-center text-slate-400 text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                    —
-                  </td>
-                  <td className="px-1.5 py-1.5 text-center text-slate-400 text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                    —
-                  </td>
-                  <td className="px-1.5 py-1.5 text-right font-mono font-semibold text-[10px] print:px-2 print:py-1.5 print:text-xs whitespace-nowrap">
-                    {formatCurrency(roomRent, settings?.currency || "THB")}
-                  </td>
-                </tr>
-              )}
-
-              {/* Water */}
-              <tr>
-                <td className="px-1.5 py-1.5 font-medium text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                  {labelWater} {isWaterFixed ? "(ค่าบริการ)" : ""}
-                </td>
-                <td className="px-1.5 py-1.5 text-center text-slate-600 text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                  {isWaterFixed
-                    ? "—"
-                    : waterReading?.previousReading != null
-                      ? waterReading.previousReading.toLocaleString()
-                      : "—"}
-                </td>
-                <td className="px-1.5 py-1.5 text-center text-slate-600 text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                  {isWaterFixed
-                    ? "—"
-                    : waterReading?.currentReading != null
-                      ? waterReading.currentReading.toLocaleString()
-                      : "—"}
-                </td>
-                <td className="px-1.5 py-1.5 text-right font-mono font-semibold text-[10px] print:px-2 print:py-1.5 print:text-xs whitespace-nowrap">
-                  {formatCurrency(waterSubtotal, settings?.currency || "THB")}
-                </td>
-              </tr>
-
-              {/* Electricity */}
-              <tr>
-                <td className="px-1.5 py-1.5 font-medium text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                  {labelElectricity}
-                </td>
-                <td className="px-1.5 py-1.5 text-center text-slate-600 text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                  {electricReading?.previousReading != null
-                    ? electricReading.previousReading.toLocaleString()
-                    : "—"}
-                </td>
-                <td className="px-1.5 py-1.5 text-center text-slate-600 text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                  {electricReading?.currentReading != null
-                    ? electricReading.currentReading.toLocaleString()
-                    : "—"}
-                </td>
-                <td className="px-1.5 py-1.5 text-right font-mono font-semibold text-[10px] print:px-2 print:py-1.5 print:text-xs whitespace-nowrap">
-                  {formatCurrency(
-                    electricSubtotal,
-                    settings?.currency || "THB",
-                  )}
-                </td>
-              </tr>
-
-              {/* Subtotal */}
-              <tr>
-                <td
-                  className="px-1.5 py-1.5 font-medium text-[10px] print:px-2 print:py-1.5 print:text-xs"
-                  colSpan={3}
-                >
-                  รวมย่อย
-                </td>
-                <td className="px-1.5 py-1.5 text-right font-mono font-semibold text-[10px] print:px-2 print:py-1.5 print:text-xs whitespace-nowrap">
-                  {formatCurrency(subtotal, settings?.currency || "THB")}
-                </td>
-              </tr>
-
-              {/* Tax */}
-              {tax > 0 && taxRate > 0 && (
-                <tr>
-                  <td
-                    className="px-1.5 py-1.5 font-medium text-[10px] print:px-2 print:py-1.5 print:text-xs"
-                    colSpan={3}
-                  >
-                    ภาษีมูลค่าเพิ่ม ({taxRate}%)
-                  </td>
-                  <td className="px-1.5 py-1.5 text-right font-mono font-semibold text-[10px] print:px-2 print:py-1.5 print:text-xs whitespace-nowrap">
-                    {formatCurrency(tax, settings?.currency || "THB")}
-                  </td>
-                </tr>
-              )}
-
-              {/* Total */}
-              <tr className="bg-slate-50">
-                <td className="px-1.5 py-1.5 font-bold text-xs print:px-2 print:py-1.5 print:text-sm">
-                  {labelTotal}
-                </td>
-                <td className="px-1.5 py-1.5 text-center text-slate-400 text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                  —
-                </td>
-                <td className="px-1.5 py-1.5 text-center text-slate-400 text-[10px] print:px-2 print:py-1.5 print:text-xs">
-                  —
-                </td>
-                <td className="px-1.5 py-1.5 text-right font-mono font-bold text-xs print:px-2 print:py-1.5 print:text-sm whitespace-nowrap">
-                  {formatCurrency(total, settings?.currency || "THB")}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Payment Instructions */}
-        <div className="space-y-2 border-t-2 border-slate-300 pt-2 print:space-y-2.5 print:pt-3">
+        <div className="grid gap-4 text-sm text-slate-600 print:text-base sm:grid-cols-2">
           <div className="space-y-1">
-            <p className="font-semibold text-slate-900 text-[10px] print:text-xs">
-              วันสุดท้ายที่ต้องชำระ : {dueDateMessage}
+            <p className="text-xs uppercase tracking-wide text-slate-500 print:text-[10px]">
+              รอบบิล
             </p>
-            {penaltyMessage && (
-              <p className="font-bold text-red-600 text-[10px] print:text-xs">
-                {penaltyMessage}
-              </p>
-            )}
+            <p className="text-base font-semibold text-slate-900">
+              {invoice.billingPeriod || "—"}
+            </p>
           </div>
+          <div className="space-y-1">
+            <p className="text-xs uppercase tracking-wide text-slate-500 print:text-[10px]">
+              สถานะ
+            </p>
+            <p className="text-base font-semibold text-slate-900 capitalize">
+              {invoice.status}
+            </p>
+          </div>
+        </div>
 
-          {/* Banking Information */}
+        <section className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <div className="grid grid-cols-4 gap-2 border-b border-slate-200 bg-slate-100 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-600 print:text-xs">
+            <span className="col-span-2 text-left">รายการ</span>
+            <span className="text-center">ก่อนหน้า</span>
+            <span className="text-right">จำนวนเงิน</span>
+          </div>
+          <div className="space-y-2 px-4 py-4 text-[11px] text-slate-800 print:text-xs">
+            {roomRent && roomRent > 0 && (
+              <div className="grid grid-cols-4 gap-2 font-semibold text-slate-900">
+                <span className="col-span-2">{labelRoomRent}</span>
+                <span className="text-center text-xs text-slate-500">—</span>
+                <span className="text-right">
+                  {formatCurrency(roomRent, settings?.currency || "THB")}
+                </span>
+              </div>
+            )}
+            <div className="grid grid-cols-4 gap-2">
+              <span className="col-span-2 font-semibold text-slate-900">
+                {labelWater} {isWaterFixed ? "(ค่าบริการ)" : ""}
+              </span>
+              <span className="text-center text-xs text-slate-500">
+                {isWaterFixed
+                  ? "—"
+                  : waterReading?.previousReading != null
+                    ? waterReading.previousReading.toLocaleString()
+                    : "—"}
+              </span>
+              <span className="text-right font-semibold text-slate-900">
+                {formatCurrency(waterSubtotal, settings?.currency || "THB")}
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <span className="col-span-2 font-semibold text-slate-900">
+                {labelElectricity}
+              </span>
+              <span className="text-center text-xs text-slate-500">
+                {electricReading?.previousReading != null
+                  ? electricReading.previousReading.toLocaleString()
+                  : "—"}
+              </span>
+              <span className="text-right font-semibold text-slate-900">
+                {formatCurrency(electricSubtotal, settings?.currency || "THB")}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm print:text-base">
+          <div className="grid grid-cols-2 gap-3 text-slate-700">
+            <span className="text-[11px] uppercase tracking-wide text-slate-500 print:text-[10px]">
+              ยอดรวมย่อย
+            </span>
+            <span className="text-right font-semibold text-slate-900">
+              {formatCurrency(subtotal, settings?.currency || "THB")}
+            </span>
+          </div>
+          {tax > 0 && taxRate > 0 && (
+            <div className="grid grid-cols-2 gap-3 text-slate-700">
+              <span className="text-[11px] uppercase tracking-wide text-slate-500 print:text-[10px]">
+                ภาษีมูลค่าเพิ่ม ({taxRate}%)
+              </span>
+              <span className="text-right font-semibold text-slate-900">
+                {formatCurrency(tax, settings?.currency || "THB")}
+              </span>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3 border-t border-slate-200 pt-3">
+            <span className="text-[11px] uppercase tracking-wide text-slate-500 print:text-[10px]">
+              {labelTotal}
+            </span>
+            <span className="text-right text-2xl font-bold text-slate-900">
+              {formatCurrency(total, settings?.currency || "THB")}
+            </span>
+          </div>
+        </section>
+
+        <section className="flex flex-col gap-3 border-t border-slate-200 pt-4 text-sm text-slate-700 print:text-base">
+          <p className="text-sm font-semibold text-slate-900 print:text-lg">
+            กรุณาชำระภายใน {dueDateMessage}
+          </p>
+          {penaltyMessage && (
+            <p className="text-sm font-semibold text-red-600 print:text-base">
+              {penaltyMessage}
+            </p>
+          )}
           {(bankName || bankAccountNumber || lineId) && (
-            <div className="space-y-0.5">
+            <div className="space-y-1 text-base font-medium text-slate-900">
               {(bankName || bankAccountNumber) && (
-                <p className="font-medium text-slate-700 text-[10px] print:text-xs">
+                <p>
                   {bankName && bankAccountNumber ? (
                     <>
                       ชำระเงินได้ที่ {bankName} เลขบัญชี {bankAccountNumber}
@@ -241,40 +198,10 @@ export function PrintInvoiceCard({
                   ) : null}
                 </p>
               )}
-              {lineId && (
-                <p className="font-medium text-slate-700 text-[10px] print:text-xs">
-                  ไอดีไลน์ {lineId}
-                </p>
-              )}
+              {lineId && <p>Line: {lineId}</p>}
             </div>
           )}
-        </div>
-
-        {/* Footer Info */}
-        <div className="border-t border-slate-200 pt-2 text-[10px] text-slate-500 print:pt-2.5 print:text-xs">
-          <div className="flex items-center justify-between">
-            <span>วันที่ออกบิล</span>
-            <span className="font-medium text-slate-700">
-              {new Date(
-                invoice.issueDate || invoice.createdAt || new Date(),
-              ).toLocaleDateString("th-TH")}
-            </span>
-          </div>
-          <div className="mt-0.5 flex items-center justify-between print:mt-1">
-            <span>วันครบกำหนดชำระ</span>
-            <span className="font-medium text-slate-700">
-              {new Date(invoice.dueDate).toLocaleDateString("th-TH")}
-            </span>
-          </div>
-          {invoice.invoiceNumber && (
-            <div className="mt-0.5 flex items-center justify-between print:mt-1">
-              <span>เลขที่ใบแจ้งหนี้</span>
-              <span className="font-mono text-slate-700">
-                {invoice.invoiceNumber}
-              </span>
-            </div>
-          )}
-        </div>
+        </section>
       </div>
     </div>
   );
