@@ -67,6 +67,15 @@ export default function ReadingDetailPage() {
   }
 
   const isWaterFixed = settings?.waterBillingMode === "fixed";
+  const formattedReadingDate = (() => {
+    const match = reading.readingDate.match(/^\d{4}-\d{2}-\d{2}/);
+    if (match) return match[0];
+    const parsed = new Date(reading.readingDate);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().slice(0, 10);
+    }
+    return reading.readingDate;
+  })();
 
   return (
     <div className="space-y-6 pb-8">
@@ -170,7 +179,7 @@ export default function ReadingDetailPage() {
                   variant="outline"
                   onClick={() =>
                     router.push(
-                      `/overview/readings/new?roomId=${reading.roomId}&date=${reading.readingDate}&meter=water`,
+                      `/overview/readings/new?roomId=${reading.roomId}&date=${formattedReadingDate}&meter=water&readingGroupId=${reading.id}`,
                     )
                   }
                 >
@@ -237,7 +246,7 @@ export default function ReadingDetailPage() {
                   variant="outline"
                   onClick={() =>
                     router.push(
-                      `/overview/readings/new?roomId=${reading.roomId}&date=${reading.readingDate}&meter=electric`,
+                      `/overview/readings/new?roomId=${reading.roomId}&date=${formattedReadingDate}&meter=electric&readingGroupId=${reading.id}`,
                     )
                   }
                 >

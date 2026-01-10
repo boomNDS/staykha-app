@@ -320,6 +320,15 @@ export default function ReadingsPage() {
       };
     })
     .filter((item) => item.hasMissing);
+  const formatDateParam = (value: string) => {
+    const match = value.match(/^\d{4}-\d{2}-\d{2}/);
+    if (match) return match[0];
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().slice(0, 10);
+    }
+    return value;
+  };
   const todayValue = (() => {
     const now = new Date();
     const year = now.getFullYear();
@@ -820,13 +829,15 @@ export default function ReadingsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const dateParam =
-                              item.currentGroup?.readingDate ?? todayValue;
-                            const groupParam = item.currentGroup
-                              ? `&readingGroupId=${item.currentGroup.id}`
-                              : "";
+                            if (item.currentGroup) {
+                              router.push(
+                                `/overview/readings/${item.currentGroup.id}`,
+                              );
+                              return;
+                            }
+                            const dateParam = formatDateParam(todayValue);
                             router.push(
-                              `/overview/readings/new?roomId=${item.room.id}&date=${dateParam}&meter=water${groupParam}`,
+                              `/overview/readings/new?roomId=${item.room.id}&date=${dateParam}&meter=water`,
                             );
                           }}
                         >
@@ -838,13 +849,15 @@ export default function ReadingsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const dateParam =
-                              item.currentGroup?.readingDate ?? todayValue;
-                            const groupParam = item.currentGroup
-                              ? `&readingGroupId=${item.currentGroup.id}`
-                              : "";
+                            if (item.currentGroup) {
+                              router.push(
+                                `/overview/readings/${item.currentGroup.id}`,
+                              );
+                              return;
+                            }
+                            const dateParam = formatDateParam(todayValue);
                             router.push(
-                              `/overview/readings/new?roomId=${item.room.id}&date=${dateParam}&meter=electric${groupParam}`,
+                              `/overview/readings/new?roomId=${item.room.id}&date=${dateParam}&meter=electric`,
                             );
                           }}
                         >
