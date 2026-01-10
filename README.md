@@ -155,7 +155,7 @@ erDiagram
     User ||--o{ Building : owns
     User ||--o{ AdminInvitation : creates
     Building ||--o{ Room : contains
-    Room ||--o| Tenant : "has (0..1)"
+    Room ||--o| Tenant : "has optional tenant"
     Room ||--o{ ReadingGroup : "has readings"
     ReadingGroup ||--o{ Invoice : "generates"
     Tenant ||--o{ Invoice : "receives"
@@ -171,7 +171,7 @@ erDiagram
         string id PK
         string email
         string name
-        string role "owner|admin"
+        string role "owner/admin"
         string teamId FK
     }
 
@@ -192,7 +192,7 @@ erDiagram
         string buildingId FK
         string buildingName
         number floor
-        string status "occupied|vacant|maintenance"
+        string status "occupied/vacant/maintenance"
         number monthlyRent
         number size
         string tenantId FK "nullable"
@@ -212,7 +212,7 @@ erDiagram
         string idCardNumber "nullable"
         string emergencyContact "nullable"
         string emergencyPhone "nullable"
-        string status "active|inactive|expired"
+        string status "active/inactive/expired"
         string teamId FK
     }
 
@@ -222,7 +222,7 @@ erDiagram
         string roomNumber
         string tenantName
         date readingDate
-        string status "incomplete|pending|billed|paid"
+        string status "incomplete/pending/billed/paid"
         json water "nullable"
         json electric "nullable"
         string teamId FK
@@ -238,7 +238,7 @@ erDiagram
         string billingPeriod
         date issueDate
         date dueDate
-        string status "draft|sent|paid|pending|overdue"
+        string status "draft/sent/paid/pending/overdue"
         number waterUsage
         number waterRate
         number waterAmount
@@ -255,7 +255,7 @@ erDiagram
         number electricRatePerUnit "nullable"
         number waterSubtotal "nullable"
         number electricSubtotal "nullable"
-        string waterBillingMode "metered|fixed, nullable"
+        string waterBillingMode "metered/fixed, nullable"
         number waterFixedFee "nullable"
         string readingGroupId FK "nullable"
         json readings "nullable"
@@ -266,7 +266,7 @@ erDiagram
         string id PK
         string teamId FK
         number waterRatePerUnit
-        string waterBillingMode "metered|fixed"
+        string waterBillingMode "metered/fixed"
         number waterFixedFee
         number electricRatePerUnit
         number taxRate
@@ -296,7 +296,7 @@ erDiagram
         string teamId FK
         string invitedBy FK
         string invitedByName
-        string status "pending|accepted|expired"
+        string status "pending/accepted/expired"
         string inviteCode
         date expiresAt
         json buildings "nullable"
