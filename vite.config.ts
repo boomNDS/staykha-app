@@ -13,6 +13,7 @@ export default defineConfig({
     ],
   },
   server: {
+    host: "127.0.0.1",
     // Enable HMR (Hot Module Replacement) for auto-reload
     hmr: {
       // HMR is enabled by default, but you can configure the port if needed
