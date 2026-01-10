@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, Droplets, Keyboard, Loader2, Zap } from "lucide-react";
 import * as React from "react";
 import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 import { SettingsRequired } from "@/components/settings-required";
 import { ConsumptionSummary } from "@/components/readings/consumption-summary";
 import { MeterReadingSection } from "@/components/readings/meter-reading-section";
@@ -24,6 +25,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useToast } from "@/hooks/use-toast";
 import { readingsApi, roomsApi, settingsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter, useSearchParams } from "@/lib/router";
 import { createReadingFormSchema, mapZodErrors } from "@/lib/schemas";
 import type { ReadingFormValues } from "@/lib/types";
@@ -74,6 +76,18 @@ export default function NewReadingPage() {
       <SettingsRequired
         title="ต้องตั้งค่า Settings ก่อนใช้งาน"
         description="คุณต้องสร้าง Settings ของทีมก่อนจึงจะเพิ่มการอ่านมิเตอร์ได้"
+      />
+    );
+  }
+
+  if (roomsQuery.isSuccess && rooms.length === 0) {
+    return (
+      <EmptyState
+        icon={<Droplets className="h-8 w-8 text-muted-foreground" />}
+        title="ต้องสร้างห้องก่อนเพิ่มมิเตอร์"
+        description="ยังไม่มีห้องในระบบ กรุณาสร้างห้องเพื่อบันทึกการอ่านมิเตอร์"
+        actionLabel="เพิ่มห้อง"
+        actionHref="/overview/rooms/new"
       />
     );
   }
@@ -302,9 +316,14 @@ export default function NewReadingPage() {
 
       router.push("/overview/readings");
     } catch (error: any) {
+      logError(error, {
+        scope: "readings",
+        action: "create",
+        metadata: { roomId: formData.roomId, readingDate: formData.readingDate },
+      });
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: error.message || "ไม่สามารถเพิ่มการอ่านมิเตอร์ได้",
+        description: getErrorMessage(error, "ไม่สามารถเพิ่มการอ่านมิเตอร์ได้"),
         variant: "destructive",
       });
     } finally {

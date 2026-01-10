@@ -1,10 +1,10 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calculator, Wand2 } from "lucide-react";
+import { Building2, Calculator, Wand2 } from "lucide-react";
 import * as React from "react";
+import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { SettingsRequired } from "@/components/settings-required";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,6 +25,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { buildingsApi, roomsApi, settingsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { bulkRoomSchema, mapZodErrors } from "@/lib/schemas";
 import type { BulkRoomFormValues } from "@/lib/types";
@@ -68,12 +69,14 @@ export default function BulkRoomPage() {
 
   const settings = settingsQuery.data?.settings;
 
-  // Show settings required message if settings don't exist
-  if (settingsQuery.isSuccess && !settings) {
+  if (buildingsQuery.isSuccess && buildings.length === 0) {
     return (
-      <SettingsRequired
-        title="ต้องตั้งค่า Settings ก่อนใช้งาน"
-        description="คุณต้องสร้าง Settings ของทีมก่อนจึงจะเพิ่มห้องแบบหลายรายการได้"
+      <EmptyState
+        icon={<Building2 className="h-8 w-8 text-muted-foreground" />}
+        title="ต้องสร้างอาคารก่อนเพิ่มห้อง"
+        description="ยังไม่มีอาคารในระบบ กรุณาสร้างอาคารก่อนเพื่อเพิ่มห้อง"
+        actionLabel="สร้างอาคาร"
+        actionHref="/overview/buildings/new"
       />
     );
   }
@@ -156,9 +159,14 @@ export default function BulkRoomPage() {
       });
       router.push("/overview/rooms");
     } catch (error: any) {
+      logError(error, {
+        scope: "rooms",
+        action: "bulk-create",
+        metadata: { buildingId: formData.buildingId },
+      });
       toast({
         title: "สร้างห้องแบบหลายรายการไม่สำเร็จ",
-        description: error.message || "สร้างห้องไม่สำเร็จ",
+        description: getErrorMessage(error, "สร้างห้องไม่สำเร็จ"),
         variant: "destructive",
       });
     } finally {

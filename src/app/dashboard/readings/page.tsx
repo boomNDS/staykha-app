@@ -11,6 +11,7 @@ import { SettingsRequired } from "@/components/settings-required";
 import { TableRowActions } from "@/components/table-row-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
+  buildingsApi,
   invoicesApi,
   readingsApi,
   roomsApi,
@@ -46,6 +48,10 @@ export default function ReadingsPage() {
   const readingsQuery = useQuery({
     queryKey: ["readings"],
     queryFn: () => readingsApi.getAll(),
+  });
+  const buildingsQuery = useQuery({
+    queryKey: ["buildings"],
+    queryFn: () => buildingsApi.getAll(),
   });
   const settingsQuery = useQuery({
     queryKey: ["settings", user?.teamId],
@@ -94,34 +100,71 @@ export default function ReadingsPage() {
 
   // All hooks must be called before any conditional returns
   const readings = readingsQuery.data?.readings ?? [];
+  const buildings = buildingsQuery.data?.buildings ?? [];
   const rooms = roomsQuery.data?.rooms ?? [];
   const settings = settingsQuery.data?.settings;
   const isLoading = readingsQuery.isLoading;
   const waterBillingMode = settings?.waterBillingMode ?? "metered";
   const isWaterFixed = waterBillingMode === "fixed";
   const groupedReadings = readings as MeterReadingGroup[];
+  const [selectedPeriod, setSelectedPeriod] = React.useState(() =>
+    new Date().toISOString().slice(0, 7),
+  );
+
+  const periodOptions = React.useMemo(() => {
+    const options = [{ value: "all", label: "ทุกงวด" }];
+    const now = new Date();
+    for (let i = 0; i < 12; i += 1) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = date.toISOString().slice(0, 7);
+      const label = date.toLocaleString("th-TH", {
+        month: "long",
+        year: "numeric",
+      });
+      options.push({ value, label });
+    }
+    return options;
+  }, []);
+
+  const filteredReadings = React.useMemo(() => {
+    if (selectedPeriod === "all") {
+      return groupedReadings;
+    }
+    return groupedReadings.filter((group) =>
+      group.readingDate.startsWith(selectedPeriod),
+    );
+  }, [groupedReadings, selectedPeriod]);
+
+  const uniquePeriods = React.useMemo(() => {
+    const set = new Set<string>();
+    groupedReadings.forEach((group) => {
+      set.add(group.readingDate.slice(0, 7));
+    });
+    return set;
+  }, [groupedReadings]);
+  const hasMixedPeriods = selectedPeriod === "all" && uniquePeriods.size > 1;
 
   // All useEffect and useMemo hooks must be called before any early returns
   React.useEffect(() => {
-    if (!groupedReadings.length) {
+    if (!filteredReadings.length) {
       setSelectedGroupId(null);
       return;
     }
     if (
       !selectedGroupId ||
-      !groupedReadings.some((group) => group.id === selectedGroupId)
+      !filteredReadings.some((group) => group.id === selectedGroupId)
     ) {
-      setSelectedGroupId(groupedReadings[0].id);
+      setSelectedGroupId(filteredReadings[0].id);
     }
-  }, [groupedReadings, selectedGroupId]);
+  }, [filteredReadings, selectedGroupId]);
 
   const selectedGroup = React.useMemo(() => {
-    if (!groupedReadings.length) return null;
+    if (!filteredReadings.length) return null;
     return (
-      groupedReadings.find((group) => group.id === selectedGroupId) ??
-      groupedReadings[0]
+      filteredReadings.find((group) => group.id === selectedGroupId) ??
+      filteredReadings[0]
     );
-  }, [groupedReadings, selectedGroupId]);
+  }, [filteredReadings, selectedGroupId]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -146,6 +189,27 @@ export default function ReadingsPage() {
     );
   }
 
+  if (roomsQuery.isSuccess && rooms.length === 0) {
+    const actionHref =
+      buildingsQuery.isSuccess && buildings.length === 0
+        ? "/overview/buildings/new"
+        : "/overview/rooms/new";
+    const actionLabel =
+      buildingsQuery.isSuccess && buildings.length === 0
+        ? "สร้างอาคาร"
+        : "เพิ่มห้อง";
+
+    return (
+      <EmptyState
+        icon={<Gauge className="h-8 w-8 text-muted-foreground" />}
+        title="ต้องสร้างห้องก่อนอ่านมิเตอร์"
+        description="ยังไม่มีห้องในระบบ กรุณาสร้างอาคารและเพิ่มห้องก่อนจึงจะบันทึกการอ่านมิเตอร์ได้"
+        actionLabel={actionLabel}
+        actionHref={actionHref}
+      />
+    );
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "billed":
@@ -161,13 +225,19 @@ export default function ReadingsPage() {
     }
   };
 
-  const monthLabel = new Date().toLocaleString("th-TH", {
-    month: "long",
-    year: "numeric",
-  });
-  const monthKey = new Date().toISOString().slice(0, 7);
+  const monthKey =
+    selectedPeriod === "all"
+      ? new Date().toISOString().slice(0, 7)
+      : selectedPeriod;
+  const monthLabel =
+    selectedPeriod === "all"
+      ? "ทุกงวด"
+      : new Date(`${monthKey}-01`).toLocaleString("th-TH", {
+          month: "long",
+          year: "numeric",
+        });
   const readingsByRoom = new Map<string, MeterReadingGroup[]>();
-  groupedReadings.forEach((group) => {
+  filteredReadings.forEach((group) => {
     if (!readingsByRoom.has(group.roomId)) {
       readingsByRoom.set(group.roomId, []);
     }
@@ -192,6 +262,14 @@ export default function ReadingsPage() {
     Boolean(selectedGroup?.electric) &&
     (isWaterFixed || Boolean(selectedGroup?.water)) &&
     !hasExistingInvoice;
+  const missingReadingsLabel = selectedGroup
+    ? [
+        !selectedGroup.electric ? "มิเตอร์ไฟ" : null,
+        !isWaterFixed && !selectedGroup.water ? "มิเตอร์น้ำ" : null,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : "";
 
   const _handleReminder = (roomId: string, type: "water" | "electric") => {
     const key = `${roomId}-${type}`;
@@ -438,15 +516,41 @@ export default function ReadingsPage() {
         title="อ่านมิเตอร์"
         description="บันทึกค่าน้ำและค่าไฟพร้อมกัน หรืออัปเดตทีละมิเตอร์ภายหลังได้"
         actions={
-          <Button
-            onClick={() => router.push("/overview/readings/new")}
-            className="w-full sm:w-auto"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            เพิ่มการอ่านมิเตอร์
-          </Button>
+          <>
+            <Select
+              value={selectedPeriod}
+              onValueChange={(value) => setSelectedPeriod(value)}
+            >
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="เลือกงวดบิล" />
+              </SelectTrigger>
+              <SelectContent>
+                {periodOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={() => router.push("/overview/readings/new")}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              เพิ่มการอ่านมิเตอร์
+            </Button>
+          </>
         }
       />
+
+      {hasMixedPeriods ? (
+        <Alert>
+          <AlertTitle>มีการอ่านหลายงวด</AlertTitle>
+          <AlertDescription>
+            มีการอ่านมิเตอร์หลายเดือนในรายการนี้ โปรดเลือกงวดบิลก่อนสร้างใบแจ้งหนี้
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -457,9 +561,9 @@ export default function ReadingsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
-              {groupedReadings.length}
+              {filteredReadings.length}
             </div>
-            <p className="text-xs text-muted-foreground">เดือนนี้</p>
+            <p className="text-xs text-muted-foreground">{monthLabel}</p>
           </CardContent>
         </Card>
         <Card>
@@ -471,7 +575,7 @@ export default function ReadingsPage() {
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
               {
-                groupedReadings.filter((group) => group.status === "pending")
+                filteredReadings.filter((group) => group.status === "pending")
                   .length
               }
             </div>
@@ -487,7 +591,7 @@ export default function ReadingsPage() {
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
               {
-                groupedReadings.filter((group) => group.status === "incomplete")
+                filteredReadings.filter((group) => group.status === "incomplete")
                   .length
               }
             </div>
@@ -503,7 +607,7 @@ export default function ReadingsPage() {
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
               {
-                groupedReadings.filter((group) => group.status === "billed")
+                filteredReadings.filter((group) => group.status === "billed")
                   .length
               }
             </div>
@@ -527,7 +631,7 @@ export default function ReadingsPage() {
                 <SelectValue placeholder="เลือกห้อง" />
               </SelectTrigger>
               <SelectContent>
-                {groupedReadings.map((group) => (
+                {filteredReadings.map((group) => (
                   <SelectItem key={group.id} value={group.id}>
                     {group.roomNumber} •{" "}
                     {new Date(group.readingDate).toLocaleString("th-TH", {
@@ -636,6 +740,13 @@ export default function ReadingsPage() {
                       {hasExistingInvoice ? "มีใบแจ้งหนี้แล้ว" : "สร้างใบแจ้งหนี้"}
                     </Button>
                   </div>
+                  {!isInvoiceReady &&
+                  !hasExistingInvoice &&
+                  missingReadingsLabel ? (
+                    <p className="text-xs text-muted-foreground">
+                      ยังขาด: {missingReadingsLabel}
+                    </p>
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   รหัสกลุ่มการอ่าน:{" "}
@@ -658,7 +769,7 @@ export default function ReadingsPage() {
         <CardContent>
           {missingReadings.length === 0 ? (
             <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              ทุกห้องอัปเดตครบสำหรับเดือนนี้
+              ทุกห้องอัปเดตครบสำหรับ {monthLabel}
             </div>
           ) : (
             <DataTable
@@ -749,9 +860,17 @@ export default function ReadingsPage() {
               actionLabel="เพิ่มการอ่านครั้งแรก"
               actionHref="/overview/readings/new"
             />
+          ) : filteredReadings.length === 0 ? (
+            <EmptyState
+              icon={<Gauge className="h-8 w-8 text-muted-foreground" />}
+              title="ยังไม่มีการอ่านในงวดนี้"
+              description={`ยังไม่มีข้อมูลการอ่านมิเตอร์สำหรับ ${monthLabel}`}
+              actionLabel="เพิ่มการอ่าน"
+              actionHref="/overview/readings/new"
+            />
           ) : (
             <DataTable
-              data={groupedReadings}
+              data={filteredReadings}
               columns={columns}
               searchPlaceholder="ค้นหาตามผู้เช่า ห้อง หรือวันที่..."
               filters={filters}

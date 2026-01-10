@@ -949,7 +949,9 @@
         "type": "autodate"
       }
     ],
-    "indexes": [],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_room_unique_pbc_3085411453` ON `rooms` (`teamId`, `buildingId`, `roomNumber`)"
+    ],
     "system": false
   },
   {

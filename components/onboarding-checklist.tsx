@@ -6,6 +6,7 @@ import {
   Circle,
   DoorOpen,
   Gauge,
+  Settings,
   Users,
   X,
 } from "lucide-react";
@@ -18,6 +19,7 @@ import { useRouter } from "@/lib/router";
 interface OnboardingChecklistProps {
   buildingsCount: number;
   roomsCount: number;
+  settingsConfigured: boolean;
   tenantsCount: number;
   readingsCount: number;
 }
@@ -27,6 +29,7 @@ const STORAGE_KEY = "staykha:onboardingChecklistHidden";
 export function OnboardingChecklist({
   buildingsCount,
   roomsCount,
+  settingsConfigured,
   tenantsCount,
   readingsCount,
 }: OnboardingChecklistProps) {
@@ -58,6 +61,15 @@ export function OnboardingChecklist({
       action: () => router.push("/overview/rooms/new"),
       actionLabel: "เพิ่มห้อง",
       icon: DoorOpen,
+    },
+    {
+      key: "settings",
+      title: "ตั้งค่าอัตราและใบแจ้งหนี้",
+      description: "กำหนดค่าเริ่มต้นสำหรับค่าน้ำ ค่าไฟ และใบแจ้งหนี้",
+      done: settingsConfigured,
+      action: () => router.push("/overview/settings"),
+      actionLabel: "ตั้งค่า",
+      icon: Settings,
     },
     {
       key: "tenants",

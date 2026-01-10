@@ -128,6 +128,14 @@ export const roomsApi = {
   },
   create: async (data: Omit<Room, "id">) => {
     await delay();
+    const exists = mockRooms.some(
+      (room) =>
+        room.buildingId === data.buildingId &&
+        room.roomNumber === data.roomNumber,
+    );
+    if (exists) {
+      throw new Error("มีเลขห้องนี้ในอาคารแล้ว กรุณาใช้เลขห้องอื่น");
+    }
     const room: Room = {
       ...data,
       id: `room-${Date.now()}`,

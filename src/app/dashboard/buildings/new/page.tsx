@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { buildingsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { usePageTitle } from "@/lib/use-page-title";
 
@@ -103,10 +104,15 @@ export default function NewBuildingPage() {
       });
 
       router.push("/overview/buildings");
-    } catch (_error) {
+    } catch (error) {
+      logError(error, {
+        scope: "buildings",
+        action: "create",
+        metadata: { ownerId: user?.id },
+      });
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "สร้างอาคารไม่สำเร็จ",
+        description: getErrorMessage(error, "สร้างอาคารไม่สำเร็จ"),
         variant: "destructive",
       });
     } finally {

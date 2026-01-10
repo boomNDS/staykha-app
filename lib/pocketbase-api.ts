@@ -389,6 +389,15 @@ export const roomsApi = {
   },
   create: async (data: CreateRoomData): Promise<{ room: Room }> => {
     const teamId = getCurrentUserTeamId();
+    const existingRooms = await listRecords<
+      Omit<RoomRecord, keyof RecordMeta>
+    >("rooms", {
+      filter: `teamId = "${teamId}" && buildingId = "${data.buildingId}" && roomNumber = "${data.roomNumber}"`,
+      perPage: 1,
+    });
+    if (existingRooms.length > 0) {
+      throw new Error("มีเลขห้องนี้ในอาคารแล้ว กรุณาใช้เลขห้องอื่น");
+    }
     const record = await createRecord("rooms", {
       ...data,
       teamId,
@@ -413,9 +422,23 @@ export const roomsApi = {
   }> => {
     const teamId = getCurrentUserTeamId();
     const created: Room[] = [];
+    const skippedRooms: string[] = [];
+    const existingRooms = await listRecords<
+      Omit<RoomRecord, keyof RecordMeta>
+    >("rooms", {
+      filter: `teamId = "${teamId}" && buildingId = "${data.buildingId}"`,
+      perPage: 200,
+    });
+    const existingRoomNumbers = new Set(
+      existingRooms.map((room) => room.roomNumber),
+    );
     for (let floor = data.floorStart; floor <= data.floorEnd; floor += 1) {
       for (let offset = 0; offset < data.roomsPerFloor; offset += 1) {
         const roomNumber = `${floor}${String(data.startIndex + offset).padStart(2, "0")}`;
+        if (existingRoomNumbers.has(roomNumber)) {
+          skippedRooms.push(roomNumber);
+          continue;
+        }
         const record = await createRecord("rooms", {
           roomNumber,
           buildingId: data.buildingId,
@@ -426,9 +449,10 @@ export const roomsApi = {
           teamId,
         });
         created.push(mapRoomRecord(record));
+        existingRoomNumbers.add(roomNumber);
       }
     }
-    return { createdCount: created.length, skippedRooms: [], rooms: created };
+    return { createdCount: created.length, skippedRooms, rooms: created };
   },
 };
 
@@ -476,13 +500,76 @@ export const readingsApi = {
     data: CreateReadingData,
   ): Promise<{ reading: MeterReadingGroup }> => {
     const teamId = getCurrentUserTeamId();
+    if (!data.water && !data.electric) {
+      throw new Error("ต้องมีการอ่านมิเตอร์อย่างน้อย 1 รายการ");
+    }
+
+    const settingsItems = await listRecords<
+      Omit<SettingsRecord, keyof RecordMeta>
+    >("settings", {
+      filter: `teamId = "${teamId}"`,
+      perPage: 1,
+    });
+    const requiresWater =
+      settingsItems.length > 0
+        ? mapSettingsRecord(settingsItems[0] as SettingsMapperInput)
+            .waterBillingMode !== "fixed"
+        : true;
+
+    const resolveStatus = (hasWater: boolean, hasElectric: boolean) =>
+      hasElectric && (!requiresWater || hasWater)
+        ? ("pending" as MeterReadingGroup["status"])
+        : ("incomplete" as MeterReadingGroup["status"]);
+
+    const existingGroups = await listRecords<
+      Omit<ReadingGroupRecord, keyof RecordMeta>
+    >("reading_groups", {
+      filter: `teamId = "${teamId}" && roomId = "${data.roomId}" && readingDate = "${data.readingDate}"`,
+      perPage: 1,
+    });
+
+    if (existingGroups.length > 0) {
+      const existingGroup = existingGroups[0];
+      const mergedWater =
+        data.water ??
+        (existingGroup.water as Record<string, unknown> | undefined);
+      const mergedElectric =
+        data.electric ??
+        (existingGroup.electric as Record<string, unknown> | undefined);
+      const status = resolveStatus(Boolean(mergedWater), Boolean(mergedElectric));
+
+      const updatedRecord = await updateRecord<
+        Partial<Omit<ReadingGroupRecord, keyof RecordMeta>>
+      >("reading_groups", existingGroup.id, {
+        water: mergedWater,
+        electric: mergedElectric,
+        status,
+      });
+
+      const mergedRecord = {
+        ...existingGroup,
+        ...updatedRecord,
+        water: (updatedRecord.water ?? mergedWater) as
+          | Record<string, unknown>
+          | undefined,
+        electric: (updatedRecord.electric ?? mergedElectric) as
+          | Record<string, unknown>
+          | undefined,
+      };
+
+      return {
+        reading: mapReadingRecord(mergedRecord as ReadingGroupMapperInput),
+      };
+    }
+
+    const status = resolveStatus(Boolean(data.water), Boolean(data.electric));
     const record = await createRecord<
       Omit<ReadingGroupRecord, keyof RecordMeta> & {
         status: MeterReadingGroup["status"];
       }
     >("reading_groups", {
       ...data,
-      status: "incomplete" as MeterReadingGroup["status"],
+      status,
       teamId,
     });
     return { reading: mapReadingRecord(record as ReadingGroupMapperInput) };

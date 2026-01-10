@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { teamsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { usePageTitle } from "@/lib/use-page-title";
 
@@ -89,17 +90,23 @@ export default function CreateTeamPage() {
 
       toast({
         title: "สร้างทีมสำเร็จ",
-        description: `ยินดีต้อนรับสู่ ${team.name}! ขั้นต่อไปให้สร้าง Settings`,
+        description: `ยินดีต้อนรับสู่ ${team.name}! ขั้นต่อไปคือสร้างอาคารและเพิ่มห้อง`,
       });
 
-      // Redirect to settings to complete setup
-      router.push("/overview/settings");
+      // Redirect to buildings to start the owner flow
+      router.push("/overview/buildings/new");
     } catch (error: any) {
-      console.error("[Create Team] Error:", error);
-      setError(error.message || "ไม่สามารถสร้างทีมได้ กรุณาลองใหม่อีกครั้ง");
+      logError(error, {
+        scope: "teams",
+        action: "create",
+        metadata: { userId: user?.id },
+      });
+      setError(
+        getErrorMessage(error, "ไม่สามารถสร้างทีมได้ กรุณาลองใหม่อีกครั้ง"),
+      );
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: error.message || "ไม่สามารถสร้างทีมได้",
+        description: getErrorMessage(error, "ไม่สามารถสร้างทีมได้"),
         variant: "destructive",
       });
     } finally {

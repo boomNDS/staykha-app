@@ -14,8 +14,10 @@ import {
   invoicesApi,
   readingsApi,
   roomsApi,
+  settingsApi,
   tenantsApi,
 } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import type { MeterReadingGroup, Tenant } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatCurrency } from "@/lib/utils";
@@ -23,6 +25,7 @@ import { formatCurrency } from "@/lib/utils";
 export default function DashboardPage() {
   usePageTitle("ภาพรวม");
 
+  const { user } = useAuth();
   const tenantsQuery = useQuery({
     queryKey: ["tenants"],
     queryFn: () => tenantsApi.getAll(),
@@ -43,18 +46,30 @@ export default function DashboardPage() {
     queryKey: ["invoices"],
     queryFn: () => invoicesApi.getAll(),
   });
+  const settingsQuery = useQuery({
+    queryKey: ["settings", user?.teamId],
+    queryFn: () => {
+      if (!user?.teamId) {
+        throw new Error("จำเป็นต้องมี Team ID เพื่อโหลด Settings");
+      }
+      return settingsApi.get(user.teamId);
+    },
+    enabled: !!user?.teamId,
+  });
 
   const tenants = tenantsQuery.data?.tenants ?? [];
   const rooms = roomsQuery.data?.rooms ?? [];
   const readings = readingsQuery.data?.readings ?? [];
   const invoices = invoicesQuery.data?.invoices ?? [];
   const buildings = buildingsQuery.data?.buildings ?? [];
+  const settingsConfigured = Boolean(settingsQuery.data?.settings);
   const isLoading =
     tenantsQuery.isLoading ||
     roomsQuery.isLoading ||
     readingsQuery.isLoading ||
     invoicesQuery.isLoading ||
-    buildingsQuery.isLoading;
+    buildingsQuery.isLoading ||
+    settingsQuery.isLoading;
 
   const occupiedRooms = rooms.filter((r) => r.status === "occupied").length;
   const totalRevenue = invoices.reduce((sum, inv) => sum + inv.total, 0);
@@ -147,6 +162,7 @@ export default function DashboardPage() {
       <OnboardingChecklist
         buildingsCount={buildings.length}
         roomsCount={rooms.length}
+        settingsConfigured={settingsConfigured}
         tenantsCount={tenants.length}
         readingsCount={readings.length}
       />

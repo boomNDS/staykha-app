@@ -23,8 +23,17 @@ import { TableRowActions } from "@/components/table-row-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { invoicesApi } from "@/lib/api-client";
+import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter, useSearchParams } from "@/lib/router";
 import type { Invoice } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -50,20 +59,61 @@ export default function BillingPage() {
   >(new Set());
   const [isExporting, setIsExporting] = React.useState(false);
   const exportRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+  const [selectedPeriod, setSelectedPeriod] = React.useState(() =>
+    new Date().toISOString().slice(0, 7),
+  );
 
   const selectionReady = selectedInvoiceIds.size > 0;
+
+  const periodOptions = React.useMemo(() => {
+    const options = [{ value: "all", label: "ทุกงวด" }];
+    const now = new Date();
+    for (let i = 0; i < 12; i += 1) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = date.toISOString().slice(0, 7);
+      const label = date.toLocaleString("th-TH", {
+        month: "long",
+        year: "numeric",
+      });
+      options.push({ value, label });
+    }
+    return options;
+  }, []);
+
+  const getInvoicePeriodKey = (invoice: Invoice) => {
+    if (!invoice.issueDate) return "";
+    const date = new Date(invoice.issueDate);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toISOString().slice(0, 7);
+  };
+
+  const filteredInvoices = React.useMemo(() => {
+    if (selectedPeriod === "all") {
+      return invoices;
+    }
+    return invoices.filter(
+      (invoice) => getInvoicePeriodKey(invoice) === selectedPeriod,
+    );
+  }, [invoices, selectedPeriod]);
+  const periodLabel =
+    selectedPeriod === "all"
+      ? "ทุกงวด"
+      : new Date(`${selectedPeriod}-01`).toLocaleString("th-TH", {
+          month: "long",
+          year: "numeric",
+        });
 
   React.useEffect(() => {
     setSelectedInvoiceIds((prev) => {
       const next = new Set<string>();
-      invoices.forEach((invoice) => {
+      filteredInvoices.forEach((invoice) => {
         if (prev.has(invoice.id)) {
           next.add(invoice.id);
         }
       });
       return next;
     });
-  }, [invoices]);
+  }, [filteredInvoices]);
 
   const generateInvoiceMutation = useMutation({
     mutationFn: (id: string) => invoicesApi.generateFromReadingGroup(id),
@@ -76,9 +126,14 @@ export default function BillingPage() {
       router.push(`/overview/billing/${data.invoice.id}`);
     },
     onError: (error: any) => {
+      logError(error, {
+        scope: "invoices",
+        action: "generate",
+        metadata: { readingGroupId: readingId ?? undefined },
+      });
       toast({
         title: "สร้างใบแจ้งหนี้ไม่สำเร็จ",
-        description: error.message || "ไม่สามารถสร้างใบแจ้งหนี้ได้",
+        description: getErrorMessage(error, "ไม่สามารถสร้างใบแจ้งหนี้ได้"),
         variant: "destructive",
       });
     },
@@ -99,9 +154,19 @@ export default function BillingPage() {
     }
   }, [readingId, generateInvoiceMutation]);
 
-  const selectedInvoices = invoices.filter((invoice) =>
+  const selectedInvoices = filteredInvoices.filter((invoice) =>
     selectedInvoiceIds.has(invoice.id),
   );
+  const selectedPeriods = React.useMemo(() => {
+    const set = new Set<string>();
+    selectedInvoices.forEach((invoice) => {
+      const period = getInvoicePeriodKey(invoice);
+      if (period) set.add(period);
+    });
+    return set;
+  }, [selectedInvoices]);
+  const hasMixedSelectedPeriods =
+    selectionReady && selectedPeriods.size > 1;
 
   const chunkedInvoices = React.useMemo(() => {
     const chunks: Invoice[][] = [];
@@ -148,10 +213,14 @@ export default function BillingPage() {
         link.click();
       }
     } catch (error) {
-      console.error("Failed to export PNG:", error);
+      logError(error, {
+        scope: "invoices",
+        action: "export-png",
+        metadata: { count: selectedInvoices.length },
+      });
       toast({
         title: "ส่งออกไม่สำเร็จ",
-        description: "ไม่สามารถสร้างไฟล์ PNG ได้",
+        description: getErrorMessage(error, "ไม่สามารถสร้างไฟล์ PNG ได้"),
         variant: "destructive",
       });
     } finally {
@@ -194,10 +263,14 @@ export default function BillingPage() {
       }
       pdf.save("staykha-invoices.pdf");
     } catch (error) {
-      console.error("Failed to export PDF:", error);
+      logError(error, {
+        scope: "invoices",
+        action: "export-pdf",
+        metadata: { count: selectedInvoices.length },
+      });
       toast({
         title: "ส่งออกไม่สำเร็จ",
-        description: "ไม่สามารถสร้างไฟล์ PDF ได้",
+        description: getErrorMessage(error, "ไม่สามารถสร้างไฟล์ PDF ได้"),
         variant: "destructive",
       });
     } finally {
@@ -217,7 +290,11 @@ export default function BillingPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error("Error downloading PDF:", error);
+      logError(error, {
+        scope: "invoices",
+        action: "download-pdf",
+        metadata: { invoiceId },
+      });
     }
   };
 
@@ -252,13 +329,13 @@ export default function BillingPage() {
     }
   };
 
-  const totalRevenue = invoices.reduce((sum, inv) => sum + inv.total, 0);
-  const paidInvoices = invoices.filter((inv) => inv.status === "paid");
+  const totalRevenue = filteredInvoices.reduce((sum, inv) => sum + inv.total, 0);
+  const paidInvoices = filteredInvoices.filter((inv) => inv.status === "paid");
   const paidAmount = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
-  const pendingAmount = invoices
+  const pendingAmount = filteredInvoices
     .filter((inv) => inv.status === "pending" || inv.status === "sent")
     .reduce((sum, inv) => sum + inv.total, 0);
-  const overdueAmount = invoices
+  const overdueAmount = filteredInvoices
     .filter((inv) => inv.status === "overdue")
     .reduce((sum, inv) => sum + inv.total, 0);
 
@@ -402,6 +479,21 @@ export default function BillingPage() {
         description="จัดการการคำนวณบิลและสร้างใบแจ้งหนี้ค่าน้ำ/ค่าไฟ"
         actions={
           <>
+            <Select
+              value={selectedPeriod}
+              onValueChange={(value) => setSelectedPeriod(value)}
+            >
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="เลือกงวดบิล" />
+              </SelectTrigger>
+              <SelectContent>
+                {periodOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="text-xs text-muted-foreground">
               {selectedInvoiceIds.size} รายการที่เลือก
             </div>
@@ -447,6 +539,15 @@ export default function BillingPage() {
         }
       />
 
+      {hasMixedSelectedPeriods ? (
+        <Alert>
+          <AlertTitle>งวดบิลที่เลือกไม่ตรงกัน</AlertTitle>
+          <AlertDescription>
+            มีใบแจ้งหนี้จากหลายงวดในรายการที่เลือก ควรส่งออกหรือพิมพ์แยกตามงวด
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
@@ -459,7 +560,7 @@ export default function BillingPage() {
               {formatCurrency(totalRevenue)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {invoices.length} ใบแจ้งหนี้เดือนนี้
+              {filteredInvoices.length} ใบแจ้งหนี้ • {periodLabel}
             </p>
           </CardContent>
         </Card>
@@ -534,9 +635,17 @@ export default function BillingPage() {
               actionLabel="ดูการอ่านมิเตอร์"
               actionHref="/overview/readings"
             />
+          ) : filteredInvoices.length === 0 ? (
+            <EmptyState
+              icon={<FileText className="h-8 w-8 text-muted-foreground" />}
+              title="ยังไม่มีใบแจ้งหนี้ในงวดนี้"
+              description={`ไม่พบใบแจ้งหนี้สำหรับ ${periodLabel}`}
+              actionLabel="ดูการอ่านมิเตอร์"
+              actionHref="/overview/readings"
+            />
           ) : (
             <DataTable
-              data={invoices}
+              data={filteredInvoices}
               columns={columns}
               searchPlaceholder="ค้นหาตามเลขใบแจ้งหนี้ ผู้เช่า ห้อง หรือรอบบิล..."
               filters={filters}
