@@ -144,21 +144,21 @@ For detailed field definitions and access rules, see [SETUP_GUIDE.md](./SETUP_GU
 
 ```mermaid
 erDiagram
-    Team ||--o{ User : "has members"
-    Team ||--o{ Building : "contains"
-    Team ||--o{ Room : "contains"
-    Team ||--o{ Tenant : "contains"
-    Team ||--o{ ReadingGroup : "contains"
-    Team ||--o{ Invoice : "contains"
-    Team ||--|| Settings : "has settings"
-    Team ||--o{ AdminInvitation : "has invitations"
-    User ||--o{ Building : owns
-    User ||--o{ AdminInvitation : creates
-    Building ||--o{ Room : contains
-    Room ||--o| Tenant : "has optional tenant"
-    Room ||--o{ ReadingGroup : "has readings"
-    ReadingGroup ||--o{ Invoice : "generates"
-    Tenant ||--o{ Invoice : "receives"
+    Team ||--o{ User
+    Team ||--o{ Building
+    Team ||--o{ Room
+    Team ||--o{ Tenant
+    Team ||--o{ ReadingGroup
+    Team ||--o{ Invoice
+    Team ||--|| Settings
+    Team ||--o{ AdminInvitation
+    User ||--o{ Building
+    User ||--o{ AdminInvitation
+    Building ||--o{ Room
+    Room ||--o| Tenant
+    Room ||--o{ ReadingGroup
+    ReadingGroup ||--o{ Invoice
+    Tenant ||--o{ Invoice
 
     Team {
         string id PK
@@ -171,7 +171,7 @@ erDiagram
         string id PK
         string email
         string name
-        string role "owner/admin"
+        string role
         string teamId FK
     }
 
@@ -192,10 +192,10 @@ erDiagram
         string buildingId FK
         string buildingName
         number floor
-        string status "occupied/vacant/maintenance"
+        string status
         number monthlyRent
         number size
-        string tenantId FK "nullable"
+        string tenantId FK
         string teamId FK
     }
 
@@ -206,13 +206,13 @@ erDiagram
         string phone
         string roomId FK
         date moveInDate
-        date contractEndDate "nullable"
+        date contractEndDate
         number monthlyRent
         number deposit
-        string idCardNumber "nullable"
-        string emergencyContact "nullable"
-        string emergencyPhone "nullable"
-        string status "active/inactive/expired"
+        string idCardNumber
+        string emergencyContact
+        string emergencyPhone
+        string status
         string teamId FK
     }
 
@@ -222,23 +222,23 @@ erDiagram
         string roomNumber
         string tenantName
         date readingDate
-        string status "incomplete/pending/billed/paid"
-        json water "nullable"
-        json electric "nullable"
+        string status
+        json water
+        json electric
         string teamId FK
     }
 
     Invoice {
         string id PK
-        string invoiceNumber "nullable"
-        string tenantId FK "nullable"
+        string invoiceNumber
+        string tenantId FK
         string roomId FK
         string tenantName
         string roomNumber
         string billingPeriod
         date issueDate
         date dueDate
-        string status "draft/sent/paid/pending/overdue"
+        string status
         number waterUsage
         number waterRate
         number waterAmount
@@ -248,17 +248,17 @@ erDiagram
         number subtotal
         number tax
         number total
-        date paidDate "nullable"
-        number waterConsumption "nullable"
-        number electricConsumption "nullable"
-        number waterRatePerUnit "nullable"
-        number electricRatePerUnit "nullable"
-        number waterSubtotal "nullable"
-        number electricSubtotal "nullable"
-        string waterBillingMode "metered/fixed, nullable"
-        number waterFixedFee "nullable"
-        string readingGroupId FK "nullable"
-        json readings "nullable"
+        date paidDate
+        number waterConsumption
+        number electricConsumption
+        number waterRatePerUnit
+        number electricRatePerUnit
+        number waterSubtotal
+        number electricSubtotal
+        string waterBillingMode
+        number waterFixedFee
+        string readingGroupId FK
+        json readings
         string teamId FK
     }
 
@@ -279,15 +279,15 @@ erDiagram
         number paymentTermsDays
         number defaultRoomRent
         number defaultRoomSize
-        string bankName "nullable"
-        string bankAccountNumber "nullable"
-        string lineId "nullable"
-        number latePaymentPenaltyPerDay "nullable"
-        number dueDateDayOfMonth "nullable"
-        string labelInvoice "nullable"
-        string labelRoomRent "nullable"
-        string labelWater "nullable"
-        string labelElectricity "nullable"
+        string bankName
+        string bankAccountNumber
+        string lineId
+        number latePaymentPenaltyPerDay
+        number dueDateDayOfMonth
+        string labelInvoice
+        string labelRoomRent
+        string labelWater
+        string labelElectricity
     }
 
     AdminInvitation {
@@ -296,10 +296,10 @@ erDiagram
         string teamId FK
         string invitedBy FK
         string invitedByName
-        string status "pending/accepted/expired"
+        string status
         string inviteCode
         date expiresAt
-        json buildings "nullable"
+        json buildings
     }
 ```
 

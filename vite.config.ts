@@ -11,6 +11,7 @@ export default defineConfig({
         replacement: `${path.resolve(__dirname, ".")}/`,
       },
     ],
+    dedupe: ["react", "react-dom"],
   },
   server: {
     host: "127.0.0.1",
