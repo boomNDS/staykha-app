@@ -170,8 +170,18 @@ export default function InvoiceDetailPage() {
                       : { status: "paid", paidDate: new Date().toISOString() },
                 })
               }
+              disabled={updateInvoiceMutation.isPending}
             >
-              {invoice.status === "paid" ? "ทำเป็นรอชำระ" : "ทำเป็นชำระแล้ว"}
+              {updateInvoiceMutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  กำลังอัปเดต...
+                </span>
+              ) : invoice.status === "paid" ? (
+                "ทำเป็นรอชำระ"
+              ) : (
+                "ทำเป็นชำระแล้ว"
+              )}
             </Button>
             <Button onClick={handleDownloadPdf} disabled={isDownloading}>
               {isDownloading ? (

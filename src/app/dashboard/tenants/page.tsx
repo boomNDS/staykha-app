@@ -58,6 +58,7 @@ export default function TenantsPage() {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
   });
+  const isDeleting = deleteTenantMutation.isPending;
 
   const getRoomInfo = (roomId: string) => {
     const room = rooms.find((r) => r.id === roomId);
@@ -184,6 +185,7 @@ export default function TenantsPage() {
               label: "ลบผู้เช่า",
               icon: Trash2,
               destructive: true,
+              disabled: isDeleting,
               onClick: () => handleDelete(tenant.id),
             },
           ]}
@@ -240,10 +242,15 @@ export default function TenantsPage() {
         title={confirmState.title}
         description={confirmState.description}
         confirmLabel="ยืนยัน"
-        onConfirm={() => {
+        isLoading={isDeleting}
+        onConfirm={async () => {
           const action = confirmState.onConfirm;
-          setConfirmState((prev) => ({ ...prev, open: false }));
-          action?.();
+          if (!action) return;
+          try {
+            await action();
+          } finally {
+            setConfirmState((prev) => ({ ...prev, open: false }));
+          }
         }}
         onOpenChange={(open) => setConfirmState((prev) => ({ ...prev, open }))}
       />

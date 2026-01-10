@@ -62,6 +62,9 @@ export default function BillingPage() {
   const [selectedPeriod, setSelectedPeriod] = React.useState(() =>
     new Date().toISOString().slice(0, 7),
   );
+  const [updatingInvoiceId, setUpdatingInvoiceId] = React.useState<
+    string | null
+  >(null);
 
   const selectionReady = selectedInvoiceIds.size > 0;
 
@@ -206,7 +209,11 @@ export default function BillingPage() {
       for (const invoice of selectedInvoices) {
         const node = exportRefs.current[invoice.id];
         if (!node) continue;
-        const dataUrl = await toPng(node, { cacheBust: true, pixelRatio: 2 });
+        const dataUrl = await toPng(node, {
+          cacheBust: true,
+          pixelRatio: 2,
+          backgroundColor: "#ffffff",
+        });
         const link = document.createElement("a");
         link.href = dataUrl;
         link.download = `invoice-${invoice.id}.png`;
@@ -244,22 +251,19 @@ export default function BillingPage() {
         const invoice = selectedInvoices[i];
         const node = exportRefs.current[invoice.id];
         if (!node) continue;
-        const dataUrl = await toPng(node, { cacheBust: true, pixelRatio: 2 });
-        const imgProps = pdf.getImageProperties(dataUrl);
+        const dataUrl = await toPng(node, {
+          cacheBust: true,
+          pixelRatio: 2,
+          backgroundColor: "#ffffff",
+        });
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
-        const ratio = Math.min(
-          pageWidth / imgProps.width,
-          pageHeight / imgProps.height,
-        );
-        const imgWidth = imgProps.width * ratio;
-        const imgHeight = imgProps.height * ratio;
-        const x = (pageWidth - imgWidth) / 2;
-        const y = 24;
+        const imgWidth = pageWidth;
+        const imgHeight = pageHeight;
         if (i > 0) {
           pdf.addPage();
         }
-        pdf.addImage(dataUrl, "PNG", x, y, imgWidth, imgHeight);
+        pdf.addImage(dataUrl, "PNG", 0, 0, imgWidth, imgHeight);
       }
       pdf.save("staykha-invoices.pdf");
     } catch (error) {
@@ -437,16 +441,34 @@ export default function BillingPage() {
           }}
           items={[
             {
-              label: invoice.status === "paid" ? "ทำเป็นรอชำระ" : "ทำเป็นชำระแล้ว",
+              label:
+                updatingInvoiceId === invoice.id &&
+                updateInvoiceMutation.isPending
+                  ? "กำลังอัปเดต..."
+                  : invoice.status === "paid"
+                    ? "ทำเป็นรอชำระ"
+                    : "ทำเป็นชำระแล้ว",
               icon: invoice.status === "paid" ? Clock : CheckCircle2,
-              onClick: () =>
-                updateInvoiceMutation.mutate({
-                  id: invoice.id,
-                  updates:
-                    invoice.status === "paid"
-                      ? { status: "pending", paidDate: null }
-                      : { status: "paid", paidDate: new Date().toISOString() },
-                }),
+              disabled:
+                updatingInvoiceId === invoice.id &&
+                updateInvoiceMutation.isPending,
+              onClick: async () => {
+                setUpdatingInvoiceId(invoice.id);
+                try {
+                  await updateInvoiceMutation.mutateAsync({
+                    id: invoice.id,
+                    updates:
+                      invoice.status === "paid"
+                        ? { status: "pending", paidDate: null }
+                        : {
+                            status: "paid",
+                            paidDate: new Date().toISOString(),
+                          },
+                  });
+                } finally {
+                  setUpdatingInvoiceId(null);
+                }
+              },
             },
             {
               label: "ดาวน์โหลด PDF",
@@ -692,7 +714,7 @@ export default function BillingPage() {
             ref={(node) => {
               exportRefs.current[invoice.id] = node;
             }}
-            className="w-[520px]"
+            className="h-[1123px] w-[794px] bg-white p-8"
           >
             <PrintInvoiceCard invoice={invoice} />
           </div>

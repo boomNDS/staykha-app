@@ -7,6 +7,7 @@ interface TenantInlineFormProps {
   onChange: (next: TenantDraft) => void;
   showDeposit?: boolean;
   errors?: Record<string, string>;
+  disabled?: boolean;
 }
 
 export function TenantInlineForm({
@@ -14,6 +15,7 @@ export function TenantInlineForm({
   onChange,
   showDeposit = false,
   errors = {},
+  disabled = false,
 }: TenantInlineFormProps) {
   const update = (patch: Partial<TenantDraft>) =>
     onChange({ ...value, ...patch });
@@ -26,6 +28,7 @@ export function TenantInlineForm({
           id="tenantName"
           value={value.name}
           onChange={(e) => update({ name: e.target.value })}
+          disabled={disabled}
         />
         {errors.name && (
           <p className="text-sm text-destructive">{errors.name}</p>
@@ -38,6 +41,7 @@ export function TenantInlineForm({
           type="email"
           value={value.email}
           onChange={(e) => update({ email: e.target.value })}
+          disabled={disabled}
         />
         {errors.email && (
           <p className="text-sm text-destructive">{errors.email}</p>
@@ -49,6 +53,7 @@ export function TenantInlineForm({
           id="tenantPhone"
           value={value.phone}
           onChange={(e) => update({ phone: e.target.value })}
+          disabled={disabled}
         />
         {errors.phone && (
           <p className="text-sm text-destructive">{errors.phone}</p>
@@ -61,6 +66,7 @@ export function TenantInlineForm({
           type="date"
           value={value.moveInDate}
           onChange={(e) => update({ moveInDate: e.target.value })}
+          disabled={disabled}
         />
         {errors.moveInDate && (
           <p className="text-sm text-destructive">{errors.moveInDate}</p>
@@ -75,6 +81,7 @@ export function TenantInlineForm({
             min="0"
             value={value.deposit ?? ""}
             onChange={(e) => update({ deposit: e.target.value })}
+            disabled={disabled}
           />
           {errors.deposit && (
             <p className="text-sm text-destructive">{errors.deposit}</p>

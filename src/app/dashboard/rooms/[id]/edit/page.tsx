@@ -324,6 +324,7 @@ export default function EditRoomPage() {
                     onChange={setTenantData}
                     showDeposit
                     errors={tenantErrors}
+                    disabled={loading}
                   />
                 )}
               </div>

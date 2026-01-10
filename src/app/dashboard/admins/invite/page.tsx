@@ -80,6 +80,7 @@ export default function InviteAdminPage() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 required
+                disabled={isSubmitting}
               />
             </div>
 
@@ -94,6 +95,7 @@ export default function InviteAdminPage() {
                   setFormData({ ...formData, name: e.target.value })
                 }
                 required
+                disabled={isSubmitting}
               />
             </div>
 
@@ -107,6 +109,7 @@ export default function InviteAdminPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, message: e.target.value })
                 }
+                disabled={isSubmitting}
               />
             </div>
 
@@ -116,6 +119,7 @@ export default function InviteAdminPage() {
                 type="button"
                 variant="outline"
                 className="flex-1 w-full bg-transparent"
+                disabled={isSubmitting}
               >
                 <Link to="/overview/admins">ยกเลิก</Link>
               </Button>

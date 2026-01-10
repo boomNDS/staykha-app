@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { readingsApi, settingsApi } from "@/lib/api-client";
+import { readingsApi, roomsApi, settingsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { useParams, useRouter } from "@/lib/router";
 import type { MeterReadingGroup } from "@/lib/types";
@@ -28,6 +28,17 @@ export default function ReadingDetailPage() {
     queryKey: ["readings", readingId],
     queryFn: () => readingsApi.getById(readingId),
     enabled: Boolean(readingId),
+  });
+  const roomId = readingQuery.data?.reading?.roomId;
+  const roomQuery = useQuery({
+    queryKey: ["rooms", roomId],
+    queryFn: () => {
+      if (!roomId) {
+        throw new Error("Missing room id");
+      }
+      return roomsApi.getById(roomId);
+    },
+    enabled: Boolean(roomId),
   });
   const settingsQuery = useQuery({
     queryKey: ["settings", user?.teamId],
@@ -48,6 +59,7 @@ export default function ReadingDetailPage() {
   }
 
   const reading = readingQuery.data?.reading as MeterReadingGroup | undefined;
+  const room = roomQuery.data?.room;
 
   if (!reading) {
     return <div className="py-12 text-center">ไม่พบการอ่านมิเตอร์</div>;
@@ -131,7 +143,19 @@ export default function ReadingDetailPage() {
           <div className="flex items-center justify-between">
             <span>ห้อง</span>
             <span className="font-medium text-foreground">
-              {reading.roomNumber || reading.roomId}
+              {room?.roomNumber || reading.roomNumber || reading.roomId}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span>อาคาร</span>
+            <span className="font-medium text-foreground">
+              {room?.buildingName || "—"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span>ชั้น</span>
+            <span className="font-medium text-foreground">
+              {room?.floor ?? "—"}
             </span>
           </div>
         </CardContent>

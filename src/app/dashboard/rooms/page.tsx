@@ -107,6 +107,10 @@ export default function RoomsPage() {
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
     },
   });
+  const isDeleting = deleteRoomMutation.isPending;
+  const isAssigning = updateTenantMutation.isPending;
+  const isCreatingTenant = createTenantMutation.isPending;
+  const isMutating = isDeleting || isAssigning || isCreatingTenant;
 
   const getTenantName = (roomId: string) => {
     const tenant = tenants.find((t) => t.roomId === roomId);
@@ -295,11 +299,13 @@ export default function RoomsPage() {
               ? {
                   label: "ยกเลิกผู้เช่า",
                   icon: UserX,
+                  disabled: isMutating,
                   onClick: () => handleUnassignTenant(room),
                 }
               : {
                   label: "ผูกผู้เช่า",
                   icon: UserPlus,
+                  disabled: isMutating,
                   onClick: () => handleAssignTenant(room),
                 },
             {
@@ -311,7 +317,7 @@ export default function RoomsPage() {
               label: "ลบห้อง",
               icon: Trash2,
               destructive: true,
-              disabled: room.status === "occupied",
+              disabled: room.status === "occupied" || isDeleting,
               onClick: () => handleDelete(room.id),
             },
           ]}
@@ -435,6 +441,7 @@ export default function RoomsPage() {
                 variant={createTenantMode ? "default" : "outline"}
                 size="sm"
                 onClick={() => setCreateTenantMode((prev) => !prev)}
+                disabled={isMutating}
               >
                 {createTenantMode ? "กำลังเลือก" : "สร้างผู้เช่า"}
               </Button>
@@ -443,6 +450,7 @@ export default function RoomsPage() {
               <Select
                 value={selectedTenantId}
                 onValueChange={setSelectedTenantId}
+                disabled={isMutating}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="เลือกผู้เช่า" />
@@ -460,6 +468,7 @@ export default function RoomsPage() {
                 value={newTenant}
                 onChange={setNewTenant}
                 errors={tenantErrors}
+                disabled={isMutating}
               />
             )}
           </div>
@@ -467,22 +476,25 @@ export default function RoomsPage() {
             <Button
               variant="outline"
               onClick={() => setAssignDialogOpen(false)}
+              disabled={isMutating}
             >
               ยกเลิก
             </Button>
             {createTenantMode ? (
               <Button
                 onClick={handleCreateTenant}
-                disabled={!newTenant.name || !newTenant.email}
+                disabled={
+                  !newTenant.name || !newTenant.email || isCreatingTenant
+                }
               >
-                สร้างและผูก
+                {isCreatingTenant ? "กำลังสร้าง..." : "สร้างและผูก"}
               </Button>
             ) : (
               <Button
                 onClick={handleSubmitAssignment}
-                disabled={!selectedTenantId}
+                disabled={!selectedTenantId || isAssigning}
               >
-                ผูกผู้เช่า
+                {isAssigning ? "กำลังบันทึก..." : "ผูกผู้เช่า"}
               </Button>
             )}
           </DialogFooter>
@@ -564,6 +576,7 @@ export default function RoomsPage() {
             <Button
               variant="outline"
               onClick={() => setDetailsDialogOpen(false)}
+              disabled={isMutating}
             >
               ปิด
             </Button>
@@ -571,12 +584,14 @@ export default function RoomsPage() {
               <Button
                 variant="outline"
                 onClick={() => detailsRoom && handleUnassignTenant(detailsRoom)}
+                disabled={isMutating}
               >
                 ยกเลิกผู้เช่า
               </Button>
             ) : (
               <Button
                 onClick={() => detailsRoom && handleAssignTenant(detailsRoom)}
+                disabled={isMutating}
               >
                 ผูกผู้เช่า
               </Button>
@@ -586,6 +601,7 @@ export default function RoomsPage() {
                 detailsRoom &&
                 router.push(`/overview/rooms/${detailsRoom.id}/edit`)
               }
+              disabled={isMutating}
             >
               แก้ไขห้อง
             </Button>
@@ -597,10 +613,15 @@ export default function RoomsPage() {
         title={confirmState.title}
         description={confirmState.description}
         confirmLabel="ยืนยัน"
-        onConfirm={() => {
+        isLoading={isDeleting}
+        onConfirm={async () => {
           const action = confirmState.onConfirm;
-          setConfirmState((prev) => ({ ...prev, open: false }));
-          action?.();
+          if (!action) return;
+          try {
+            await action();
+          } finally {
+            setConfirmState((prev) => ({ ...prev, open: false }));
+          }
         }}
         onOpenChange={(open) => setConfirmState((prev) => ({ ...prev, open }))}
       />

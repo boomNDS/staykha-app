@@ -60,6 +60,8 @@ export default function AdminsPage() {
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
     },
   });
+  const isMutating =
+    deleteAdminMutation.isPending || revokeInvitationMutation.isPending;
 
   const handleDelete = (id: string) => {
     setConfirmState({
@@ -131,7 +133,7 @@ export default function AdminsPage() {
               label: "ลบผู้ดูแล",
               icon: UserX,
               destructive: true,
-              disabled: admin.id === user?.id,
+              disabled: admin.id === user?.id || isMutating,
               onClick: () => handleDelete(admin.id),
             },
           ]}
@@ -198,6 +200,7 @@ export default function AdminsPage() {
               label: "เพิกถอนคำเชิญ",
               icon: Trash2,
               destructive: true,
+              disabled: isMutating,
               onClick: () => handleRevokeInvitation(invitation.id),
             },
           ]}
@@ -290,10 +293,15 @@ export default function AdminsPage() {
         title={confirmState.title}
         description={confirmState.description}
         confirmLabel="ยืนยัน"
-        onConfirm={() => {
+        isLoading={isMutating}
+        onConfirm={async () => {
           const action = confirmState.onConfirm;
-          setConfirmState((prev) => ({ ...prev, open: false }));
-          action?.();
+          if (!action) return;
+          try {
+            await action();
+          } finally {
+            setConfirmState((prev) => ({ ...prev, open: false }));
+          }
         }}
         onOpenChange={(open) => setConfirmState((prev) => ({ ...prev, open }))}
       />

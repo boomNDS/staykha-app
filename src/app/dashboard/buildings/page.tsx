@@ -1,7 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit, Home, LayoutGrid, MapPin, Plus, Trash2 } from "lucide-react";
+import {
+  Edit,
+  Home,
+  LayoutGrid,
+  Loader2,
+  MapPin,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import * as React from "react";
 import { AdminRestrictionBanner } from "@/components/admin-restriction-banner";
 import { DataTable } from "@/components/data-table";
@@ -53,6 +61,7 @@ export default function BuildingsPage() {
       });
     },
   });
+  const isDeleting = deleteBuildingMutation.isPending;
 
   const handleDelete = async (id: string) => {
     try {
@@ -151,6 +160,7 @@ export default function BuildingsPage() {
               label: "ลบ",
               icon: Trash2,
               destructive: true,
+              disabled: isDeleting,
               onClick: () => setDeleteId(building.id),
             },
           ]}
@@ -218,12 +228,20 @@ export default function BuildingsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>ยกเลิก</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && handleDelete(deleteId)}
               className="bg-destructive"
+              disabled={isDeleting}
             >
-              ลบ
+              {isDeleting ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  กำลังลบ...
+                </span>
+              ) : (
+                "ลบ"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
