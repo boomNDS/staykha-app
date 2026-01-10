@@ -1099,11 +1099,15 @@ export const settingsApi = {
 };
 
 export const adminsApi = {
-  getAll: async (): Promise<{ admins: User[] }> => {
+  getAll: async (teamId?: string): Promise<{ admins: User[] }> => {
+    const filterParts: string[] = ['(role = "admin" || role = "owner")'];
+    if (teamId) {
+      filterParts.unshift(`teamId = "${teamId}"`);
+    }
     const items = await listRecords<Omit<UserRecord, keyof RecordMeta>>(
       "users",
       {
-        filter: 'role = "admin"',
+        filter: filterParts.join(" && "),
       },
     );
     return { admins: items.map(mapUserRecord) };

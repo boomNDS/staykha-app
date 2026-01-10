@@ -24,12 +24,14 @@ export default function AdminsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const adminsQuery = useQuery({
-    queryKey: ["admins"],
-    queryFn: () => adminsApi.getAll(),
+    queryKey: ["admins", user?.teamId],
+    queryFn: () => adminsApi.getAll(user?.teamId),
+    enabled: !!user?.teamId,
   });
   const invitationsQuery = useQuery({
-    queryKey: ["invitations"],
-    queryFn: () => invitationsApi.getAll(),
+    queryKey: ["invitations", user?.teamId],
+    queryFn: () => invitationsApi.getAll(user?.teamId),
+    enabled: !!user?.teamId,
   });
   const admins = adminsQuery.data?.admins ?? [];
   const invitations = invitationsQuery.data?.invitations ?? [];

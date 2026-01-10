@@ -2,8 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Droplets, Zap } from "lucide-react";
+import * as React from "react";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
+import { ReadingForm } from "@/components/readings/reading-form";
 import { SettingsRequired } from "@/components/settings-required";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +39,9 @@ export default function ReadingDetailPage() {
     },
     enabled: !!user?.teamId,
   });
+  const [inlineMeter, setInlineMeter] = React.useState<"water" | "electric" | null>(
+    null,
+  );
 
   if (readingQuery.isLoading) {
     return <LoadingState fullScreen message="กำลังโหลดการอ่านมิเตอร์..." />;
@@ -97,6 +102,20 @@ export default function ReadingDetailPage() {
           </Badge>
         }
       />
+
+      {inlineMeter ? (
+        <ReadingForm
+          initialRoomId={reading.roomId}
+          initialDate={formattedReadingDate}
+          initialMeterScope={inlineMeter}
+          readingGroupId={reading.id}
+          lockRoom
+          lockDate
+          lockMeterScope
+          showCancel={false}
+          onSuccess={() => setInlineMeter(null)}
+        />
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -178,9 +197,7 @@ export default function ReadingDetailPage() {
                 <Button
                   variant="outline"
                   onClick={() =>
-                    router.push(
-                      `/overview/readings/new?roomId=${reading.roomId}&date=${formattedReadingDate}&meter=water&readingGroupId=${reading.id}`,
-                    )
+                    setInlineMeter((prev) => (prev === "water" ? null : "water"))
                   }
                 >
                   เพิ่มมิเตอร์น้ำ
@@ -245,8 +262,8 @@ export default function ReadingDetailPage() {
                 <Button
                   variant="outline"
                   onClick={() =>
-                    router.push(
-                      `/overview/readings/new?roomId=${reading.roomId}&date=${formattedReadingDate}&meter=electric&readingGroupId=${reading.id}`,
+                    setInlineMeter((prev) =>
+                      prev === "electric" ? null : "electric",
                     )
                   }
                 >
