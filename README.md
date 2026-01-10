@@ -16,7 +16,7 @@ A modern dormitory and room management system with automated meter reading and b
 - **Admin Management**: Multi-admin support with role-based access (owner/admin) and invitation system
 - **Settings**: Configurable billing rates, company information, payment details (bank info, late payment penalties), Thai invoice labels, and default values
 - **Dashboard**: Real-time overview with statistics, occupancy rates, and pending readings
-- **Authentication**: Login functionality (registration and password reset can be added using PocketBase's built-in features)
+- **Authentication**: Login, registration, and team onboarding (create or join a team)
 
 ## Tech Stack
 
@@ -120,6 +120,15 @@ The application requires the following PocketBase collections:
 - `invoices`
 - `settings` (linked to teams via `teamId`)
 - `admin_invitations`
+
+### Recommended Unique Indexes
+
+Add these indexes in PocketBase to enforce data integrity:
+- `rooms`: `teamId`, `buildingId`, `roomNumber`
+- `reading_groups`: `teamId`, `roomId`, `readingDate`
+- `settings`: `teamId`
+- `teams`: `name`
+- `invoices`: `readingGroupId`
 
 **Access Control**: The application implements role-based and team-based access control:
 - Only **owners** and **admins** can access data
@@ -246,7 +255,7 @@ erDiagram
         number electricRatePerUnit "nullable"
         number waterSubtotal "nullable"
         number electricSubtotal "nullable"
-        string waterBillingMode "metered|fixed" "nullable"
+        string waterBillingMode "metered|fixed, nullable"
         number waterFixedFee "nullable"
         string readingGroupId FK "nullable"
         json readings "nullable"
@@ -365,16 +374,16 @@ The application uses PocketBase as the backend. All API calls are made through t
 ### Authentication
 
 **Current Implementation:**
-The application currently implements login functionality only. Users authenticate through PocketBase's built-in authentication system. The app stores the auth token in `localStorage` and includes it in API requests via the `Authorization` header.
+The application implements login and registration. Owners must create a team, and admins join a team. The app stores the auth token in `localStorage` and includes it in API requests via the `Authorization` header.
 
 **Available Authentication Features:**
 PocketBase supports additional authentication features that can be implemented:
 
-- ✅ **Login** - Currently implemented
-- ⚠️ **User Registration** - Not yet implemented (can be added)
-- ⚠️ **Password Reset / Forgot Password** - Not yet implemented (can be added)
-- ⚠️ **Email Verification** - Not yet implemented (can be added)
-- ⚠️ **Password Change** - Not yet implemented (can be added)
+- ✅ **Login** - Implemented
+- ✅ **User Registration** - Implemented
+- ⚠️ **Password Reset / Forgot Password** - API available, UI not yet implemented
+- ⚠️ **Email Verification** - API available, UI not yet implemented
+- ⚠️ **Password Change** - API available, UI not yet implemented
 
 **Adding Registration, Password Reset, and Other Auth Features:**
 
@@ -422,8 +431,12 @@ changePassword: async (oldPassword: string, password: string, passwordConfirm: s
 }
 ```
 
-Then create corresponding pages:
+Existing pages:
 - `src/app/register/page.tsx` - User registration page
+- `src/app/register/create-team/page.tsx` - Owner creates a team
+- `src/app/register/join-team/page.tsx` - Admin joins a team
+
+Optional pages to add:
 - `src/app/forgot-password/page.tsx` - Request password reset
 - `src/app/reset-password/page.tsx` - Confirm password reset
 - `src/app/verify-email/page.tsx` - Email verification
@@ -443,6 +456,7 @@ To enable email-based features (password reset, email verification), configure S
 - **Invoices**: `invoicesApi.getAll()`, `invoicesApi.update()`, etc.
 - **Settings**: `settingsApi.get()`, `settingsApi.update()`
 - **Auth**: `authApi.login()`
+- **Auth**: `authApi.register()`, `authApi.requestPasswordReset()`, `authApi.confirmPasswordReset()`, `authApi.verifyEmail()`
 
 All API methods return data that matches the TypeScript interfaces defined in `lib/types.ts`.
 
