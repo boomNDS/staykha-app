@@ -56,6 +56,20 @@ import {
 const pocketbaseUrl: string =
   import.meta.env.VITE_POCKETBASE_URL || "http://127.0.0.1:8090";
 
+const isUniqueConstraintError = (error: unknown) => {
+  const message =
+    typeof error === "string"
+      ? error
+      : error instanceof Error
+        ? error.message
+        : (error as { message?: string })?.message;
+  const raw = JSON.stringify(error ?? {});
+  return (
+    (message && /unique|constraint/i.test(message)) ||
+    /unique|constraint/i.test(raw)
+  );
+};
+
 // Helper function to get current user's teamId from localStorage
 function getCurrentUserTeamId(): string {
   if (typeof window === "undefined") {
@@ -251,13 +265,30 @@ export const teamsApi = {
   create: async (
     data: Omit<Team, "id" | "createdAt" | "updatedAt">,
   ): Promise<{ team: Team }> => {
-    const record = await createRecord<Omit<TeamRecord, keyof RecordMeta>>(
-      "teams",
-      {
-        name: data.name,
-      },
-    );
-    return { team: mapTeamRecord(record as TeamMapperInput) };
+    const teamName = data.name.trim();
+    const existingTeams = await listRecords<
+      Omit<TeamRecord, keyof RecordMeta>
+    >("teams", {
+      filter: `name = "${teamName}"`,
+      perPage: 1,
+    });
+    if (existingTeams.length > 0) {
+      throw new Error("ชื่อทีมนี้ถูกใช้แล้ว กรุณาใช้ชื่ออื่น");
+    }
+    try {
+      const record = await createRecord<Omit<TeamRecord, keyof RecordMeta>>(
+        "teams",
+        {
+          name: teamName,
+        },
+      );
+      return { team: mapTeamRecord(record as TeamMapperInput) };
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) {
+        throw error;
+      }
+      throw new Error("ชื่อทีมนี้ถูกใช้แล้ว กรุณาใช้ชื่ออื่น");
+    }
   },
   update: async (id: string, data: Partial<Team>): Promise<{ team: Team }> => {
     const record = await updateRecord<Team>("teams", id, data);
@@ -398,11 +429,27 @@ export const roomsApi = {
     if (existingRooms.length > 0) {
       throw new Error("มีเลขห้องนี้ในอาคารแล้ว กรุณาใช้เลขห้องอื่น");
     }
-    const record = await createRecord("rooms", {
-      ...data,
-      teamId,
-    });
-    return { room: mapRoomRecord(record) };
+    try {
+      const record = await createRecord("rooms", {
+        ...data,
+        teamId,
+      });
+      return { room: mapRoomRecord(record) };
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) {
+        throw error;
+      }
+      const existingAfterError = await listRecords<
+        Omit<RoomRecord, keyof RecordMeta>
+      >("rooms", {
+        filter: `teamId = "${teamId}" && buildingId = "${data.buildingId}" && roomNumber = "${data.roomNumber}"`,
+        perPage: 1,
+      });
+      if (existingAfterError.length === 0) {
+        throw error;
+      }
+      return { room: mapRoomRecord(existingAfterError[0]) };
+    }
   },
   update: async (
     id: string,
@@ -439,17 +486,24 @@ export const roomsApi = {
           skippedRooms.push(roomNumber);
           continue;
         }
-        const record = await createRecord("rooms", {
-          roomNumber,
-          buildingId: data.buildingId,
-          floor,
-          status: data.status,
-          monthlyRent: data.monthlyRent,
-          size: data.size,
-          teamId,
-        });
-        created.push(mapRoomRecord(record));
-        existingRoomNumbers.add(roomNumber);
+        try {
+          const record = await createRecord("rooms", {
+            roomNumber,
+            buildingId: data.buildingId,
+            floor,
+            status: data.status,
+            monthlyRent: data.monthlyRent,
+            size: data.size,
+            teamId,
+          });
+          created.push(mapRoomRecord(record));
+          existingRoomNumbers.add(roomNumber);
+        } catch (error) {
+          if (!isUniqueConstraintError(error)) {
+            throw error;
+          }
+          skippedRooms.push(roomNumber);
+        }
       }
     }
     return { createdCount: created.length, skippedRooms, rooms: created };
@@ -575,17 +629,68 @@ export const readingsApi = {
     }
 
     const status = resolveStatus(Boolean(data.water), Boolean(data.electric));
-    const record = await createRecord<
-      Omit<ReadingGroupRecord, keyof RecordMeta> & {
-        status: MeterReadingGroup["status"];
+    try {
+      const record = await createRecord<
+        Omit<ReadingGroupRecord, keyof RecordMeta> & {
+          status: MeterReadingGroup["status"];
+        }
+      >("reading_groups", {
+        ...data,
+        readingDate,
+        status,
+        teamId,
+      });
+      return { reading: mapReadingRecord(record as ReadingGroupMapperInput) };
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) {
+        throw error;
       }
-    >("reading_groups", {
-      ...data,
-      readingDate,
-      status,
-      teamId,
-    });
-    return { reading: mapReadingRecord(record as ReadingGroupMapperInput) };
+
+      const existingAfterError = await listRecords<
+        Omit<ReadingGroupRecord, keyof RecordMeta>
+      >("reading_groups", {
+        filter: `teamId = "${teamId}" && roomId = "${data.roomId}" && readingDate = "${readingDate}"`,
+        perPage: 1,
+      });
+      if (existingAfterError.length === 0) {
+        throw error;
+      }
+
+      const existingGroup = existingAfterError[0];
+      const mergedWater =
+        data.water ??
+        (existingGroup.water as Record<string, unknown> | undefined);
+      const mergedElectric =
+        data.electric ??
+        (existingGroup.electric as Record<string, unknown> | undefined);
+      const mergedStatus = resolveStatus(
+        Boolean(mergedWater),
+        Boolean(mergedElectric),
+      );
+
+      const updatedRecord = await updateRecord<
+        Partial<Omit<ReadingGroupRecord, keyof RecordMeta>>
+      >("reading_groups", existingGroup.id, {
+        water: mergedWater,
+        electric: mergedElectric,
+        status: mergedStatus,
+      });
+
+      const mergedRecord = {
+        ...existingGroup,
+        ...updatedRecord,
+        water: (updatedRecord.water ?? mergedWater) as
+          | Record<string, unknown>
+          | undefined,
+        electric: (updatedRecord.electric ?? mergedElectric) as
+          | Record<string, unknown>
+          | undefined,
+      };
+
+      return {
+        reading: mapReadingRecord(mergedRecord as ReadingGroupMapperInput),
+      };
+    }
   },
   update: async (
     id: string,
@@ -784,44 +889,61 @@ export const invoicesApi = {
     }
 
     // Create invoice
-    const invoiceRecord = await createRecord<
-      Omit<InvoiceRecord, keyof RecordMeta>
-    >("invoices", {
-      invoiceNumber,
-      tenantId: tenant?.id,
-      roomId: readingGroup.roomId,
-      tenantName: tenant?.name ?? readingGroup.tenantName,
-      roomNumber: room.roomNumber ?? readingGroup.roomNumber,
-      billingPeriod: issueDate.toLocaleString("default", {
-        month: "long",
-        year: "numeric",
-      }),
-      issueDate: issueDate.toISOString(),
-      dueDate: dueDate.toISOString(),
-      status: "pending" as Invoice["status"],
-      waterUsage: settings.waterBillingMode === "fixed" ? 0 : waterConsumption,
-      waterRate:
-        settings.waterBillingMode === "fixed" ? 0 : settings.waterRatePerUnit,
-      waterAmount,
-      electricUsage: electricConsumption,
-      electricRate: settings.electricRatePerUnit,
-      electricAmount,
-      subtotal,
-      tax,
-      total,
-      waterConsumption:
-        settings.waterBillingMode === "fixed" ? undefined : waterConsumption,
-      electricConsumption,
-      waterRatePerUnit: settings.waterRatePerUnit,
-      electricRatePerUnit: settings.electricRatePerUnit,
-      waterSubtotal: waterAmount,
-      electricSubtotal: electricAmount,
-      waterBillingMode: settings.waterBillingMode,
-      waterFixedFee: settings.waterFixedFee,
-      readingGroupId,
-      readings: invoiceReadings.length > 0 ? invoiceReadings : undefined,
-      teamId,
-    } as Omit<InvoiceRecord, keyof RecordMeta>);
+    let invoiceRecord: Omit<InvoiceRecord, keyof RecordMeta> & RecordMeta;
+    try {
+      invoiceRecord = await createRecord<
+        Omit<InvoiceRecord, keyof RecordMeta>
+      >("invoices", {
+        invoiceNumber,
+        tenantId: tenant?.id,
+        roomId: readingGroup.roomId,
+        tenantName: tenant?.name ?? readingGroup.tenantName,
+        roomNumber: room.roomNumber ?? readingGroup.roomNumber,
+        billingPeriod: issueDate.toLocaleString("default", {
+          month: "long",
+          year: "numeric",
+        }),
+        issueDate: issueDate.toISOString(),
+        dueDate: dueDate.toISOString(),
+        status: "pending" as Invoice["status"],
+        waterUsage: settings.waterBillingMode === "fixed" ? 0 : waterConsumption,
+        waterRate:
+          settings.waterBillingMode === "fixed" ? 0 : settings.waterRatePerUnit,
+        waterAmount,
+        electricUsage: electricConsumption,
+        electricRate: settings.electricRatePerUnit,
+        electricAmount,
+        subtotal,
+        tax,
+        total,
+        waterConsumption:
+          settings.waterBillingMode === "fixed" ? undefined : waterConsumption,
+        electricConsumption,
+        waterRatePerUnit: settings.waterRatePerUnit,
+        electricRatePerUnit: settings.electricRatePerUnit,
+        waterSubtotal: waterAmount,
+        electricSubtotal: electricAmount,
+        waterBillingMode: settings.waterBillingMode,
+        waterFixedFee: settings.waterFixedFee,
+        readingGroupId,
+        readings: invoiceReadings.length > 0 ? invoiceReadings : undefined,
+        teamId,
+      } as Omit<InvoiceRecord, keyof RecordMeta>);
+    } catch (error) {
+      if (!isUniqueConstraintError(error)) {
+        throw error;
+      }
+      const existingForGroup = await listRecords<
+        Omit<InvoiceRecord, keyof RecordMeta>
+      >("invoices", {
+        filter: `readingGroupId = "${readingGroupId}"`,
+        perPage: 1,
+      });
+      if (existingForGroup.length === 0) {
+        throw error;
+      }
+      return { invoice: mapInvoiceRecord(existingForGroup[0]) };
+    }
 
     // Update reading group status to "billed"
     await updateRecord<Partial<Omit<ReadingGroupRecord, keyof RecordMeta>>>(
@@ -877,33 +999,54 @@ export const settingsApi = {
       ) as Partial<Omit<SettingsRecord, keyof RecordMeta>>;
 
       // Create with defaults for required fields if not provided
-      const newRecord = await createRecord<
-        Omit<SettingsRecord, keyof RecordMeta>
-      >("settings", {
-        teamId,
-        waterRatePerUnit: cleanPayload.waterRatePerUnit ?? 25,
-        waterBillingMode: cleanPayload.waterBillingMode ?? "metered",
-        waterFixedFee: cleanPayload.waterFixedFee ?? 0,
-        electricRatePerUnit: cleanPayload.electricRatePerUnit ?? 4.5,
-        taxRate: cleanPayload.taxRate ?? 7,
-        currency: cleanPayload.currency ?? "THB",
-        companyName: cleanPayload.companyName ?? "StayKha",
-        companyAddress: cleanPayload.companyAddress ?? "",
-        companyPhone: cleanPayload.companyPhone ?? "",
-        companyEmail: cleanPayload.companyEmail ?? "",
-        invoicePrefix: cleanPayload.invoicePrefix ?? "INV",
-        paymentTermsDays: cleanPayload.paymentTermsDays ?? 15,
-        defaultRoomRent: cleanPayload.defaultRoomRent ?? 4500,
-        defaultRoomSize: cleanPayload.defaultRoomSize ?? 28,
-        latePaymentPenaltyPerDay: cleanPayload.latePaymentPenaltyPerDay ?? 0,
-        dueDateDayOfMonth: cleanPayload.dueDateDayOfMonth ?? 5,
-        labelInvoice: cleanPayload.labelInvoice ?? "ใบแจ้งหนี้",
-        labelRoomRent: cleanPayload.labelRoomRent ?? "ค่าเช่าห้อง",
-        labelWater: cleanPayload.labelWater ?? "ค่าน้ำประปา",
-        labelElectricity: cleanPayload.labelElectricity ?? "ค่าไฟฟ้า",
-        ...cleanPayload,
-      });
-      return { settings: mapSettingsRecord(newRecord as SettingsMapperInput) };
+      try {
+        const newRecord = await createRecord<
+          Omit<SettingsRecord, keyof RecordMeta>
+        >("settings", {
+          teamId,
+          waterRatePerUnit: cleanPayload.waterRatePerUnit ?? 25,
+          waterBillingMode: cleanPayload.waterBillingMode ?? "metered",
+          waterFixedFee: cleanPayload.waterFixedFee ?? 0,
+          electricRatePerUnit: cleanPayload.electricRatePerUnit ?? 4.5,
+          taxRate: cleanPayload.taxRate ?? 7,
+          currency: cleanPayload.currency ?? "THB",
+          companyName: cleanPayload.companyName ?? "StayKha",
+          companyAddress: cleanPayload.companyAddress ?? "",
+          companyPhone: cleanPayload.companyPhone ?? "",
+          companyEmail: cleanPayload.companyEmail ?? "",
+          invoicePrefix: cleanPayload.invoicePrefix ?? "INV",
+          paymentTermsDays: cleanPayload.paymentTermsDays ?? 15,
+          defaultRoomRent: cleanPayload.defaultRoomRent ?? 4500,
+          defaultRoomSize: cleanPayload.defaultRoomSize ?? 28,
+          latePaymentPenaltyPerDay: cleanPayload.latePaymentPenaltyPerDay ?? 0,
+          dueDateDayOfMonth: cleanPayload.dueDateDayOfMonth ?? 5,
+          labelInvoice: cleanPayload.labelInvoice ?? "ใบแจ้งหนี้",
+          labelRoomRent: cleanPayload.labelRoomRent ?? "ค่าเช่าห้อง",
+          labelWater: cleanPayload.labelWater ?? "ค่าน้ำประปา",
+          labelElectricity: cleanPayload.labelElectricity ?? "ค่าไฟฟ้า",
+          ...cleanPayload,
+        });
+        return { settings: mapSettingsRecord(newRecord as SettingsMapperInput) };
+      } catch (error) {
+        if (!isUniqueConstraintError(error)) {
+          throw error;
+        }
+        const existingAfterError = await listRecords<
+          Omit<SettingsRecord, keyof RecordMeta>
+        >("settings", {
+          filter: `teamId = "${teamId}"`,
+          perPage: 1,
+        });
+        if (existingAfterError.length === 0) {
+          throw error;
+        }
+        const updated = await updateRecord(
+          "settings",
+          existingAfterError[0].id,
+          cleanPayload,
+        );
+        return { settings: mapSettingsRecord(updated as SettingsMapperInput) };
+      }
     }
 
     // Settings exist, update them

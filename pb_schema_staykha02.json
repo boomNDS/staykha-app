@@ -125,7 +125,9 @@
     },
     "passwordAuth": {
       "enabled": true,
-      "identityFields": ["email"]
+      "identityFields": [
+        "email"
+      ]
     },
     "mfa": {
       "enabled": false,
@@ -292,7 +294,10 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": ["owner", "admin"]
+        "values": [
+          "owner",
+          "admin"
+        ]
       },
       {
         "cascadeDelete": false,
@@ -353,7 +358,9 @@
     },
     "passwordAuth": {
       "enabled": true,
-      "identityFields": ["email"]
+      "identityFields": [
+        "email"
+      ]
     },
     "mfa": {
       "enabled": false,
@@ -877,7 +884,11 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": ["pending", "accepted", "expired"]
+        "values": [
+          "pending",
+          "accepted",
+          "expired"
+        ]
       },
       {
         "autogeneratePattern": "",
@@ -949,9 +960,7 @@
         "type": "autodate"
       }
     ],
-    "indexes": [
-      "CREATE UNIQUE INDEX `idx_room_unique_pbc_3085411453` ON `rooms` (`teamId`, `buildingId`, `roomNumber`)"
-    ],
+    "indexes": [],
     "system": false
   },
   {
@@ -1229,7 +1238,13 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": ["draft", "sent", "paid", "pending", "overdue"]
+        "values": [
+          "draft",
+          "sent",
+          "paid",
+          "pending",
+          "overdue"
+        ]
       },
       {
         "hidden": false,
@@ -1431,7 +1446,10 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": ["metered", "fixed"]
+        "values": [
+          "metered",
+          "fixed"
+        ]
       },
       {
         "hidden": false,
@@ -1502,7 +1520,9 @@
         "type": "autodate"
       }
     ],
-    "indexes": [],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_ieDMuDYrxt` ON `invoices` (`readingGroupId`)"
+    ],
     "system": false
   },
   {
@@ -1590,7 +1610,12 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": ["incomplete", "pending", "billed", "paid"]
+        "values": [
+          "incomplete",
+          "pending",
+          "billed",
+          "paid"
+        ]
       },
       {
         "hidden": false,
@@ -1646,7 +1671,9 @@
         "type": "autodate"
       }
     ],
-    "indexes": [],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_7f9cY1dH9v` ON `reading_groups` (\n  `teamId`,\n  `roomId`,\n  `readingDate`\n)"
+    ],
     "system": false
   },
   {
@@ -1735,7 +1762,11 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": ["occupied", "vacant", "maintenance"]
+        "values": [
+          "occupied",
+          "vacant",
+          "maintenance"
+        ]
       },
       {
         "hidden": false,
@@ -1808,7 +1839,10 @@
         "type": "autodate"
       }
     ],
-    "indexes": [],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_mvsp2PzaRi` ON `rooms` (\n  `tenantId`,\n  `buildingId`,\n  `teamId`\n)",
+      "CREATE UNIQUE INDEX `idx_8BEDOw8sju` ON `rooms` (`roomNumber`)"
+    ],
     "system": false
   },
   {
@@ -1869,7 +1903,10 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": ["metered", "fixed"]
+        "values": [
+          "metered",
+          "fixed"
+        ]
       },
       {
         "hidden": false,
@@ -2167,7 +2204,9 @@
         "type": "autodate"
       }
     ],
-    "indexes": [],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_LKOvQiptLb` ON `settings` (`teamId`)"
+    ],
     "system": false
   },
   {
@@ -2229,7 +2268,9 @@
         "type": "autodate"
       }
     ],
-    "indexes": [],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_IUfFTAbhUf` ON `teams` (`name`)"
+    ],
     "system": false
   },
   {
@@ -2405,7 +2446,11 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": ["active", "inactive", "expired"]
+        "values": [
+          "active",
+          "inactive",
+          "expired"
+        ]
       },
       {
         "cascadeDelete": false,
