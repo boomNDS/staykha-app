@@ -60,7 +60,6 @@ export default function NewReadingPage() {
     enabled: !!user?.teamId,
   });
   const [isLoading, setIsLoading] = React.useState(false);
-  const rooms = roomsQuery.data?.rooms ?? [];
   const [inputMode, setInputMode] = React.useState<InputMode>("ocr");
   const initialScope = ((): MeterScope => {
     const scope = searchParams.get("meter");
@@ -77,54 +76,6 @@ export default function NewReadingPage() {
     })();
   const initialRoomId = searchParams.get("roomId") ?? "";
   const [meterScope, setMeterScope] = React.useState<MeterScope>(initialScope);
-  const settings = settingsQuery.data?.settings;
-
-  const toDateInputValue = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
-  const parseDateString = (value: string) => {
-    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (!match) return null;
-    const [, year, month, day] = match;
-    return new Date(Number(year), Number(month) - 1, Number(day));
-  };
-
-  // Show settings required message if settings don't exist
-  if (settingsQuery.isSuccess && !settings) {
-    return (
-      <SettingsRequired
-        title="ต้องตั้งค่า Settings ก่อนใช้งาน"
-        description="คุณต้องสร้าง Settings ของทีมก่อนจึงจะเพิ่มการอ่านมิเตอร์ได้"
-      />
-    );
-  }
-
-  if (roomsQuery.isSuccess && rooms.length === 0) {
-    return (
-      <EmptyState
-        icon={<Droplets className="h-8 w-8 text-muted-foreground" />}
-        title="ต้องสร้างห้องก่อนเพิ่มมิเตอร์"
-        description="ยังไม่มีห้องในระบบ กรุณาสร้างห้องเพื่อบันทึกการอ่านมิเตอร์"
-        actionLabel="เพิ่มห้อง"
-        actionHref="/overview/rooms/new"
-      />
-    );
-  }
-
-  const isWaterFixed = settings?.waterBillingMode === "fixed";
-  const selectedDate =
-    parseDateString(formData.readingDate) ?? new Date();
-
-  React.useEffect(() => {
-    if (isWaterFixed && meterScope !== "electric") {
-      setMeterScope("electric");
-    }
-  }, [isWaterFixed, meterScope]);
-
   const [formData, setFormData] = React.useState<ReadingFormValues>({
     roomId: initialRoomId,
     readingDate: initialDate,
@@ -140,6 +91,31 @@ export default function NewReadingPage() {
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isProcessingOCR, setIsProcessingOCR] = React.useState(false);
+
+  const toDateInputValue = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const parseDateString = (value: string) => {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return null;
+    const [, year, month, day] = match;
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  };
+
+  const settings = settingsQuery.data?.settings;
+  const rooms = roomsQuery.data?.rooms ?? [];
+  const isWaterFixed = settings?.waterBillingMode === "fixed";
+  const selectedDate = parseDateString(formData.readingDate) ?? new Date();
+
+  React.useEffect(() => {
+    if (isWaterFixed && meterScope !== "electric") {
+      setMeterScope("electric");
+    }
+  }, [isWaterFixed, meterScope]);
 
   const createReadingMutation = useMutation({
     mutationFn: (payload: {
@@ -164,6 +140,28 @@ export default function NewReadingPage() {
       queryClient.invalidateQueries({ queryKey: ["readings"] });
     },
   });
+
+  // Show settings required message if settings don't exist
+  if (settingsQuery.isSuccess && !settings) {
+    return (
+      <SettingsRequired
+        title="ต้องตั้งค่า Settings ก่อนใช้งาน"
+        description="คุณต้องสร้าง Settings ของทีมก่อนจึงจะเพิ่มการอ่านมิเตอร์ได้"
+      />
+    );
+  }
+
+  if (roomsQuery.isSuccess && rooms.length === 0) {
+    return (
+      <EmptyState
+        icon={<Droplets className="h-8 w-8 text-muted-foreground" />}
+        title="ต้องสร้างห้องก่อนเพิ่มมิเตอร์"
+        description="ยังไม่มีห้องในระบบ กรุณาสร้างห้องเพื่อบันทึกการอ่านมิเตอร์"
+        actionLabel="เพิ่มห้อง"
+        actionHref="/overview/rooms/new"
+      />
+    );
+  }
 
   const performOCR = async (file: File): Promise<string> => {
     const worker = await createWorker("eng");
