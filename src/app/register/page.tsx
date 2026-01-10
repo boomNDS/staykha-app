@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@/lib/router";
 import { mapZodErrors, registerSchema } from "@/lib/schemas";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -22,6 +23,7 @@ export default function RegisterPage() {
   usePageTitle("Sign up");
 
   const router = useRouter();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
   const [formData, setFormData] = React.useState({
@@ -32,6 +34,12 @@ export default function RegisterPage() {
     role: "admin" as "owner" | "admin",
   });
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    if (user) {
+      router.push("/overview");
+    }
+  }, [user, router]);
 
   const validateForm = () => {
     const result = registerSchema.safeParse(formData);

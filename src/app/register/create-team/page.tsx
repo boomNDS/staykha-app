@@ -23,7 +23,7 @@ export default function CreateTeamPage() {
 
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
   const [teamName, setTeamName] = React.useState("");
   const [error, setError] = React.useState("");
@@ -163,6 +163,11 @@ export default function CreateTeamPage() {
               )}
             </Button>
           </form>
+          <div className="mt-6 flex items-center justify-center">
+            <Button variant="ghost" size="sm" onClick={logout}>
+              ออกจากระบบ
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
