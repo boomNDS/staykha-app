@@ -45,6 +45,9 @@ export default function NewReadingPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const readingGroupId = searchParams.get("readingGroupId");
+  const searchRoomId = searchParams.get("roomId") ?? "";
+  const searchDate = searchParams.get("date") ?? "";
   const roomsQuery = useQuery({
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
@@ -58,6 +61,21 @@ export default function NewReadingPage() {
       return settingsApi.get(user.teamId);
     },
     enabled: !!user?.teamId,
+  });
+  const readingGroupQuery = useQuery({
+    queryKey: ["readings", readingGroupId],
+    queryFn: () => {
+      if (!readingGroupId) {
+        throw new Error("Missing reading group id");
+      }
+      return readingsApi.getById(readingGroupId);
+    },
+    enabled: Boolean(readingGroupId),
+  });
+  const readingGroupLookupQuery = useQuery({
+    queryKey: ["readings", "lookup", searchRoomId, searchDate],
+    queryFn: () => readingsApi.getByRoomDate(searchRoomId, searchDate),
+    enabled: Boolean(searchRoomId && searchDate && !readingGroupId),
   });
   const [isLoading, setIsLoading] = React.useState(false);
   const [inputMode, setInputMode] = React.useState<InputMode>("ocr");
@@ -74,8 +92,9 @@ export default function NewReadingPage() {
       }
       return new Date().toISOString().split("T")[0];
     })();
-  const initialRoomId = searchParams.get("roomId") ?? "";
+  const initialRoomId = searchRoomId;
   const [meterScope, setMeterScope] = React.useState<MeterScope>(initialScope);
+  const existingGroup = readingGroupQuery.data?.reading;
   const [formData, setFormData] = React.useState<ReadingFormValues>({
     roomId: initialRoomId,
     readingDate: initialDate,
@@ -116,6 +135,23 @@ export default function NewReadingPage() {
       setMeterScope("electric");
     }
   }, [isWaterFixed, meterScope]);
+
+  React.useEffect(() => {
+    if (!existingGroup) return;
+    setFormData((prev) => ({
+      ...prev,
+      roomId: existingGroup.roomId,
+      readingDate: existingGroup.readingDate,
+    }));
+  }, [existingGroup]);
+
+  React.useEffect(() => {
+    if (readingGroupId) return;
+    const foundGroup = readingGroupLookupQuery.data?.reading;
+    if (foundGroup) {
+      router.replace(`/overview/readings/${foundGroup.id}`);
+    }
+  }, [readingGroupId, readingGroupLookupQuery.data?.reading, router]);
 
   const createReadingMutation = useMutation({
     mutationFn: (payload: {
@@ -294,40 +330,55 @@ export default function NewReadingPage() {
           )
         : null;
 
-      await createReadingMutation.mutateAsync({
-        roomId: data.roomId,
-        readingDate: data.readingDate,
-        water: includesWater
-          ? {
-              previousReading: Number.parseFloat(formData.waterPreviousReading),
-              currentReading: Number.parseFloat(formData.waterCurrentReading),
-              consumption: waterConsumption ?? 0,
-              previousPhotoUrl: formData.waterPreviousPhoto
-                ? URL.createObjectURL(formData.waterPreviousPhoto)
-                : "/placeholder.svg",
-              currentPhotoUrl: formData.waterCurrentPhoto
-                ? URL.createObjectURL(formData.waterCurrentPhoto)
-                : "/placeholder.svg",
-            }
-          : undefined,
-        electric: includesElectric
-          ? {
-              previousReading: Number.parseFloat(
-                formData.electricPreviousReading,
-              ),
-              currentReading: Number.parseFloat(
-                formData.electricCurrentReading,
-              ),
-              consumption: electricConsumption ?? 0,
-              previousPhotoUrl: formData.electricPreviousPhoto
-                ? URL.createObjectURL(formData.electricPreviousPhoto)
-                : "/placeholder.svg",
-              currentPhotoUrl: formData.electricCurrentPhoto
-                ? URL.createObjectURL(formData.electricCurrentPhoto)
-                : "/placeholder.svg",
-            }
-          : undefined,
-      });
+      const nextWater = includesWater
+        ? {
+            previousReading: Number.parseFloat(formData.waterPreviousReading),
+            currentReading: Number.parseFloat(formData.waterCurrentReading),
+            consumption: waterConsumption ?? 0,
+            previousPhotoUrl: formData.waterPreviousPhoto
+              ? URL.createObjectURL(formData.waterPreviousPhoto)
+              : "/placeholder.svg",
+            currentPhotoUrl: formData.waterCurrentPhoto
+              ? URL.createObjectURL(formData.waterCurrentPhoto)
+              : "/placeholder.svg",
+          }
+        : undefined;
+      const nextElectric = includesElectric
+        ? {
+            previousReading: Number.parseFloat(formData.electricPreviousReading),
+            currentReading: Number.parseFloat(formData.electricCurrentReading),
+            consumption: electricConsumption ?? 0,
+            previousPhotoUrl: formData.electricPreviousPhoto
+              ? URL.createObjectURL(formData.electricPreviousPhoto)
+              : "/placeholder.svg",
+            currentPhotoUrl: formData.electricCurrentPhoto
+              ? URL.createObjectURL(formData.electricCurrentPhoto)
+              : "/placeholder.svg",
+          }
+        : undefined;
+
+      if (readingGroupId) {
+        const requiresWater = settings ? settings.waterBillingMode !== "fixed" : true;
+        const hasWater = Boolean(nextWater ?? existingGroup?.water);
+        const hasElectric = Boolean(nextElectric ?? existingGroup?.electric);
+        const status =
+          hasElectric && (!requiresWater || hasWater)
+            ? "pending"
+            : "incomplete";
+
+        await readingsApi.update(readingGroupId, {
+          water: nextWater,
+          electric: nextElectric,
+          status,
+        });
+      } else {
+        await createReadingMutation.mutateAsync({
+          roomId: data.roomId,
+          readingDate: data.readingDate,
+          water: nextWater,
+          electric: nextElectric,
+        });
+      }
 
       toast({
         title: "บันทึกสำเร็จ",

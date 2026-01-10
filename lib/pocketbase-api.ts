@@ -535,6 +535,18 @@ export const tenantsApi = {
     deleteRecord("tenants", id),
 };
 
+const normalizeReadingDate = (value: string) => {
+  const directMatch = value.match(/^\d{4}-\d{2}-\d{2}/);
+  if (directMatch) {
+    return directMatch[0];
+  }
+  const parsed = new Date(value);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+  return value;
+};
+
 export const readingsApi = {
   getAll: async (): Promise<{ readings: MeterReadingGroup[] }> => {
     const items =
@@ -550,21 +562,29 @@ export const readingsApi = {
     );
     return { reading: mapReadingRecord(record as ReadingGroupMapperInput) };
   },
+  getByRoomDate: async (
+    roomId: string,
+    readingDate: string,
+  ): Promise<{ reading: MeterReadingGroup | null }> => {
+    const teamId = getCurrentUserTeamId();
+    const normalizedDate = normalizeReadingDate(readingDate);
+    const items = await listRecords<
+      Omit<ReadingGroupRecord, keyof RecordMeta>
+    >("reading_groups", {
+      filter: `teamId = "${teamId}" && roomId = "${roomId}" && readingDate = "${normalizedDate}"`,
+      perPage: 1,
+    });
+    if (!items.length) {
+      return { reading: null };
+    }
+    return {
+      reading: mapReadingRecord(items[0] as ReadingGroupMapperInput),
+    };
+  },
   create: async (
     data: CreateReadingData,
   ): Promise<{ reading: MeterReadingGroup }> => {
     const teamId = getCurrentUserTeamId();
-    const normalizeReadingDate = (value: string) => {
-      const directMatch = value.match(/^\d{4}-\d{2}-\d{2}/);
-      if (directMatch) {
-        return directMatch[0];
-      }
-      const parsed = new Date(value);
-      if (!Number.isNaN(parsed.getTime())) {
-        return parsed.toISOString().slice(0, 10);
-      }
-      return value;
-    };
     const readingDate = normalizeReadingDate(data.readingDate);
     if (!data.water && !data.electric) {
       throw new Error("ต้องมีการอ่านมิเตอร์อย่างน้อย 1 รายการ");

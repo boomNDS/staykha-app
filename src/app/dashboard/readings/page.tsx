@@ -313,12 +313,20 @@ export default function ReadingsPage() {
       const missingWater = !isWaterFixed && !currentGroup?.water;
       return {
         room,
+        currentGroup,
         missingElectric,
         missingWater,
         hasMissing: missingElectric || missingWater,
       };
     })
     .filter((item) => item.hasMissing);
+  const todayValue = (() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  })();
 
   const columns = [
     {
@@ -441,7 +449,7 @@ export default function ReadingsPage() {
                 icon: Droplets,
                 onClick: () =>
                   router.push(
-                    `/overview/readings/new?roomId=${group.roomId}&date=${group.readingDate}&meter=water`,
+                    `/overview/readings/new?roomId=${group.roomId}&date=${group.readingDate}&meter=water&readingGroupId=${group.id}`,
                   ),
               }
             : null,
@@ -451,7 +459,7 @@ export default function ReadingsPage() {
                 icon: Zap,
                 onClick: () =>
                   router.push(
-                    `/overview/readings/new?roomId=${group.roomId}&date=${group.readingDate}&meter=electric`,
+                    `/overview/readings/new?roomId=${group.roomId}&date=${group.readingDate}&meter=electric&readingGroupId=${group.id}`,
                   ),
               }
             : null,
@@ -811,11 +819,16 @@ export default function ReadingsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() =>
+                          onClick={() => {
+                            const dateParam =
+                              item.currentGroup?.readingDate ?? todayValue;
+                            const groupParam = item.currentGroup
+                              ? `&readingGroupId=${item.currentGroup.id}`
+                              : "";
                             router.push(
-                              `/overview/readings/new?roomId=${item.room.id}&date=${monthKey}-01&meter=water`,
-                            )
-                          }
+                              `/overview/readings/new?roomId=${item.room.id}&date=${dateParam}&meter=water${groupParam}`,
+                            );
+                          }}
                         >
                           เพิ่มมิเตอร์น้ำ
                         </Button>
@@ -824,11 +837,16 @@ export default function ReadingsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() =>
+                          onClick={() => {
+                            const dateParam =
+                              item.currentGroup?.readingDate ?? todayValue;
+                            const groupParam = item.currentGroup
+                              ? `&readingGroupId=${item.currentGroup.id}`
+                              : "";
                             router.push(
-                              `/overview/readings/new?roomId=${item.room.id}&date=${monthKey}-01&meter=electric`,
-                            )
-                          }
+                              `/overview/readings/new?roomId=${item.room.id}&date=${dateParam}&meter=electric${groupParam}`,
+                            );
+                          }}
                         >
                           เพิ่มมิเตอร์ไฟ
                         </Button>
