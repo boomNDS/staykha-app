@@ -500,6 +500,18 @@ export const readingsApi = {
     data: CreateReadingData,
   ): Promise<{ reading: MeterReadingGroup }> => {
     const teamId = getCurrentUserTeamId();
+    const normalizeReadingDate = (value: string) => {
+      const directMatch = value.match(/^\d{4}-\d{2}-\d{2}/);
+      if (directMatch) {
+        return directMatch[0];
+      }
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString().slice(0, 10);
+      }
+      return value;
+    };
+    const readingDate = normalizeReadingDate(data.readingDate);
     if (!data.water && !data.electric) {
       throw new Error("ต้องมีการอ่านมิเตอร์อย่างน้อย 1 รายการ");
     }
@@ -524,7 +536,7 @@ export const readingsApi = {
     const existingGroups = await listRecords<
       Omit<ReadingGroupRecord, keyof RecordMeta>
     >("reading_groups", {
-      filter: `teamId = "${teamId}" && roomId = "${data.roomId}" && readingDate = "${data.readingDate}"`,
+      filter: `teamId = "${teamId}" && roomId = "${data.roomId}" && readingDate = "${readingDate}"`,
       perPage: 1,
     });
 
@@ -569,6 +581,7 @@ export const readingsApi = {
       }
     >("reading_groups", {
       ...data,
+      readingDate,
       status,
       teamId,
     });

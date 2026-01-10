@@ -402,6 +402,18 @@ export const readingsApi = {
     };
   }) => {
     await delay();
+    const normalizeReadingDate = (value: string) => {
+      const directMatch = value.match(/^\d{4}-\d{2}-\d{2}/);
+      if (directMatch) {
+        return directMatch[0];
+      }
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString().slice(0, 10);
+      }
+      return value;
+    };
+    const readingDate = normalizeReadingDate(data.readingDate);
     if (!data.water && !data.electric) {
       throw new Error("ต้องมีการอ่านมิเตอร์อย่างน้อย 1 รายการ");
     }
@@ -412,7 +424,7 @@ export const readingsApi = {
       roomId: data.roomId,
       roomNumber: room?.roomNumber,
       tenantName: tenant?.name,
-      readingDate: data.readingDate,
+      readingDate,
       status: "pending" as const,
     };
 
@@ -462,7 +474,7 @@ export const readingsApi = {
 
     return {
       reading: groupReadings().find(
-        (item) => item.id === `${data.roomId}-${data.readingDate}`,
+        (item) => item.id === `${data.roomId}-${readingDate}`,
       ),
     };
   },

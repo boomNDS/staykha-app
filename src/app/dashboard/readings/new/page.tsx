@@ -2,7 +2,7 @@
 
 import { createWorker } from "tesseract.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Droplets, Keyboard, Loader2, Zap } from "lucide-react";
+import { Calendar as CalendarIcon, Camera, Droplets, Keyboard, Loader2, Zap } from "lucide-react";
 import * as React from "react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
@@ -10,9 +10,10 @@ import { SettingsRequired } from "@/components/settings-required";
 import { ConsumptionSummary } from "@/components/readings/consumption-summary";
 import { MeterReadingSection } from "@/components/readings/meter-reading-section";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -30,6 +31,7 @@ import { useRouter, useSearchParams } from "@/lib/router";
 import { createReadingFormSchema, mapZodErrors } from "@/lib/schemas";
 import type { ReadingFormValues } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
+import { cn, formatDate } from "@/lib/utils";
 import { calculateConsumption, validateImageFile } from "@/lib/validation";
 
 type InputMode = "ocr" | "manual";
@@ -65,10 +67,31 @@ export default function NewReadingPage() {
     return scope === "water" || scope === "electric" ? scope : "both";
   })();
   const initialDate =
-    searchParams.get("date") ?? new Date().toISOString().split("T")[0];
+    (() => {
+      const dateParam = searchParams.get("date");
+      if (dateParam) {
+        const match = dateParam.match(/\d{4}-\d{2}-\d{2}/);
+        if (match) return match[0];
+      }
+      return new Date().toISOString().split("T")[0];
+    })();
   const initialRoomId = searchParams.get("roomId") ?? "";
   const [meterScope, setMeterScope] = React.useState<MeterScope>(initialScope);
   const settings = settingsQuery.data?.settings;
+
+  const toDateInputValue = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const parseDateString = (value: string) => {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return null;
+    const [, year, month, day] = match;
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  };
 
   // Show settings required message if settings don't exist
   if (settingsQuery.isSuccess && !settings) {
@@ -93,6 +116,8 @@ export default function NewReadingPage() {
   }
 
   const isWaterFixed = settings?.waterBillingMode === "fixed";
+  const selectedDate =
+    parseDateString(formData.readingDate) ?? new Date();
 
   React.useEffect(() => {
     if (isWaterFixed && meterScope !== "electric") {
@@ -449,15 +474,43 @@ export default function NewReadingPage() {
             {/* Reading Date */}
             <div className="space-y-2">
               <Label htmlFor="readingDate">วันที่อ่านมิเตอร์</Label>
-              <Input
-                id="readingDate"
-                type="date"
-                value={formData.readingDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, readingDate: e.target.value })
-                }
-                disabled={isLoading}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={isLoading}
+                    className={cn(
+                      "w-full justify-between",
+                      errors.readingDate ? "border-destructive" : "",
+                    )}
+                  >
+                    <span>
+                      {selectedDate ? formatDate(selectedDate) : "เลือกวันที่"}
+                    </span>
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      if (date) {
+                        setFormData({
+                          ...formData,
+                          readingDate: toDateInputValue(date),
+                        });
+                      }
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.readingDate && (
+                <p className="text-sm text-destructive">
+                  {errors.readingDate}
+                </p>
+              )}
             </div>
 
             <div className="space-y-6">
