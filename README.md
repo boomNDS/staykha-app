@@ -1,5 +1,9 @@
 # StayKha
 
+![Vite 6.1.0](https://img.shields.io/badge/Vite-6.1.0-646CFF?logo=vite&logoColor=white)
+![React 19.2.0](https://img.shields.io/badge/React-19.2.0-61DAFB?logo=react&logoColor=0B0F1A)
+![PocketBase latest](https://img.shields.io/badge/PocketBase-latest-0A0A0A?logo=pocketbase&logoColor=white)
+
 A modern dormitory and room management system with automated meter reading and billing capabilities. StayKha helps property owners manage buildings, rooms, tenants, capture monthly utility readings, and generate invoices seamlessly.
 
 ## Features
