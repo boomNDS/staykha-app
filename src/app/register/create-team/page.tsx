@@ -23,7 +23,7 @@ export default function CreateTeamPage() {
 
   const router = useRouter();
   const { toast } = useToast();
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
   const [teamName, setTeamName] = React.useState("");
   const [error, setError] = React.useState("");

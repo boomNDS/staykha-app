@@ -163,10 +163,7 @@ export default function BuildingsPage() {
   if (user?.role !== "owner") {
     return (
       <div className="space-y-6">
-        <PageHeader
-          title="อาคาร"
-          description="จัดการข้อมูลอาคารของคุณ"
-        />
+        <PageHeader title="อาคาร" description="จัดการข้อมูลอาคารของคุณ" />
         <AdminRestrictionBanner
           title="ต้องให้เจ้าของดำเนินการ"
           message="เฉพาะเจ้าของเท่านั้นที่สามารถสร้างและจัดการอาคารได้ โปรดติดต่อเจ้าของทีมเพื่อสร้างอาคาร"

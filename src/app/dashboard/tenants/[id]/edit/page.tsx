@@ -127,11 +127,7 @@ export default function EditTenantPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="แก้ไขผู้เช่า"
-        description="อัปเดตข้อมูลผู้เช่า"
-        showBack
-      />
+      <PageHeader title="แก้ไขผู้เช่า" description="อัปเดตข้อมูลผู้เช่า" showBack />
 
       <Card>
         <CardHeader>

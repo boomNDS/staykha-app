@@ -333,13 +333,17 @@ export default function BillingPage() {
       key: "status",
       header: "สถานะ",
       render: (invoice: Invoice) => {
-        const dueDateLabel = new Date(invoice.dueDate).toLocaleDateString("th-TH");
+        const dueDateLabel = new Date(invoice.dueDate).toLocaleDateString(
+          "th-TH",
+        );
         return (
           <div className="space-y-1">
             <Badge variant={getStatusColor(invoice.status)}>
               {getStatusLabel(invoice.status)}
             </Badge>
-            <p className="text-xs text-muted-foreground">ครบกำหนด {dueDateLabel}</p>
+            <p className="text-xs text-muted-foreground">
+              ครบกำหนด {dueDateLabel}
+            </p>
           </div>
         );
       },

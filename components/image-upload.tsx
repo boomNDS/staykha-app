@@ -82,9 +82,7 @@ export function ImageUpload({
           <input {...getInputProps({ id: inputId })} />
           <Upload className="h-8 w-8 text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">
-            {isDragActive
-              ? "วางรูปที่นี่"
-              : "ลากและวาง หรือคลิกเพื่ออัปโหลด"}
+            {isDragActive ? "วางรูปที่นี่" : "ลากและวาง หรือคลิกเพื่ออัปโหลด"}
           </p>
           <p className="text-xs text-muted-foreground">
             PNG, JPG, WEBP (สูงสุด 5MB)

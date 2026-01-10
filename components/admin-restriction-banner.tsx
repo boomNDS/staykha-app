@@ -15,14 +15,17 @@ export function AdminRestrictionBanner({
   action,
 }: AdminRestrictionBannerProps) {
   return (
-    <Alert variant="default" className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+    <Alert
+      variant="default"
+      className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950"
+    >
       <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-      <AlertTitle className="text-amber-900 dark:text-amber-100">{title}</AlertTitle>
+      <AlertTitle className="text-amber-900 dark:text-amber-100">
+        {title}
+      </AlertTitle>
       <AlertDescription className="text-amber-800 dark:text-amber-200">
         {message}
-        {action && (
-          <span className="mt-1 block font-medium">{action}</span>
-        )}
+        {action && <span className="mt-1 block font-medium">{action}</span>}
       </AlertDescription>
     </Alert>
   );

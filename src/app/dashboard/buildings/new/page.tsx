@@ -26,16 +26,12 @@ export default function NewBuildingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   // Show restriction banner for admins
   if (user?.role !== "owner") {
     return (
       <div className="space-y-6">
-        <PageHeader
-          title="เพิ่มอาคารใหม่"
-          description="สร้างอาคารใหม่"
-          showBack
-        />
+        <PageHeader title="เพิ่มอาคารใหม่" description="สร้างอาคารใหม่" showBack />
         <AdminRestrictionBanner
           title="ต้องให้เจ้าของดำเนินการ"
           message="เฉพาะเจ้าของเท่านั้นที่สามารถสร้างอาคารได้ โปรดติดต่อเจ้าของทีมเพื่อสร้างอาคารก่อน"
@@ -120,18 +116,12 @@ export default function NewBuildingPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="เพิ่มอาคารใหม่"
-        description="สร้างอาคารใหม่"
-        showBack
-      />
+      <PageHeader title="เพิ่มอาคารใหม่" description="สร้างอาคารใหม่" showBack />
 
       <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle>ข้อมูลอาคาร</CardTitle>
-          <CardDescription>
-            กรอกรายละเอียดอาคาร
-          </CardDescription>
+          <CardDescription>กรอกรายละเอียดอาคาร</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -100,9 +100,7 @@ export default function NewTenantPage() {
       <Card>
         <CardHeader>
           <CardTitle>ข้อมูลผู้เช่า</CardTitle>
-          <CardDescription>
-            กรอกรายละเอียดผู้เช่าใหม่
-          </CardDescription>
+          <CardDescription>กรอกรายละเอียดผู้เช่าใหม่</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">

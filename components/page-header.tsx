@@ -33,7 +33,17 @@ export function PageHeader({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => (backHref ? router.push(backHref) : router.back())}
+              onClick={() => {
+                if (backHref) {
+                  router.push(backHref);
+                  return;
+                }
+                if (window.history.length > 1) {
+                  router.back();
+                  return;
+                }
+                router.push("/overview");
+              }}
               aria-label="ย้อนกลับ"
             >
               <ArrowLeft className="h-5 w-5" />

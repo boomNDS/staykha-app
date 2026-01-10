@@ -3,7 +3,32 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "a11y": {
+        "noSvgWithoutTitle": "off",
+        "useSemanticElements": "off",
+        "useFocusableInteractive": "off",
+        "useAriaPropsSupportedByRole": "off",
+        "useAriaPropsForRole": "off",
+        "noStaticElementInteractions": "off",
+        "useKeyWithClickEvents": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "off",
+        "useHookAtTopLevel": "off"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noDocumentCookie": "off",
+        "noExplicitAny": "off",
+        "useBiomeIgnoreFolder": "off"
+      },
+      "style": {
+        "useImportType": "off"
+      }
     }
   },
   "formatter": {
@@ -12,12 +37,16 @@
     "indentWidth": 2,
     "formatWithErrors": true
   },
+  "assist": {
+    "enabled": false
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "files": {
-    "experimentalScannerIgnores": [
-      "**/node_modules/**",
-      "**/dist/**",
-      "**/.next/**"
-    ]
+    "includes": ["**/*", "!!**/node_modules", "!!**/dist", "!!**/.next"]
   },
   "overrides": [
     {

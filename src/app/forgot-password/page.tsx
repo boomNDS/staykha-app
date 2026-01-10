@@ -151,9 +151,7 @@ export default function ForgotPasswordPage() {
             <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
               ลืมรหัสผ่าน?
             </CardTitle>
-            <CardDescription>
-              กรอกอีเมลเพื่อรับลิงก์รีเซ็ตรหัสผ่าน
-            </CardDescription>
+            <CardDescription>กรอกอีเมลเพื่อรับลิงก์รีเซ็ตรหัสผ่าน</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

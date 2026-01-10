@@ -511,14 +511,10 @@ export const invoicesApi = {
       throw new Error("ไม่พบกลุ่มการอ่านมิเตอร์");
     }
     if (!group.electric) {
-      throw new Error(
-        "ต้องมีการอ่านมิเตอร์ไฟก่อนจึงจะสร้างใบแจ้งหนี้ได้",
-      );
+      throw new Error("ต้องมีการอ่านมิเตอร์ไฟก่อนจึงจะสร้างใบแจ้งหนี้ได้");
     }
     if (settings.waterBillingMode !== "fixed" && !group.water) {
-      throw new Error(
-        "กรุณากรอกการอ่านมิเตอร์น้ำและไฟให้ครบก่อนสร้างใบแจ้งหนี้",
-      );
+      throw new Error("กรุณากรอกการอ่านมิเตอร์น้ำและไฟให้ครบก่อนสร้างใบแจ้งหนี้");
     }
     const room = mockRooms.find((item) => item.id === group.roomId);
     const tenant = mockTenants.find((item) => item.roomId === group.roomId);

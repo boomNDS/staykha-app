@@ -554,9 +554,7 @@ export default function RoomsPage() {
                       </p>
                     </>
                   ) : (
-                    <p className="text-sm text-muted-foreground">
-                      ยังไม่มีผู้เช่า
-                    </p>
+                    <p className="text-sm text-muted-foreground">ยังไม่มีผู้เช่า</p>
                   )}
                 </div>
               </div>

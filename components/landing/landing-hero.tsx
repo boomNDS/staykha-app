@@ -103,9 +103,7 @@ export function LandingHero() {
               <p className="mt-2 text-xl font-semibold text-foreground">
                 52 ห้อง
               </p>
-              <p className="text-xs text-muted-foreground">
-                ขาด 4 ห้อง
-              </p>
+              <p className="text-xs text-muted-foreground">ขาด 4 ห้อง</p>
             </div>
           </div>
           <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-primary">

@@ -67,7 +67,7 @@ export default function BulkRoomPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const settings = settingsQuery.data?.settings;
-  
+
   // Show settings required message if settings don't exist
   if (settingsQuery.isSuccess && !settings) {
     return (
@@ -77,17 +77,13 @@ export default function BulkRoomPage() {
       />
     );
   }
-  
+
   React.useEffect(() => {
     if (settings) {
       setFormData((prev) => ({
         ...prev,
-        monthlyRent:
-          prev.monthlyRent ||
-          String(settings.defaultRoomRent ?? ""),
-        size:
-          prev.size ||
-          String(settings.defaultRoomSize ?? ""),
+        monthlyRent: prev.monthlyRent || String(settings.defaultRoomRent ?? ""),
+        size: prev.size || String(settings.defaultRoomSize ?? ""),
       }));
     }
   }, [settings]);
@@ -181,10 +177,8 @@ export default function BulkRoomPage() {
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <Card>
           <CardHeader>
-          <CardTitle>สร้างห้องแบบอัตโนมัติ</CardTitle>
-          <CardDescription>
-            ระบบจะสร้างห้องให้ทุกชั้นตามช่วงที่กำหนด
-          </CardDescription>
+            <CardTitle>สร้างห้องแบบอัตโนมัติ</CardTitle>
+            <CardDescription>ระบบจะสร้างห้องให้ทุกชั้นตามช่วงที่กำหนด</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -230,9 +224,9 @@ export default function BulkRoomPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                    <SelectItem value="vacant">ว่าง</SelectItem>
-                    <SelectItem value="occupied">เข้าพัก</SelectItem>
-                    <SelectItem value="maintenance">ซ่อมบำรุง</SelectItem>
+                      <SelectItem value="vacant">ว่าง</SelectItem>
+                      <SelectItem value="occupied">เข้าพัก</SelectItem>
+                      <SelectItem value="maintenance">ซ่อมบำรุง</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -389,17 +383,13 @@ export default function BulkRoomPage() {
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
             <div className="rounded-lg border bg-muted/20 p-3">
-              <p className="text-xs text-muted-foreground">
-                จำนวนห้องที่จะถูกสร้าง
-              </p>
+              <p className="text-xs text-muted-foreground">จำนวนห้องที่จะถูกสร้าง</p>
               <p className="mt-2 text-2xl font-semibold text-foreground">
                 {totalRooms}
               </p>
             </div>
             <div className="rounded-lg border bg-muted/20 p-3">
-              <p className="text-xs text-muted-foreground">
-                ตัวอย่างเลขห้อง
-              </p>
+              <p className="text-xs text-muted-foreground">ตัวอย่างเลขห้อง</p>
               <p className="mt-2 font-semibold text-foreground">{sampleRoom}</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 รูปแบบ: ชั้น + เลขสองหลัก (เช่น 201, 202, 203)

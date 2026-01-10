@@ -556,11 +556,9 @@ export const invoicesApi = {
     >("invoices", {
       filter: `readingGroupId = "${readingGroupId}"`,
     });
-    
+
     if (existingInvoicesForGroup.length > 0) {
-      throw new Error(
-        "มีใบแจ้งหนี้สำหรับกลุ่มการอ่านนี้แล้ว (แต่ละกลุ่มสร้างได้เพียง 1 ใบ)",
-      );
+      throw new Error("มีใบแจ้งหนี้สำหรับกลุ่มการอ่านนี้แล้ว (แต่ละกลุ่มสร้างได้เพียง 1 ใบ)");
     }
 
     // Get the reading group
@@ -603,9 +601,13 @@ export const invoicesApi = {
     // Calculate dates
     const issueDate = new Date(readingGroup.readingDate);
     const dueDate = new Date(issueDate);
-    
+
     // Use dueDateDayOfMonth if set, otherwise use paymentTermsDays
-    if (settings.dueDateDayOfMonth && settings.dueDateDayOfMonth >= 1 && settings.dueDateDayOfMonth <= 31) {
+    if (
+      settings.dueDateDayOfMonth &&
+      settings.dueDateDayOfMonth >= 1 &&
+      settings.dueDateDayOfMonth <= 31
+    ) {
       // Set due date to the specified day of the month
       dueDate.setDate(settings.dueDateDayOfMonth);
       // If the due date is in the past for this month, move to next month
@@ -618,20 +620,24 @@ export const invoicesApi = {
     }
 
     // Extract reading values from reading group
-    const waterReading = readingGroup.water as {
-      previousReading?: number;
-      currentReading?: number;
-      consumption?: number;
-      previousPhotoUrl?: string;
-      currentPhotoUrl?: string;
-    } | undefined;
-    const electricReading = readingGroup.electric as {
-      previousReading?: number;
-      currentReading?: number;
-      consumption?: number;
-      previousPhotoUrl?: string;
-      currentPhotoUrl?: string;
-    } | undefined;
+    const waterReading = readingGroup.water as
+      | {
+          previousReading?: number;
+          currentReading?: number;
+          consumption?: number;
+          previousPhotoUrl?: string;
+          currentPhotoUrl?: string;
+        }
+      | undefined;
+    const electricReading = readingGroup.electric as
+      | {
+          previousReading?: number;
+          currentReading?: number;
+          consumption?: number;
+          previousPhotoUrl?: string;
+          currentPhotoUrl?: string;
+        }
+      | undefined;
 
     // Calculate amounts
     const waterConsumption = waterReading?.consumption ?? 0;
@@ -733,7 +739,7 @@ export const invoicesApi = {
 export const settingsApi = {
   get: async (
     teamId: string,
-  ): Promise<{ settings: AdminSettings & RecordMeta | null }> => {
+  ): Promise<{ settings: (AdminSettings & RecordMeta) | null }> => {
     const items = await listRecords<Omit<SettingsRecord, keyof RecordMeta>>(
       "settings",
       {
@@ -757,67 +763,60 @@ export const settingsApi = {
         filter: `teamId = "${teamId}"`,
       },
     );
-    
+
     // If settings don't exist, create them with the provided updates
     if (items.length === 0) {
       // Filter out fields that shouldn't be created (team relation, etc.)
-      const {
-        team,
-        teamId: _teamId,
-        ...createPayload
-      } = updates;
-      
+      const { team, teamId: _teamId, ...createPayload } = updates;
+
       // Remove undefined values
       const cleanPayload = Object.fromEntries(
-        Object.entries(createPayload).filter(([_, value]) => value !== undefined)
+        Object.entries(createPayload).filter(
+          ([_, value]) => value !== undefined,
+        ),
       ) as Partial<Omit<SettingsRecord, keyof RecordMeta>>;
-      
+
       // Create with defaults for required fields if not provided
-      const newRecord = await createRecord<Omit<SettingsRecord, keyof RecordMeta>>(
-        "settings",
-        {
-          teamId,
-          waterRatePerUnit: cleanPayload.waterRatePerUnit ?? 25,
-          waterBillingMode: cleanPayload.waterBillingMode ?? "metered",
-          waterFixedFee: cleanPayload.waterFixedFee ?? 0,
-          electricRatePerUnit: cleanPayload.electricRatePerUnit ?? 4.5,
-          taxRate: cleanPayload.taxRate ?? 7,
-          currency: cleanPayload.currency ?? "THB",
-          companyName: cleanPayload.companyName ?? "StayKha",
-          companyAddress: cleanPayload.companyAddress ?? "",
-          companyPhone: cleanPayload.companyPhone ?? "",
-          companyEmail: cleanPayload.companyEmail ?? "",
-          invoicePrefix: cleanPayload.invoicePrefix ?? "INV",
-          paymentTermsDays: cleanPayload.paymentTermsDays ?? 15,
-          defaultRoomRent: cleanPayload.defaultRoomRent ?? 4500,
-          defaultRoomSize: cleanPayload.defaultRoomSize ?? 28,
-          latePaymentPenaltyPerDay: cleanPayload.latePaymentPenaltyPerDay ?? 0,
-          dueDateDayOfMonth: cleanPayload.dueDateDayOfMonth ?? 5,
-          labelInvoice: cleanPayload.labelInvoice ?? "ใบแจ้งหนี้",
-          labelRoomRent: cleanPayload.labelRoomRent ?? "ค่าเช่าห้อง",
-          labelWater: cleanPayload.labelWater ?? "ค่าน้ำประปา",
-          labelElectricity: cleanPayload.labelElectricity ?? "ค่าไฟฟ้า",
-          ...cleanPayload,
-        },
-      );
+      const newRecord = await createRecord<
+        Omit<SettingsRecord, keyof RecordMeta>
+      >("settings", {
+        teamId,
+        waterRatePerUnit: cleanPayload.waterRatePerUnit ?? 25,
+        waterBillingMode: cleanPayload.waterBillingMode ?? "metered",
+        waterFixedFee: cleanPayload.waterFixedFee ?? 0,
+        electricRatePerUnit: cleanPayload.electricRatePerUnit ?? 4.5,
+        taxRate: cleanPayload.taxRate ?? 7,
+        currency: cleanPayload.currency ?? "THB",
+        companyName: cleanPayload.companyName ?? "StayKha",
+        companyAddress: cleanPayload.companyAddress ?? "",
+        companyPhone: cleanPayload.companyPhone ?? "",
+        companyEmail: cleanPayload.companyEmail ?? "",
+        invoicePrefix: cleanPayload.invoicePrefix ?? "INV",
+        paymentTermsDays: cleanPayload.paymentTermsDays ?? 15,
+        defaultRoomRent: cleanPayload.defaultRoomRent ?? 4500,
+        defaultRoomSize: cleanPayload.defaultRoomSize ?? 28,
+        latePaymentPenaltyPerDay: cleanPayload.latePaymentPenaltyPerDay ?? 0,
+        dueDateDayOfMonth: cleanPayload.dueDateDayOfMonth ?? 5,
+        labelInvoice: cleanPayload.labelInvoice ?? "ใบแจ้งหนี้",
+        labelRoomRent: cleanPayload.labelRoomRent ?? "ค่าเช่าห้อง",
+        labelWater: cleanPayload.labelWater ?? "ค่าน้ำประปา",
+        labelElectricity: cleanPayload.labelElectricity ?? "ค่าไฟฟ้า",
+        ...cleanPayload,
+      });
       return { settings: mapSettingsRecord(newRecord as SettingsMapperInput) };
     }
-    
+
     // Settings exist, update them
     const target = items[0];
-    
+
     // Filter out fields that shouldn't be updated (team relation, etc.)
-    const {
-      team,
-      teamId: _teamId,
-      ...updatePayload
-    } = updates;
-    
+    const { team, teamId: _teamId, ...updatePayload } = updates;
+
     // Remove undefined values to avoid sending them to PocketBase
     const cleanPayload = Object.fromEntries(
-      Object.entries(updatePayload).filter(([_, value]) => value !== undefined)
+      Object.entries(updatePayload).filter(([_, value]) => value !== undefined),
     ) as Partial<Omit<SettingsRecord, keyof RecordMeta>>;
-    
+
     const updated = await updateRecord("settings", target.id, cleanPayload);
     return { settings: mapSettingsRecord(updated as SettingsMapperInput) };
   },

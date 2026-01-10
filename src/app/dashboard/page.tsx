@@ -142,10 +142,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-8 sm:space-y-8">
-      <PageHeader
-        title="ภาพรวม"
-        description="ภาพรวมการจัดการ StayKha ของคุณ"
-      />
+      <PageHeader title="ภาพรวม" description="ภาพรวมการจัดการ StayKha ของคุณ" />
 
       <OnboardingChecklist
         buildingsCount={buildings.length}

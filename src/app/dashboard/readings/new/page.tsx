@@ -67,7 +67,7 @@ export default function NewReadingPage() {
   const initialRoomId = searchParams.get("roomId") ?? "";
   const [meterScope, setMeterScope] = React.useState<MeterScope>(initialScope);
   const settings = settingsQuery.data?.settings;
-  
+
   // Show settings required message if settings don't exist
   if (settingsQuery.isSuccess && !settings) {
     return (
@@ -77,7 +77,7 @@ export default function NewReadingPage() {
       />
     );
   }
-  
+
   const isWaterFixed = settings?.waterBillingMode === "fixed";
 
   React.useEffect(() => {
@@ -128,15 +128,17 @@ export default function NewReadingPage() {
 
   const performOCR = async (file: File): Promise<string> => {
     const worker = await createWorker("eng");
-    
+
     try {
       // Perform OCR on the image
-      const { data: { text } } = await worker.recognize(file);
-      
+      const {
+        data: { text },
+      } = await worker.recognize(file);
+
       // Extract numbers from the OCR text
       // Look for patterns like: 1234.56, 1234, or just numbers
       const numbers = text.match(/\d+\.?\d*/g);
-      
+
       if (numbers && numbers.length > 0) {
         // Use the first/largest number found (likely the meter reading)
         const readings = numbers.map(Number).filter((n) => !Number.isNaN(n));
@@ -146,7 +148,7 @@ export default function NewReadingPage() {
           return maxReading.toFixed(2);
         }
       }
-      
+
       // If no numbers found, try to extract any numeric value
       const fallbackNumber = text.match(/[\d,]+\.?\d*/);
       if (fallbackNumber) {
@@ -155,7 +157,7 @@ export default function NewReadingPage() {
           return value.toFixed(2);
         }
       }
-      
+
       throw new Error("ไม่พบตัวเลขในรูปภาพ");
     } finally {
       await worker.terminate();
@@ -183,7 +185,7 @@ export default function NewReadingPage() {
         toast({
           title: "OCR ไม่สำเร็จ",
           description:
-            error instanceof Error 
+            error instanceof Error
               ? `ไม่สามารถอ่านค่าได้: ${error.message} กรุณากรอกเอง`
               : "ไม่สามารถอ่านค่าได้จากรูปภาพ กรุณากรอกเอง",
           variant: "destructive",
@@ -382,9 +384,7 @@ export default function NewReadingPage() {
                 className="mt-2 w-full"
               >
                 {!isWaterFixed && (
-                  <ToggleGroupItem value="both">
-                    น้ำ + ไฟ
-                  </ToggleGroupItem>
+                  <ToggleGroupItem value="both">น้ำ + ไฟ</ToggleGroupItem>
                 )}
                 {!isWaterFixed && (
                   <ToggleGroupItem value="water">เฉพาะน้ำ</ToggleGroupItem>

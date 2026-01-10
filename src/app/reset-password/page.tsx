@@ -45,8 +45,7 @@ export default function ResetPasswordPage() {
     if (!token) {
       toast({
         title: "ลิงก์ไม่ถูกต้อง",
-        description:
-          "ลิงก์รีเซ็ตไม่ถูกต้องหรือไม่ครบถ้วน กรุณาขอลิงก์ใหม่อีกครั้ง",
+        description: "ลิงก์รีเซ็ตไม่ถูกต้องหรือไม่ครบถ้วน กรุณาขอลิงก์ใหม่อีกครั้ง",
         variant: "destructive",
       });
       router.push("/forgot-password");
@@ -93,9 +92,7 @@ export default function ResetPasswordPage() {
     } catch (error: any) {
       toast({
         title: "รีเซ็ตรหัสผ่านไม่สำเร็จ",
-        description:
-          error.message ||
-          "ลิงก์อาจหมดอายุ กรุณาขอลิงก์ใหม่อีกครั้ง",
+        description: error.message || "ลิงก์อาจหมดอายุ กรุณาขอลิงก์ใหม่อีกครั้ง",
         variant: "destructive",
       });
     } finally {
@@ -115,9 +112,7 @@ export default function ResetPasswordPage() {
             <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
               รีเซ็ตรหัสผ่านสำเร็จ
             </CardTitle>
-            <CardDescription>
-              รีเซ็ตรหัสผ่านเรียบร้อยแล้ว
-            </CardDescription>
+            <CardDescription>รีเซ็ตรหัสผ่านเรียบร้อยแล้ว</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-center text-sm text-muted-foreground">

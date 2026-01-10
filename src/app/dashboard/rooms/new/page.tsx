@@ -61,7 +61,7 @@ export default function NewRoomPage() {
   const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   const settings = settingsQuery.data?.settings;
-  
+
   // Show settings required message if settings don't exist
   if (settingsQuery.isSuccess && !settings) {
     return (
@@ -71,17 +71,13 @@ export default function NewRoomPage() {
       />
     );
   }
-  
+
   React.useEffect(() => {
     if (settings) {
       setFormData((prev) => ({
         ...prev,
-        monthlyRent:
-          prev.monthlyRent ||
-          String(settings.defaultRoomRent ?? ""),
-        size:
-          prev.size ||
-          String(settings.defaultRoomSize ?? ""),
+        monthlyRent: prev.monthlyRent || String(settings.defaultRoomRent ?? ""),
+        size: prev.size || String(settings.defaultRoomSize ?? ""),
       }));
     }
   }, [settings]);
@@ -132,18 +128,12 @@ export default function NewRoomPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="เพิ่มห้องใหม่"
-        description="สร้างห้องใหม่ในระบบ"
-        showBack
-      />
+      <PageHeader title="เพิ่มห้องใหม่" description="สร้างห้องใหม่ในระบบ" showBack />
 
       <Card>
         <CardHeader>
           <CardTitle>ข้อมูลห้อง</CardTitle>
-          <CardDescription>
-            กรอกรายละเอียดห้องใหม่
-          </CardDescription>
+          <CardDescription>กรอกรายละเอียดห้องใหม่</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">

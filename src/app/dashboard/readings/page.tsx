@@ -26,7 +26,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { invoicesApi, readingsApi, roomsApi, settingsApi } from "@/lib/api-client";
+import {
+  invoicesApi,
+  readingsApi,
+  roomsApi,
+  settingsApi,
+} from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@/lib/router";
 import type { Invoice, MeterReadingGroup, Room } from "@/lib/types";
@@ -179,7 +184,9 @@ export default function ReadingsPage() {
   const selectedGroupStatus = selectedGroup?.status ?? "pending";
   const invoices = invoicesQuery.data?.invoices ?? [];
   const hasExistingInvoice = selectedGroup
-    ? invoices.some((invoice: Invoice) => invoice.readingGroupId === selectedGroup.id)
+    ? invoices.some(
+        (invoice: Invoice) => invoice.readingGroupId === selectedGroup.id,
+      )
     : false;
   const isInvoiceReady =
     Boolean(selectedGroup?.electric) &&
@@ -509,9 +516,7 @@ export default function ReadingsPage() {
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle>รายละเอียดกลุ่ม</CardTitle>
-            <CardDescription>
-              ตรวจสอบห้องและรอบบิลก่อนสร้างใบแจ้งหนี้
-            </CardDescription>
+            <CardDescription>ตรวจสอบห้องและรอบบิลก่อนสร้างใบแจ้งหนี้</CardDescription>
           </div>
           <div className="min-w-[200px]">
             <Select
@@ -679,9 +684,7 @@ export default function ReadingsPage() {
                   header: "ที่ขาด",
                   render: (item) => (
                     <div className="flex flex-wrap gap-2">
-                      {item.missingWater && (
-                        <Badge variant="outline">น้ำ</Badge>
-                      )}
+                      {item.missingWater && <Badge variant="outline">น้ำ</Badge>}
                       {item.missingElectric && (
                         <Badge variant="outline">ไฟ</Badge>
                       )}

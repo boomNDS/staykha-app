@@ -78,13 +78,8 @@ export default function SettingsPage() {
 
   const { toast } = useToast();
   const { user } = useAuth();
-  const { settings, isLoading, isUpdating, updateSettings } = useSettings();
-  const {
-    team,
-    isLoading: isTeamLoading,
-    isUpdating: isSavingTeam,
-    updateTeam,
-  } = useTeam();
+  const { settings, isLoading, updateSettings } = useSettings();
+  const { team, isUpdating: isSavingTeam, updateTeam } = useTeam();
   const [isSaving, setIsSaving] = React.useState(false);
   const [teamName, setTeamName] = React.useState("");
 
@@ -148,7 +143,10 @@ export default function SettingsPage() {
       });
     } catch (error: any) {
       console.error("Settings save error:", error);
-      const errorMessage = error?.response?.data?.message || error?.message || "Failed to save settings";
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to save settings";
       toast({
         title: "เกิดข้อผิดพลาด",
         description: errorMessage,
@@ -215,7 +213,7 @@ export default function SettingsPage() {
         </div>
       );
     }
-    
+
     // If owner, show create button
     return (
       <div className="space-y-6 pb-8">
@@ -259,10 +257,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      <PageHeader
-        title="Settings"
-        description="จัดการอัตราค่าบริการและข้อมูลบริษัท"
-      />
+      <PageHeader title="Settings" description="จัดการอัตราค่าบริการและข้อมูลบริษัท" />
 
       <div className="space-y-6">
         {/* Team Management (Owner Only) */}
@@ -270,9 +265,7 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>ข้อมูลทีม</CardTitle>
-              <CardDescription>
-                จัดการชื่อทีม/องค์กรของคุณ
-              </CardDescription>
+              <CardDescription>จัดการชื่อทีม/องค์กรของคุณ</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -311,9 +304,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>อัตราค่าบริการ</CardTitle>
-            <CardDescription>
-              กำหนดอัตราต่อหน่วยสำหรับค่าน้ำและค่าไฟ
-            </CardDescription>
+            <CardDescription>กำหนดอัตราต่อหน่วยสำหรับค่าน้ำและค่าไฟ</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-6 sm:grid-cols-2">
@@ -561,9 +552,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>ตั้งค่าใบแจ้งหนี้</CardTitle>
-            <CardDescription>
-              กำหนดตัวเลือกการสร้างใบแจ้งหนี้
-            </CardDescription>
+            <CardDescription>กำหนดตัวเลือกการสร้างใบแจ้งหนี้</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -717,13 +706,13 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
-              <div className="space-y-2">
-                <LabelWithInfo
-                  htmlFor="latePaymentPenaltyPerDay"
-                  tooltip="ค่าปรับรายวันที่คิดเมื่อชำระเกินกำหนด จะแสดงบนใบแจ้งหนี้เป็น 'หากเกินกำหนด ชำระค่าปรับวันละ [จำนวนเงิน]'. ตั้งค่า 0 เพื่อปิด"
-                >
-                  ค่าปรับชำระล่าช้า (ต่อวัน)
-                </LabelWithInfo>
+            <div className="space-y-2">
+              <LabelWithInfo
+                htmlFor="latePaymentPenaltyPerDay"
+                tooltip="ค่าปรับรายวันที่คิดเมื่อชำระเกินกำหนด จะแสดงบนใบแจ้งหนี้เป็น 'หากเกินกำหนด ชำระค่าปรับวันละ [จำนวนเงิน]'. ตั้งค่า 0 เพื่อปิด"
+              >
+                ค่าปรับชำระล่าช้า (ต่อวัน)
+              </LabelWithInfo>
               <Input
                 id="latePaymentPenaltyPerDay"
                 type="number"
@@ -733,7 +722,8 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setFormSettings({
                     ...formSettings,
-                    latePaymentPenaltyPerDay: Number.parseFloat(e.target.value) || 0,
+                    latePaymentPenaltyPerDay:
+                      Number.parseFloat(e.target.value) || 0,
                   })
                 }
                 placeholder="50"

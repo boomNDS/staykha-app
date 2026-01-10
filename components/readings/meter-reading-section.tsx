@@ -81,11 +81,7 @@ export function MeterReadingSection({
             id={`${previousReadingKey}-input`}
             type="number"
             step="0.01"
-            placeholder={
-              mode === "ocr"
-                ? "ระบบจะอ่านค่าให้อัตโนมัติ"
-                : "123.45"
-            }
+            placeholder={mode === "ocr" ? "ระบบจะอ่านค่าให้อัตโนมัติ" : "123.45"}
             value={previousReading}
             onChange={(e) => onPreviousReadingChange(e.target.value)}
             disabled={disabled}
@@ -98,18 +94,12 @@ export function MeterReadingSection({
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`${currentReadingKey}-input`}>
-            เลขล่าสุด ({unit})
-          </Label>
+          <Label htmlFor={`${currentReadingKey}-input`}>เลขล่าสุด ({unit})</Label>
           <Input
             id={`${currentReadingKey}-input`}
             type="number"
             step="0.01"
-            placeholder={
-              mode === "ocr"
-                ? "ระบบจะอ่านค่าให้อัตโนมัติ"
-                : "167.89"
-            }
+            placeholder={mode === "ocr" ? "ระบบจะอ่านค่าให้อัตโนมัติ" : "167.89"}
             value={currentReading}
             onChange={(e) => onCurrentReadingChange(e.target.value)}
             disabled={disabled}

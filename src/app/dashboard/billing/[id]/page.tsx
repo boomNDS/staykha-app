@@ -10,7 +10,13 @@ import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { invoicesApi } from "@/lib/api-client";
@@ -60,7 +66,7 @@ export default function InvoiceDetailPage() {
     try {
       // Wait a bit to ensure the component is fully rendered
       await new Promise((resolve) => setTimeout(resolve, 100));
-      
+
       const node = printCardRef.current;
       if (!node) {
         throw new Error("ไม่พบองค์ประกอบใบแจ้งหนี้");
@@ -72,7 +78,7 @@ export default function InvoiceDetailPage() {
         quality: 1,
         backgroundColor: "#ffffff",
       });
-      
+
       const pdf = new jsPDF({ unit: "pt", format: "a4" });
       const imgProps = pdf.getImageProperties(dataUrl);
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -87,7 +93,7 @@ export default function InvoiceDetailPage() {
       const y = 24;
       pdf.addImage(dataUrl, "PNG", x, y, imgWidth, imgHeight);
       pdf.save(`invoice-${invoice.invoiceNumber || invoiceId}.pdf`);
-      
+
       toast({
         title: "ดาวน์โหลด PDF แล้ว",
         description: "ดาวน์โหลดใบแจ้งหนี้ PDF สำเร็จ",
@@ -249,9 +255,7 @@ export default function InvoiceDetailPage() {
           <Separator />
 
           <div>
-            <h3 className="mb-4 font-semibold text-foreground">
-              สรุปยอดบิล
-            </h3>
+            <h3 className="mb-4 font-semibold text-foreground">สรุปยอดบิล</h3>
             <div className="overflow-hidden rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-muted-foreground">
@@ -263,7 +267,9 @@ export default function InvoiceDetailPage() {
                     <th className="px-4 py-3 text-center font-medium">
                       เลขล่าสุด
                     </th>
-                    <th className="px-4 py-3 text-right font-medium">จำนวนเงิน</th>
+                    <th className="px-4 py-3 text-right font-medium">
+                      จำนวนเงิน
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -291,16 +297,16 @@ export default function InvoiceDetailPage() {
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       {isWaterFixed
                         ? "—"
-                        : (waterReading?.previousReading != null
-                            ? waterReading.previousReading.toLocaleString()
-                            : "—")}
+                        : waterReading?.previousReading != null
+                          ? waterReading.previousReading.toLocaleString()
+                          : "—"}
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       {isWaterFixed
                         ? "—"
-                        : (waterReading?.currentReading != null
-                            ? waterReading.currentReading.toLocaleString()
-                            : "—")}
+                        : waterReading?.currentReading != null
+                          ? waterReading.currentReading.toLocaleString()
+                          : "—"}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-foreground">
                       {formatCurrency(waterSubtotal)}
@@ -448,7 +454,10 @@ export default function InvoiceDetailPage() {
           <CardDescription>รูปแบบสำหรับพิมพ์ตามสไตล์ใบแจ้งหนี้ไทย</CardDescription>
         </CardHeader>
         <CardContent>
-          <div ref={printCardRef} className="bg-white w-full max-w-full overflow-visible">
+          <div
+            ref={printCardRef}
+            className="bg-white w-full max-w-full overflow-visible"
+          >
             <PrintInvoiceCard invoice={invoice} />
           </div>
         </CardContent>

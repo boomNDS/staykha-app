@@ -105,7 +105,8 @@ export default function LoginPage() {
                 StayKha ที่เรียบง่ายแต่ครบถ้วน
               </h1>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                ติดตามการอ่านมิเตอร์ จัดการผู้เช่า และออกใบแจ้งหนี้ ด้วยเวิร์กโฟลว์ที่ชัดเจนสำหรับงานประจำวัน
+                ติดตามการอ่านมิเตอร์ จัดการผู้เช่า และออกใบแจ้งหนี้
+                ด้วยเวิร์กโฟลว์ที่ชัดเจนสำหรับงานประจำวัน
               </p>
             </div>
             <div className="grid gap-3 text-sm text-muted-foreground">
@@ -132,9 +133,7 @@ export default function LoginPage() {
               <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
                 StayKha
               </CardTitle>
-              <CardDescription>
-                กรอกข้อมูลเพื่อเข้าสู่พอร์ทัลผู้ดูแล
-              </CardDescription>
+              <CardDescription>กรอกข้อมูลเพื่อเข้าสู่พอร์ทัลผู้ดูแล</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -189,28 +188,26 @@ export default function LoginPage() {
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    กำลังเข้าสู่ระบบ...
-                  </>
-                ) : (
-                  "Sign in"
-                )}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      กำลังเข้าสู่ระบบ...
+                    </>
+                  ) : (
+                    "Sign in"
+                  )}
                 </Button>
               </form>
 
               <div className="mt-4 flex items-center justify-between text-sm">
                 <Link
-                to="/forgot-password"
-                className="font-medium text-primary hover:underline"
-              >
-                ลืมรหัสผ่าน?
-              </Link>
+                  to="/forgot-password"
+                  className="font-medium text-primary hover:underline"
+                >
+                  ลืมรหัสผ่าน?
+                </Link>
                 <div>
-                  <span className="text-muted-foreground">
-                    ยังไม่มีบัญชีใช่ไหม?{" "}
-                  </span>
+                  <span className="text-muted-foreground">ยังไม่มีบัญชีใช่ไหม? </span>
                   <Link
                     to="/register"
                     className="font-medium text-primary hover:underline"

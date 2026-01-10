@@ -25,8 +25,10 @@ import SettingsPage from "./app/dashboard/settings/page";
 import EditTenantPage from "./app/dashboard/tenants/[id]/edit/page";
 import NewTenantPage from "./app/dashboard/tenants/new/page";
 import TenantsPage from "./app/dashboard/tenants/page";
+import ErrorPage from "./app/error";
 import ForgotPasswordPage from "./app/forgot-password/page";
 import LoginPage from "./app/login/page";
+import NotFoundPage from "./app/not-found";
 import HomePage from "./app/page";
 import CreateTeamPage from "./app/register/create-team/page";
 import JoinTeamPage from "./app/register/join-team/page";
@@ -40,6 +42,8 @@ function RootLayout() {
 
 const rootRoute = createRootRoute({
   component: RootLayout,
+  errorComponent: (props) => <ErrorPage error={props.error} />,
+  notFoundComponent: NotFoundPage,
 });
 
 const indexRoute = createRoute({
@@ -93,6 +97,17 @@ const termsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "terms",
   component: TermsPage,
+});
+
+const errorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "error",
+  component: ErrorPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      code: (search.code as string) || "",
+    };
+  },
 });
 
 const overviewRoute = createRoute({
@@ -234,6 +249,7 @@ const routeTree = rootRoute.addChildren([
   forgotPasswordRoute,
   resetPasswordRoute,
   termsRoute,
+  errorRoute,
   overviewRoute.addChildren([
     overviewIndexRoute,
     billingRoute,

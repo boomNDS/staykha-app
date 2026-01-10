@@ -179,11 +179,7 @@ export default function EditRoomPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="แก้ไขห้อง"
-        description="อัปเดตข้อมูลห้อง"
-        showBack
-      />
+      <PageHeader title="แก้ไขห้อง" description="อัปเดตข้อมูลห้อง" showBack />
 
       <Card>
         <CardHeader>
@@ -309,9 +305,7 @@ export default function EditRoomPage() {
               <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-foreground">
-                      ผูกผู้เช่าตอนนี้
-                    </p>
+                    <p className="font-medium text-foreground">ผูกผู้เช่าตอนนี้</p>
                     <p className="text-xs text-muted-foreground">
                       สร้างผู้เช่าและผูกกับห้องนี้ทันที
                     </p>

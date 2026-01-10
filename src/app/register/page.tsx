@@ -81,8 +81,7 @@ export default function RegisterPage() {
     } catch (error: any) {
       toast({
         title: "สมัครไม่สำเร็จ",
-        description:
-          error.message || "ไม่สามารถสร้างบัญชีได้ กรุณาลองใหม่อีกครั้ง",
+        description: error.message || "ไม่สามารถสร้างบัญชีได้ กรุณาลองใหม่อีกครั้ง",
         variant: "destructive",
       });
     } finally {
@@ -133,9 +132,7 @@ export default function RegisterPage() {
             <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
               Sign up
             </CardTitle>
-            <CardDescription>
-              กรอกข้อมูลเพื่อเริ่มต้นใช้งาน
-            </CardDescription>
+            <CardDescription>กรอกข้อมูลเพื่อเริ่มต้นใช้งาน</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -301,9 +298,7 @@ export default function RegisterPage() {
             </form>
 
             <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">
-                มีบัญชีอยู่แล้วใช่ไหม?{" "}
-              </span>
+              <span className="text-muted-foreground">มีบัญชีอยู่แล้วใช่ไหม? </span>
               <Link
                 to="/login"
                 className="font-medium text-primary hover:underline"

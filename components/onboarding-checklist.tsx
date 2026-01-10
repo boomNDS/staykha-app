@@ -99,9 +99,7 @@ export function OnboardingChecklist({
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <div>
           <CardTitle className="text-lg">
-            {user?.role === "owner"
-              ? "เช็กลิสต์เริ่มต้นสำหรับเจ้าของ"
-              : "เช็กลิสต์เริ่มต้น"}
+            {user?.role === "owner" ? "เช็กลิสต์เริ่มต้นสำหรับเจ้าของ" : "เช็กลิสต์เริ่มต้น"}
           </CardTitle>
           <p className="mt-1 text-sm text-muted-foreground">
             ทำขั้นพื้นฐานเพื่อเริ่มออกบิลได้เร็วขึ้น เสร็จแล้ว {progress}%

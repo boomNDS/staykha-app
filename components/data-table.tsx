@@ -141,7 +141,7 @@ export function DataTable<T>({
     const filtersChanged =
       prev.searchTerm !== searchTerm ||
       JSON.stringify(prev.activeFilters) !== JSON.stringify(activeFilters);
-    
+
     if (filtersChanged) {
       setCurrentPage(1);
       prevFiltersRef.current = { searchTerm, activeFilters };
@@ -242,40 +242,48 @@ export function DataTable<T>({
               </TableCell>
             </TableRow>
           ) : (
-            paginatedData.map((item, index) => (
-              <TableRow key={index} className={rowClassName?.(item)}>
-                {selectionEnabled && (
-                  <TableCell>
-                    <Checkbox
-                      aria-label={selectionLabel}
-                      checked={(selectedRowIds as Set<string>).has(
-                        getRowId?.(item) as string,
-                      )}
-                      onCheckedChange={(checked) => {
-                        const nextSelection = new Set(
-                          selectedRowIds as Set<string>,
-                        );
-                        const rowId = getRowId?.(item);
-                        if (!rowId) {
-                          return;
-                        }
-                        if (checked) {
-                          nextSelection.add(rowId);
-                        } else {
-                          nextSelection.delete(rowId);
-                        }
-                        onSelectionChange?.(nextSelection);
-                      }}
-                    />
-                  </TableCell>
-                )}
-                {columns.map((col) => (
-                  <TableCell key={col.key} className={col.className}>
-                    {col.render(item)}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
+            paginatedData.map((item) => {
+              const rowKey =
+                getRowId?.(item) ??
+                (item as { id?: string }).id ??
+                (item as { key?: string }).key ??
+                JSON.stringify(item);
+
+              return (
+                <TableRow key={rowKey} className={rowClassName?.(item)}>
+                  {selectionEnabled && (
+                    <TableCell>
+                      <Checkbox
+                        aria-label={selectionLabel}
+                        checked={(selectedRowIds as Set<string>).has(
+                          getRowId?.(item) as string,
+                        )}
+                        onCheckedChange={(checked) => {
+                          const nextSelection = new Set(
+                            selectedRowIds as Set<string>,
+                          );
+                          const rowId = getRowId?.(item);
+                          if (!rowId) {
+                            return;
+                          }
+                          if (checked) {
+                            nextSelection.add(rowId);
+                          } else {
+                            nextSelection.delete(rowId);
+                          }
+                          onSelectionChange?.(nextSelection);
+                        }}
+                      />
+                    </TableCell>
+                  )}
+                  {columns.map((col) => (
+                    <TableCell key={col.key} className={col.className}>
+                      {col.render(item)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>
@@ -284,8 +292,8 @@ export function DataTable<T>({
       {!hidePagination && (forcePagination || totalPages > 1) && (
         <div className="flex flex-col gap-2">
           <div className="text-sm text-muted-foreground">
-            แสดง {startIndex + 1} ถึง {Math.min(endIndex, filteredData.length)} จากทั้งหมด{" "}
-            {filteredData.length} รายการ
+            แสดง {startIndex + 1} ถึง {Math.min(endIndex, filteredData.length)}{" "}
+            จากทั้งหมด {filteredData.length} รายการ
           </div>
           <Pagination className="justify-end">
             <PaginationContent>
@@ -299,7 +307,9 @@ export function DataTable<T>({
                     setCurrentPage((p) => Math.max(1, p - 1));
                   }}
                   aria-disabled={currentPage === 1}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                  className={
+                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                  }
                 />
               </PaginationItem>
               {Array.from({ length: totalPages }, (_, index) => index + 1).map(
@@ -340,7 +350,11 @@ export function DataTable<T>({
                     setCurrentPage((p) => Math.min(totalPages, p + 1));
                   }}
                   aria-disabled={currentPage === totalPages}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : ""
+                  }
                 />
               </PaginationItem>
             </PaginationContent>

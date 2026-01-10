@@ -55,7 +55,7 @@ export default function ReadingDetailPage() {
         ? "secondary"
         : "default";
   const settings = settingsQuery.data?.settings;
-  
+
   // Show settings required message if settings don't exist
   if (settingsQuery.isSuccess && !settings) {
     return (
@@ -65,7 +65,7 @@ export default function ReadingDetailPage() {
       />
     );
   }
-  
+
   const isWaterFixed = settings?.waterBillingMode === "fixed";
 
   return (
@@ -159,9 +159,7 @@ export default function ReadingDetailPage() {
               </>
             ) : isWaterFixed ? (
               <div className="space-y-3 text-sm">
-                <p className="text-muted-foreground">
-                  ค่าน้ำคิดแบบเหมาจ่ายรายเดือน
-                </p>
+                <p className="text-muted-foreground">ค่าน้ำคิดแบบเหมาจ่ายรายเดือน</p>
               </div>
             ) : (
               <div className="space-y-3 text-sm">

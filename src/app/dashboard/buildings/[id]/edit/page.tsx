@@ -122,18 +122,12 @@ export default function EditBuildingPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="แก้ไขอาคาร"
-        description="อัปเดตข้อมูลอาคาร"
-        showBack
-      />
+      <PageHeader title="แก้ไขอาคาร" description="อัปเดตข้อมูลอาคาร" showBack />
 
       <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle>ข้อมูลอาคาร</CardTitle>
-          <CardDescription>
-            แก้ไขรายละเอียดของอาคารนี้
-          </CardDescription>
+          <CardDescription>แก้ไขรายละเอียดของอาคารนี้</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
