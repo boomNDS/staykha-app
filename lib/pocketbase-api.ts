@@ -210,9 +210,11 @@ async function listRecords<T>(
 async function getRecord<T>(
   collection: string,
   id: string,
+  params?: Record<string, unknown>,
 ): Promise<T & RecordMeta> {
   const response = await pocketbaseClient.get<T & RecordMeta>(
     `/${collection}/records/${id}`,
+    params ? { params } : undefined,
   );
   return response;
 }
@@ -752,13 +754,18 @@ export const readingsApi = {
 export const invoicesApi = {
   getAll: async (): Promise<{ invoices: Invoice[] }> => {
     const items =
-      await listRecords<Omit<InvoiceRecord, keyof RecordMeta>>("invoices");
+      await listRecords<Omit<InvoiceRecord, keyof RecordMeta>>("invoices", {
+        expand: "tenant,room",
+      });
     return { invoices: items.map(mapInvoiceRecord) };
   },
   getById: async (id: string): Promise<{ invoice: Invoice }> => {
     const record = await getRecord<Omit<InvoiceRecord, keyof RecordMeta>>(
       "invoices",
       id,
+      {
+        expand: "tenant,room",
+      },
     );
     return { invoice: mapInvoiceRecord(record) };
   },

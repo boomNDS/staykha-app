@@ -105,6 +105,19 @@ export const mapInvoiceRecord = (record: InvoiceMapperInput): Invoice => {
     }
   }
 
+  // Map expanded relations if they exist
+  // PocketBase returns expanded relations either in expand object or at top level
+  const tenant = record.expand?.tenant
+    ? mapTenantRecord(record.expand.tenant)
+    : record.tenant
+      ? mapTenantRecord(record.tenant)
+      : undefined;
+  const room = record.expand?.room
+    ? mapRoomRecord(record.expand.room)
+    : record.room
+      ? mapRoomRecord(record.room)
+      : undefined;
+
   return {
     id: record.id,
     invoiceNumber: record.invoiceNumber,
@@ -137,6 +150,8 @@ export const mapInvoiceRecord = (record: InvoiceMapperInput): Invoice => {
     readingGroupId: record.readingGroupId,
     readings,
     teamId: record.teamId,
+    tenant,
+    room,
   };
 };
 

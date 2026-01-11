@@ -95,6 +95,14 @@ export type InvoiceMapperInput = RecordMeta & {
   readingGroupId?: string;
   readings?: InvoiceReading[];
   teamId: string;
+  // Expanded relations (when expand=tenant,room is used)
+  expand?: {
+    tenant?: TenantMapperInput;
+    room?: RoomMapperInput;
+  };
+  // Direct relation properties (PocketBase returns expanded relations at top level)
+  tenant?: TenantMapperInput;
+  room?: RoomMapperInput;
 };
 
 export type SettingsMapperInput = RecordMeta &
