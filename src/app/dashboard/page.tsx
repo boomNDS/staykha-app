@@ -79,6 +79,7 @@ export default function DashboardPage() {
 
   const stats = [
     {
+      id: "tenants",
       title: "ผู้เช่าทั้งหมด",
       value: tenants.length,
       description: `${tenants.filter((t) => t.status === "active").length} ผู้เช่าที่กำลังอยู่`,
@@ -86,6 +87,7 @@ export default function DashboardPage() {
       trend: { value: 12, label: "เทียบเดือนที่แล้ว" },
     },
     {
+      id: "occupied-rooms",
       title: "ห้องที่มีผู้เช่า",
       value: `${occupiedRooms}/${rooms.length}`,
       description: `${rooms.length ? ((occupiedRooms / rooms.length) * 100).toFixed(0) : "0"}% มีผู้เช่า`,
@@ -93,12 +95,14 @@ export default function DashboardPage() {
       trend: { value: 8, label: "เทียบเดือนที่แล้ว" },
     },
     {
+      id: "pending-readings",
       title: "การอ่านที่ค้างอยู่",
       value: pendingReadings,
       description: "รอออกบิลหรือขาดมิเตอร์",
       icon: Gauge,
     },
     {
+      id: "monthly-revenue",
       title: "รายได้ประจำเดือน",
       value: formatCurrency(totalRevenue),
       description: "จากใบแจ้งหนี้เดือนนี้",
@@ -170,7 +174,7 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <StatCard key={stat.title} {...stat} />
+          <StatCard key={stat.id} {...stat} />
         ))}
       </div>
 

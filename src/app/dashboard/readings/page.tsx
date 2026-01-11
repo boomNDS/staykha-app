@@ -166,18 +166,51 @@ export default function ReadingsPage() {
     );
   }, [filteredReadings, selectedGroupId]);
 
+  // Debounced localStorage writes to avoid excessive writes
+  const reminderHistoryTimeoutRef = React.useRef<NodeJS.Timeout>();
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(
-      "staykha:readingReminders",
-      JSON.stringify(reminderHistory),
-    );
+    
+    // Clear previous timeout
+    if (reminderHistoryTimeoutRef.current) {
+      clearTimeout(reminderHistoryTimeoutRef.current);
+    }
+    
+    // Debounce localStorage write
+    reminderHistoryTimeoutRef.current = setTimeout(() => {
+      window.localStorage.setItem(
+        "staykha:readingReminders",
+        JSON.stringify(reminderHistory),
+      );
+    }, 300); // 300ms debounce
+    
+    return () => {
+      if (reminderHistoryTimeoutRef.current) {
+        clearTimeout(reminderHistoryTimeoutRef.current);
+      }
+    };
   }, [reminderHistory]);
 
+  const followUpsTimeoutRef = React.useRef<NodeJS.Timeout>();
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    window.localStorage.setItem(followUpStorageKey, JSON.stringify(followUps));
-  }, [followUps]);
+    
+    // Clear previous timeout
+    if (followUpsTimeoutRef.current) {
+      clearTimeout(followUpsTimeoutRef.current);
+    }
+    
+    // Debounce localStorage write
+    followUpsTimeoutRef.current = setTimeout(() => {
+      window.localStorage.setItem(followUpStorageKey, JSON.stringify(followUps));
+    }, 300); // 300ms debounce
+    
+    return () => {
+      if (followUpsTimeoutRef.current) {
+        clearTimeout(followUpsTimeoutRef.current);
+      }
+    };
+  }, [followUps, followUpStorageKey]);
 
   // Show settings required message if settings don't exist (AFTER all hooks)
   if (settingsQuery.isSuccess && !settings) {

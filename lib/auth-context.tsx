@@ -24,6 +24,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useAtom(isLoadingAuthAtom);
 
   // Check authentication on mount and listen for storage changes
+  // Using useRef to store the latest loadUser function to avoid dependency issues
+  const loadUserRef = React.useRef<() => void>();
+  
   const loadUser = React.useCallback(() => {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
@@ -43,13 +46,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setIsLoading(false);
   }, [setUser, setIsLoading]);
+  
+  // Keep ref updated
+  loadUserRef.current = loadUser;
 
   React.useEffect(() => {
     loadUser();
 
     // Listen for storage changes (when user is updated in other tabs/components)
     const handleStorageChange = () => {
-      loadUser();
+      loadUserRef.current?.();
     };
 
     // Listen to both storage events (cross-tab) and custom events (same-tab)
@@ -57,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Custom event for same-tab updates
     const handleCustomStorage = () => {
-      loadUser();
+      loadUserRef.current?.();
     };
     window.addEventListener("userUpdated", handleCustomStorage);
 
@@ -65,7 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("userUpdated", handleCustomStorage);
     };
-  }, [loadUser]);
+    // Only run on mount - event handlers use ref to get latest function
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const login = async (email: string, password: string) => {
     console.log("[Auth Context] Login attempt:", { email });

@@ -155,7 +155,8 @@ export default function BillingPage() {
       hasGenerated.current = true;
       generateInvoiceMutation.mutate(readingId);
     }
-  }, [readingId, generateInvoiceMutation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readingId]);
 
   const selectedInvoices = filteredInvoices.filter((invoice) =>
     selectedInvoiceIds.has(invoice.id),

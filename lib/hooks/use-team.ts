@@ -4,7 +4,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAtom, useAtomValue } from "jotai";
-import { useMemo } from "react";
+import { useEffect } from "react";
 import { teamsApi } from "../api-client";
 import {
   isOwnerAtom,
@@ -33,7 +33,7 @@ export function useTeam() {
   });
 
   // Sync React Query data to Jotai atom
-  useMemo(() => {
+  useEffect(() => {
     if (teamQuery.data?.team) {
       setTeam(teamQuery.data.team);
     }
