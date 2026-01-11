@@ -140,6 +140,7 @@ export default function InvoiceDetailPage() {
   const waterSubtotal = invoice.waterSubtotal ?? invoice.waterAmount ?? 0;
   const electricSubtotal =
     invoice.electricSubtotal ?? invoice.electricAmount ?? 0;
+  const roomRent = invoice.roomRent ?? invoice.room?.monthlyRent ?? null;
   const issuedAt =
     invoice.createdAt ?? invoice.issueDate ?? new Date().toISOString();
   const waterReading = invoice.readings?.find(
@@ -148,7 +149,6 @@ export default function InvoiceDetailPage() {
   const electricReading = invoice.readings?.find(
     (reading) => reading.meterType === "electric",
   );
-  const roomRent = invoice.room?.monthlyRent ?? null;
   const isWaterFixed = invoice.waterBillingMode === "fixed";
 
   return (
@@ -354,7 +354,10 @@ export default function InvoiceDetailPage() {
                       —
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-foreground">
-                      {formatCurrency(invoice.subtotal)}
+                      {formatCurrency(
+                        invoice.subtotal ??
+                          waterSubtotal + electricSubtotal + (roomRent ?? 0),
+                      )}
                     </td>
                   </tr>
                   <tr className="border-t">

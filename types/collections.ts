@@ -96,6 +96,7 @@ export type InvoiceRecord = RecordMeta & {
   electricSubtotal?: number;
   waterBillingMode?: "metered" | "fixed";
   waterFixedFee?: number;
+  roomRent?: number; // Monthly rent for the room
   teamId: string;
   readingGroupId?: string; // Link to reading group - ensures one invoice per reading group
   readings?: InvoiceReading[]; // JSON field storing meter reading details

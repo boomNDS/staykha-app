@@ -23,7 +23,7 @@ export function PrintInvoiceCard({
   const electricReading = invoice.readings?.find(
     (reading) => reading.meterType === "electric",
   );
-  const roomRent = invoice.room?.monthlyRent ?? null;
+  const roomRent = invoice.roomRent ?? invoice.room?.monthlyRent ?? null;
   const waterSubtotal = invoice.waterSubtotal ?? invoice.waterAmount ?? 0;
   const electricSubtotal =
     invoice.electricSubtotal ?? invoice.electricAmount ?? 0;

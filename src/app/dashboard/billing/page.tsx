@@ -126,9 +126,12 @@ export default function BillingPage() {
         title: "สร้างใบแจ้งหนี้แล้ว",
         description: `สร้าง ${data.invoice.id} จากการอ่านมิเตอร์รายเดือน`,
       });
+      // Only navigate after successful creation
       router.push(`/overview/billing/${data.invoice.id}`);
     },
     onError: (error: any) => {
+      // Reset the ref so user can try again
+      hasGenerated.current = false;
       logError(error, {
         scope: "invoices",
         action: "generate",
@@ -151,7 +154,12 @@ export default function BillingPage() {
   });
 
   React.useEffect(() => {
-    if (readingId && !hasGenerated.current) {
+    if (
+      readingId &&
+      !hasGenerated.current &&
+      !generateInvoiceMutation.isPending &&
+      !generateInvoiceMutation.isSuccess
+    ) {
       hasGenerated.current = true;
       generateInvoiceMutation.mutate(readingId);
     }
@@ -497,8 +505,24 @@ export default function BillingPage() {
     },
   ];
 
+  const isGeneratingInvoice = generateInvoiceMutation.isPending;
+
   return (
     <div className="space-y-6 pb-8 sm:space-y-8">
+      {/* Loading overlay when generating invoice */}
+      {isGeneratingInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Card className="w-full max-w-md shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-center">กำลังสร้างใบแจ้งหนี้</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center gap-4 p-8">
+              <LoadingState message="กรุณารอสักครู่ ระบบกำลังสร้างใบแจ้งหนี้ให้คุณ..." />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <PageHeader
         title="บิล/ใบแจ้งหนี้"
         description="จัดการการคำนวณบิลและสร้างใบแจ้งหนี้ค่าน้ำ/ค่าไฟ"

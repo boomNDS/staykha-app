@@ -92,6 +92,7 @@ export type InvoiceMapperInput = RecordMeta & {
   electricSubtotal?: number;
   waterBillingMode?: "metered" | "fixed";
   waterFixedFee?: number;
+  roomRent?: number;
   readingGroupId?: string;
   readings?: InvoiceReading[];
   teamId: string;

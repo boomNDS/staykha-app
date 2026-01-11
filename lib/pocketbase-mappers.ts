@@ -147,6 +147,7 @@ export const mapInvoiceRecord = (record: InvoiceMapperInput): Invoice => {
     electricSubtotal: record.electricSubtotal,
     waterBillingMode: record.waterBillingMode,
     waterFixedFee: record.waterFixedFee,
+    roomRent: record.roomRent,
     readingGroupId: record.readingGroupId,
     readings,
     teamId: record.teamId,

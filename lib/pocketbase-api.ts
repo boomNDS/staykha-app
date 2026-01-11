@@ -887,7 +887,8 @@ export const invoicesApi = {
         ? (settings.waterFixedFee ?? 0)
         : waterConsumption * settings.waterRatePerUnit;
     const electricAmount = electricConsumption * settings.electricRatePerUnit;
-    const subtotal = waterAmount + electricAmount;
+    const roomRent = room.monthlyRent ?? 0; // Get room rent
+    const subtotal = waterAmount + electricAmount + roomRent; // Include room rent in subtotal
     const tax = subtotal * (settings.taxRate / 100);
     const total = subtotal + tax;
 
@@ -964,6 +965,7 @@ export const invoicesApi = {
           electricSubtotal: electricAmount,
           waterBillingMode: settings.waterBillingMode,
           waterFixedFee: settings.waterFixedFee,
+          roomRent: roomRent > 0 ? roomRent : undefined, // Store room rent if it exists
           readingGroupId,
           readings: invoiceReadings.length > 0 ? invoiceReadings : undefined,
           teamId,
