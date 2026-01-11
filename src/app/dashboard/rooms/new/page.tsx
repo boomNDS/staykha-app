@@ -129,7 +129,10 @@ export default function NewRoomPage() {
       logError(error, {
         scope: "rooms",
         action: "create",
-        metadata: { buildingId: formData.buildingId, roomNumber: formData.roomNumber },
+        metadata: {
+          buildingId: formData.buildingId,
+          roomNumber: formData.roomNumber,
+        },
       });
       toast({
         title: "เพิ่มห้องไม่สำเร็จ",

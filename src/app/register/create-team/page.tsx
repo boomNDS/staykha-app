@@ -101,9 +101,7 @@ export default function CreateTeamPage() {
         action: "create",
         metadata: { userId: user?.id },
       });
-      setError(
-        getErrorMessage(error, "ไม่สามารถสร้างทีมได้ กรุณาลองใหม่อีกครั้ง"),
-      );
+      setError(getErrorMessage(error, "ไม่สามารถสร้างทีมได้ กรุณาลองใหม่อีกครั้ง"));
       toast({
         title: "เกิดข้อผิดพลาด",
         description: getErrorMessage(error, "ไม่สามารถสร้างทีมได้"),

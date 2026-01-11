@@ -168,8 +168,7 @@ export default function BillingPage() {
     });
     return set;
   }, [selectedInvoices]);
-  const hasMixedSelectedPeriods =
-    selectionReady && selectedPeriods.size > 1;
+  const hasMixedSelectedPeriods = selectionReady && selectedPeriods.size > 1;
 
   const chunkedInvoices = React.useMemo(() => {
     const chunks: Invoice[][] = [];
@@ -333,7 +332,10 @@ export default function BillingPage() {
     }
   };
 
-  const totalRevenue = filteredInvoices.reduce((sum, inv) => sum + inv.total, 0);
+  const totalRevenue = filteredInvoices.reduce(
+    (sum, inv) => sum + inv.total,
+    0,
+  );
   const paidInvoices = filteredInvoices.filter((inv) => inv.status === "paid");
   const paidAmount = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
   const pendingAmount = filteredInvoices

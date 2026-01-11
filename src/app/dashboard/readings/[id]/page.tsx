@@ -13,12 +13,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { readingsApi, roomsApi, settingsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
-import { useParams, useRouter } from "@/lib/router";
+import { useParams } from "@/lib/router";
 import type { MeterReadingGroup } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function ReadingDetailPage() {
-  const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
   const readingId = params.id as string;
@@ -50,9 +49,9 @@ export default function ReadingDetailPage() {
     },
     enabled: !!user?.teamId,
   });
-  const [inlineMeter, setInlineMeter] = React.useState<"water" | "electric" | null>(
-    null,
-  );
+  const [inlineMeter, setInlineMeter] = React.useState<
+    "water" | "electric" | null
+  >(null);
 
   if (readingQuery.isLoading) {
     return <LoadingState fullScreen message="กำลังโหลดการอ่านมิเตอร์..." />;
@@ -221,7 +220,9 @@ export default function ReadingDetailPage() {
                 <Button
                   variant="outline"
                   onClick={() =>
-                    setInlineMeter((prev) => (prev === "water" ? null : "water"))
+                    setInlineMeter((prev) =>
+                      prev === "water" ? null : "water",
+                    )
                   }
                 >
                   เพิ่มมิเตอร์น้ำ

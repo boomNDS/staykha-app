@@ -125,9 +125,7 @@
     },
     "passwordAuth": {
       "enabled": true,
-      "identityFields": [
-        "email"
-      ]
+      "identityFields": ["email"]
     },
     "mfa": {
       "enabled": false,
@@ -294,10 +292,7 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": [
-          "owner",
-          "admin"
-        ]
+        "values": ["owner", "admin"]
       },
       {
         "cascadeDelete": false,
@@ -358,9 +353,7 @@
     },
     "passwordAuth": {
       "enabled": true,
-      "identityFields": [
-        "email"
-      ]
+      "identityFields": ["email"]
     },
     "mfa": {
       "enabled": false,
@@ -884,11 +877,7 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": [
-          "pending",
-          "accepted",
-          "expired"
-        ]
+        "values": ["pending", "accepted", "expired"]
       },
       {
         "autogeneratePattern": "",
@@ -1238,13 +1227,7 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": [
-          "draft",
-          "sent",
-          "paid",
-          "pending",
-          "overdue"
-        ]
+        "values": ["draft", "sent", "paid", "pending", "overdue"]
       },
       {
         "hidden": false,
@@ -1446,10 +1429,7 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": [
-          "metered",
-          "fixed"
-        ]
+        "values": ["metered", "fixed"]
       },
       {
         "hidden": false,
@@ -1610,12 +1590,7 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": [
-          "incomplete",
-          "pending",
-          "billed",
-          "paid"
-        ]
+        "values": ["incomplete", "pending", "billed", "paid"]
       },
       {
         "hidden": false,
@@ -1762,11 +1737,7 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": [
-          "occupied",
-          "vacant",
-          "maintenance"
-        ]
+        "values": ["occupied", "vacant", "maintenance"]
       },
       {
         "hidden": false,
@@ -1903,10 +1874,7 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": [
-          "metered",
-          "fixed"
-        ]
+        "values": ["metered", "fixed"]
       },
       {
         "hidden": false,
@@ -2268,9 +2236,7 @@
         "type": "autodate"
       }
     ],
-    "indexes": [
-      "CREATE UNIQUE INDEX `idx_IUfFTAbhUf` ON `teams` (`name`)"
-    ],
+    "indexes": ["CREATE UNIQUE INDEX `idx_IUfFTAbhUf` ON `teams` (`name`)"],
     "system": false
   },
   {
@@ -2446,11 +2412,7 @@
         "required": true,
         "system": false,
         "type": "select",
-        "values": [
-          "active",
-          "inactive",
-          "expired"
-        ]
+        "values": ["active", "inactive", "expired"]
       },
       {
         "cascadeDelete": false,

@@ -2,7 +2,14 @@
 
 import { createWorker } from "tesseract.js";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalendarIcon, Camera, Droplets, Keyboard, Loader2, Zap } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  Camera,
+  Droplets,
+  Keyboard,
+  Loader2,
+  Zap,
+} from "lucide-react";
 import * as React from "react";
 import { EmptyState } from "@/components/empty-state";
 import { ConsumptionSummary } from "@/components/readings/consumption-summary";
@@ -12,7 +19,11 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -331,7 +342,9 @@ export function ReadingForm({
         : undefined;
       const nextElectric = includesElectric
         ? {
-            previousReading: Number.parseFloat(formData.electricPreviousReading),
+            previousReading: Number.parseFloat(
+              formData.electricPreviousReading,
+            ),
             currentReading: Number.parseFloat(formData.electricCurrentReading),
             consumption: electricConsumption ?? 0,
             previousPhotoUrl: formData.electricPreviousPhoto
@@ -350,7 +363,9 @@ export function ReadingForm({
         const hasWater = Boolean(nextWater ?? existingGroup?.water);
         const hasElectric = Boolean(nextElectric ?? existingGroup?.electric);
         const status =
-          hasElectric && (!requiresWater || hasWater) ? "pending" : "incomplete";
+          hasElectric && (!requiresWater || hasWater)
+            ? "pending"
+            : "incomplete";
 
         await readingsApi.update(readingGroupId, {
           water: nextWater,
@@ -386,7 +401,10 @@ export function ReadingForm({
       logError(error, {
         scope: "readings",
         action: readingGroupId ? "update" : "create",
-        metadata: { roomId: formData.roomId, readingDate: formData.readingDate },
+        metadata: {
+          roomId: formData.roomId,
+          readingDate: formData.readingDate,
+        },
       });
       toast({
         title: "เกิดข้อผิดพลาด",

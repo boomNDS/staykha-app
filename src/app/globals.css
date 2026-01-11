@@ -240,26 +240,29 @@
   }
 
   .print-only {
-    display: block !important;
-    visibility: visible !important;
+    display: block;
+    visibility: visible;
   }
 
   .screen-only {
-    display: none !important;
+    display: none;
   }
 
-  .print-area,
-  .print-area * {
-    visibility: visible !important;
+  .print-only .print-area,
+  .print-only .print-area * {
+    visibility: visible;
   }
 
   .print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
+    position: relative;
+    left: auto;
+    top: auto;
     width: 100%;
-    padding: 12px;
-    display: block !important;
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 24px 32px;
+    display: block;
+    box-sizing: border-box;
   }
 
   .print-page {
@@ -267,7 +270,7 @@
   }
 
   .print-grid {
-    display: grid !important;
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }

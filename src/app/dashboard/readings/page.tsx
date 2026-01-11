@@ -608,8 +608,9 @@ export default function ReadingsPage() {
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
               {
-                filteredReadings.filter((group) => group.status === "incomplete")
-                  .length
+                filteredReadings.filter(
+                  (group) => group.status === "incomplete",
+                ).length
               }
             </div>
             <p className="text-xs text-muted-foreground">ขาดมิเตอร์บางรายการ</p>

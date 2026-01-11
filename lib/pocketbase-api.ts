@@ -266,12 +266,13 @@ export const teamsApi = {
     data: Omit<Team, "id" | "createdAt" | "updatedAt">,
   ): Promise<{ team: Team }> => {
     const teamName = data.name.trim();
-    const existingTeams = await listRecords<
-      Omit<TeamRecord, keyof RecordMeta>
-    >("teams", {
-      filter: `name = "${teamName}"`,
-      perPage: 1,
-    });
+    const existingTeams = await listRecords<Omit<TeamRecord, keyof RecordMeta>>(
+      "teams",
+      {
+        filter: `name = "${teamName}"`,
+        perPage: 1,
+      },
+    );
     if (existingTeams.length > 0) {
       throw new Error("ชื่อทีมนี้ถูกใช้แล้ว กรุณาใช้ชื่ออื่น");
     }
@@ -420,12 +421,13 @@ export const roomsApi = {
   },
   create: async (data: CreateRoomData): Promise<{ room: Room }> => {
     const teamId = getCurrentUserTeamId();
-    const existingRooms = await listRecords<
-      Omit<RoomRecord, keyof RecordMeta>
-    >("rooms", {
-      filter: `teamId = "${teamId}" && buildingId = "${data.buildingId}" && roomNumber = "${data.roomNumber}"`,
-      perPage: 1,
-    });
+    const existingRooms = await listRecords<Omit<RoomRecord, keyof RecordMeta>>(
+      "rooms",
+      {
+        filter: `teamId = "${teamId}" && buildingId = "${data.buildingId}" && roomNumber = "${data.roomNumber}"`,
+        perPage: 1,
+      },
+    );
     if (existingRooms.length > 0) {
       throw new Error("มีเลขห้องนี้ในอาคารแล้ว กรุณาใช้เลขห้องอื่น");
     }
@@ -470,12 +472,13 @@ export const roomsApi = {
     const teamId = getCurrentUserTeamId();
     const created: Room[] = [];
     const skippedRooms: string[] = [];
-    const existingRooms = await listRecords<
-      Omit<RoomRecord, keyof RecordMeta>
-    >("rooms", {
-      filter: `teamId = "${teamId}" && buildingId = "${data.buildingId}"`,
-      perPage: 200,
-    });
+    const existingRooms = await listRecords<Omit<RoomRecord, keyof RecordMeta>>(
+      "rooms",
+      {
+        filter: `teamId = "${teamId}" && buildingId = "${data.buildingId}"`,
+        perPage: 200,
+      },
+    );
     const existingRoomNumbers = new Set(
       existingRooms.map((room) => room.roomNumber),
     );
@@ -568,12 +571,13 @@ export const readingsApi = {
   ): Promise<{ reading: MeterReadingGroup | null }> => {
     const teamId = getCurrentUserTeamId();
     const normalizedDate = normalizeReadingDate(readingDate);
-    const items = await listRecords<
-      Omit<ReadingGroupRecord, keyof RecordMeta>
-    >("reading_groups", {
-      filter: `teamId = "${teamId}" && roomId = "${roomId}" && readingDate = "${normalizedDate}"`,
-      perPage: 1,
-    });
+    const items = await listRecords<Omit<ReadingGroupRecord, keyof RecordMeta>>(
+      "reading_groups",
+      {
+        filter: `teamId = "${teamId}" && roomId = "${roomId}" && readingDate = "${normalizedDate}"`,
+        perPage: 1,
+      },
+    );
     if (!items.length) {
       return { reading: null };
     }
@@ -622,7 +626,10 @@ export const readingsApi = {
       const mergedElectric =
         data.electric ??
         (existingGroup.electric as Record<string, unknown> | undefined);
-      const status = resolveStatus(Boolean(mergedWater), Boolean(mergedElectric));
+      const status = resolveStatus(
+        Boolean(mergedWater),
+        Boolean(mergedElectric),
+      );
 
       const updatedRecord = await updateRecord<
         Partial<Omit<ReadingGroupRecord, keyof RecordMeta>>
@@ -911,44 +918,50 @@ export const invoicesApi = {
     // Create invoice
     let invoiceRecord: Omit<InvoiceRecord, keyof RecordMeta> & RecordMeta;
     try {
-      invoiceRecord = await createRecord<
-        Omit<InvoiceRecord, keyof RecordMeta>
-      >("invoices", {
-        invoiceNumber,
-        tenantId: tenant?.id,
-        roomId: readingGroup.roomId,
-        tenantName: tenant?.name ?? readingGroup.tenantName,
-        roomNumber: room.roomNumber ?? readingGroup.roomNumber,
-        billingPeriod: issueDate.toLocaleString("default", {
-          month: "long",
-          year: "numeric",
-        }),
-        issueDate: issueDate.toISOString(),
-        dueDate: dueDate.toISOString(),
-        status: "pending" as Invoice["status"],
-        waterUsage: settings.waterBillingMode === "fixed" ? 0 : waterConsumption,
-        waterRate:
-          settings.waterBillingMode === "fixed" ? 0 : settings.waterRatePerUnit,
-        waterAmount,
-        electricUsage: electricConsumption,
-        electricRate: settings.electricRatePerUnit,
-        electricAmount,
-        subtotal,
-        tax,
-        total,
-        waterConsumption:
-          settings.waterBillingMode === "fixed" ? undefined : waterConsumption,
-        electricConsumption,
-        waterRatePerUnit: settings.waterRatePerUnit,
-        electricRatePerUnit: settings.electricRatePerUnit,
-        waterSubtotal: waterAmount,
-        electricSubtotal: electricAmount,
-        waterBillingMode: settings.waterBillingMode,
-        waterFixedFee: settings.waterFixedFee,
-        readingGroupId,
-        readings: invoiceReadings.length > 0 ? invoiceReadings : undefined,
-        teamId,
-      } as Omit<InvoiceRecord, keyof RecordMeta>);
+      invoiceRecord = await createRecord<Omit<InvoiceRecord, keyof RecordMeta>>(
+        "invoices",
+        {
+          invoiceNumber,
+          tenantId: tenant?.id,
+          roomId: readingGroup.roomId,
+          tenantName: tenant?.name ?? readingGroup.tenantName,
+          roomNumber: room.roomNumber ?? readingGroup.roomNumber,
+          billingPeriod: issueDate.toLocaleString("default", {
+            month: "long",
+            year: "numeric",
+          }),
+          issueDate: issueDate.toISOString(),
+          dueDate: dueDate.toISOString(),
+          status: "pending" as Invoice["status"],
+          waterUsage:
+            settings.waterBillingMode === "fixed" ? 0 : waterConsumption,
+          waterRate:
+            settings.waterBillingMode === "fixed"
+              ? 0
+              : settings.waterRatePerUnit,
+          waterAmount,
+          electricUsage: electricConsumption,
+          electricRate: settings.electricRatePerUnit,
+          electricAmount,
+          subtotal,
+          tax,
+          total,
+          waterConsumption:
+            settings.waterBillingMode === "fixed"
+              ? undefined
+              : waterConsumption,
+          electricConsumption,
+          waterRatePerUnit: settings.waterRatePerUnit,
+          electricRatePerUnit: settings.electricRatePerUnit,
+          waterSubtotal: waterAmount,
+          electricSubtotal: electricAmount,
+          waterBillingMode: settings.waterBillingMode,
+          waterFixedFee: settings.waterFixedFee,
+          readingGroupId,
+          readings: invoiceReadings.length > 0 ? invoiceReadings : undefined,
+          teamId,
+        } as Omit<InvoiceRecord, keyof RecordMeta>,
+      );
     } catch (error) {
       if (!isUniqueConstraintError(error)) {
         throw error;
@@ -1046,7 +1059,9 @@ export const settingsApi = {
           labelElectricity: cleanPayload.labelElectricity ?? "ค่าไฟฟ้า",
           ...cleanPayload,
         });
-        return { settings: mapSettingsRecord(newRecord as SettingsMapperInput) };
+        return {
+          settings: mapSettingsRecord(newRecord as SettingsMapperInput),
+        };
       } catch (error) {
         if (!isUniqueConstraintError(error)) {
           throw error;
