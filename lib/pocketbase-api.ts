@@ -633,12 +633,36 @@ export const readingsApi = {
         Boolean(mergedElectric),
       );
 
+      // Fetch room and tenant info if not already stored
+      let roomNumber = existingGroup.roomNumber;
+      let tenantName = existingGroup.tenantName;
+      
+      if (!roomNumber || !tenantName) {
+        const room = await getRecord<Omit<RoomRecord, keyof RecordMeta>>(
+          "rooms",
+          data.roomId,
+        ).catch(() => null);
+        
+        if (room) {
+          roomNumber = roomNumber ?? room.roomNumber;
+          if (room.tenantId && !tenantName) {
+            const tenant = await getRecord<Omit<TenantRecord, keyof RecordMeta>>(
+              "tenants",
+              room.tenantId,
+            ).catch(() => null);
+            tenantName = tenant?.name;
+          }
+        }
+      }
+
       const updatedRecord = await updateRecord<
         Partial<Omit<ReadingGroupRecord, keyof RecordMeta>>
       >("reading_groups", existingGroup.id, {
         water: mergedWater,
         electric: mergedElectric,
         status,
+        ...(roomNumber && { roomNumber }),
+        ...(tenantName && { tenantName }),
       });
 
       const mergedRecord = {
@@ -657,6 +681,19 @@ export const readingsApi = {
       };
     }
 
+    // Fetch room and tenant info to store in reading group
+    const room = await getRecord<Omit<RoomRecord, keyof RecordMeta>>(
+      "rooms",
+      data.roomId,
+    ).catch(() => null);
+    
+    const tenant = room?.tenantId
+      ? await getRecord<Omit<TenantRecord, keyof RecordMeta>>(
+          "tenants",
+          room.tenantId,
+        ).catch(() => null)
+      : null;
+
     const status = resolveStatus(Boolean(data.water), Boolean(data.electric));
     try {
       const record = await createRecord<
@@ -665,6 +702,9 @@ export const readingsApi = {
         }
       >("reading_groups", {
         ...data,
+        roomId: data.roomId,
+        roomNumber: room?.roomNumber,
+        tenantName: tenant?.name,
         readingDate,
         status,
         teamId,
@@ -697,12 +737,36 @@ export const readingsApi = {
         Boolean(mergedElectric),
       );
 
+      // Fetch room and tenant info if not already stored
+      let roomNumber = existingGroup.roomNumber;
+      let tenantName = existingGroup.tenantName;
+      
+      if (!roomNumber || !tenantName) {
+        const room = await getRecord<Omit<RoomRecord, keyof RecordMeta>>(
+          "rooms",
+          data.roomId,
+        ).catch(() => null);
+        
+        if (room) {
+          roomNumber = roomNumber ?? room.roomNumber;
+          if (room.tenantId && !tenantName) {
+            const tenant = await getRecord<Omit<TenantRecord, keyof RecordMeta>>(
+              "tenants",
+              room.tenantId,
+            ).catch(() => null);
+            tenantName = tenant?.name;
+          }
+        }
+      }
+
       const updatedRecord = await updateRecord<
         Partial<Omit<ReadingGroupRecord, keyof RecordMeta>>
       >("reading_groups", existingGroup.id, {
         water: mergedWater,
         electric: mergedElectric,
         status: mergedStatus,
+        ...(roomNumber && { roomNumber }),
+        ...(tenantName && { tenantName }),
       });
 
       const mergedRecord = {
