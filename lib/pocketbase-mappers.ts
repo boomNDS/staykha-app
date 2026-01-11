@@ -46,18 +46,28 @@ export const mapBuildingRecord = (record: BuildingMapperInput): Building => ({
   updatedAt: record.updated,
 });
 
-export const mapRoomRecord = (record: RoomMapperInput): Room => ({
-  id: record.id,
-  roomNumber: record.roomNumber,
-  buildingId: record.buildingId,
-  buildingName: record.buildingName,
-  floor: record.floor ?? 1,
-  status: record.status ?? "vacant",
-  size: record.size,
-  monthlyRent: record.monthlyRent,
-  tenantId: record.tenantId ?? null,
-  teamId: record.teamId,
-});
+export const mapRoomRecord = (record: RoomMapperInput): Room => {
+  // If status is not set, infer it from tenantId
+  let status: Room["status"] = record.status ?? "vacant";
+  if (!record.status && record.tenantId) {
+    status = "occupied";
+  } else if (!record.status && !record.tenantId) {
+    status = "vacant";
+  }
+
+  return {
+    id: record.id,
+    roomNumber: record.roomNumber,
+    buildingId: record.buildingId,
+    buildingName: record.buildingName,
+    floor: record.floor ?? 1,
+    status,
+    size: record.size,
+    monthlyRent: record.monthlyRent,
+    tenantId: record.tenantId ?? null,
+    teamId: record.teamId,
+  };
+};
 
 export const mapTenantRecord = (record: TenantMapperInput): Tenant => ({
   id: record.id,
@@ -125,6 +135,8 @@ export const mapInvoiceRecord = (record: InvoiceMapperInput): Invoice => {
     roomId: record.roomId ?? "",
     tenantName: record.tenantName,
     roomNumber: record.roomNumber,
+    buildingName: record.buildingName,
+    floor: record.floor,
     billingPeriod: record.billingPeriod ?? "",
     issueDate: record.issueDate ?? record.created,
     dueDate: record.dueDate ?? record.created,

@@ -47,7 +47,7 @@ export type TenantRecord = RecordMeta & {
   name: string;
   email: string;
   phone: string;
-  roomId: string;
+  roomId: string | null;
   moveInDate: string;
   monthlyRent: number;
   deposit: number;
@@ -74,6 +74,8 @@ export type InvoiceRecord = RecordMeta & {
   roomId: string;
   tenantName?: string;
   roomNumber?: string;
+  buildingName?: string; // Building name for the room
+  floor?: number; // Floor number for the room
   billingPeriod: string;
   issueDate: string;
   dueDate: string;

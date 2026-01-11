@@ -45,7 +45,7 @@ export type TenantMapperInput = RecordMeta & {
   name: string;
   email: string;
   phone: string;
-  roomId: string;
+  roomId: string | null;
   moveInDate: string;
   monthlyRent: number;
   deposit: number;
@@ -70,6 +70,8 @@ export type InvoiceMapperInput = RecordMeta & {
   roomId?: string;
   tenantName?: string;
   roomNumber?: string;
+  buildingName?: string;
+  floor?: number;
   billingPeriod?: string;
   issueDate?: string;
   dueDate?: string;

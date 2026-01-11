@@ -253,11 +253,15 @@ export default function InvoiceDetailPage() {
                 รายละเอียดห้อง
               </p>
               <p className="font-semibold text-foreground">
-                ห้อง {invoice.room?.roomNumber || invoice.roomNumber}
+                ห้อง{" "}
+                {invoice.room?.roomNumber ||
+                  invoice.roomNumber ||
+                  invoice.roomId ||
+                  "—"}
               </p>
               <p className="text-sm text-muted-foreground">
-                {invoice.room?.buildingName || "—"}, ชั้น{" "}
-                {invoice.room?.floor ?? "—"}
+                {invoice.room?.buildingName || invoice.buildingName || "—"}, ชั้น{" "}
+                {invoice.room?.floor ?? invoice.floor ?? "—"}
               </p>
             </div>
           </div>

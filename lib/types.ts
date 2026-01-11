@@ -51,7 +51,7 @@ export interface Tenant {
   name: string;
   email: string;
   phone: string;
-  roomId: string;
+  roomId: string | null;
   room?: Room;
   moveInDate: string;
   contractEndDate?: string;
@@ -157,6 +157,8 @@ export interface Invoice {
   roomId: string;
   tenantName?: string;
   roomNumber?: string;
+  buildingName?: string; // Building name for the room
+  floor?: number; // Floor number for the room
   billingPeriod: string;
   issueDate: string;
   dueDate: string;

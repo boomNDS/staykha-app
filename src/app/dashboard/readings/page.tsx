@@ -1,14 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { Droplets, FileText, Gauge, Plus, Zap } from "lucide-react";
-import * as React from "react";
-import { DataTable } from "@/components/data-table";
-import { EmptyState } from "@/components/empty-state";
-import { LoadingState } from "@/components/loading-state";
-import { PageHeader } from "@/components/page-header";
-import { SettingsRequired } from "@/components/settings-required";
-import { TableRowActions } from "@/components/table-row-actions";
+import { Gauge, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -26,193 +18,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import {
-  buildingsApi,
-  invoicesApi,
-  readingsApi,
-  roomsApi,
-  settingsApi,
-} from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "@/lib/router";
-import type { Invoice, MeterReadingGroup, Room } from "@/lib/types";
+import { DataTable } from "@/components/data-table";
+import { EmptyState } from "@/components/empty-state";
+import { LoadingState } from "@/components/loading-state";
+import { PageHeader } from "@/components/page-header";
+import { SettingsRequired } from "@/components/settings-required";
+import { useReadingsPage } from "@/lib/hooks/use-readings-page";
+import type { MeterReadingGroup, Room } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function ReadingsPage() {
   usePageTitle("อ่านมิเตอร์");
 
-  const router = useRouter();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const readingsQuery = useQuery({
-    queryKey: ["readings"],
-    queryFn: () => readingsApi.getAll(),
-  });
-  const buildingsQuery = useQuery({
-    queryKey: ["buildings"],
-    queryFn: () => buildingsApi.getAll(),
-  });
-  const settingsQuery = useQuery({
-    queryKey: ["settings", user?.teamId],
-    queryFn: () => {
-      if (!user?.teamId) {
-        throw new Error("จำเป็นต้องมี Team ID เพื่อโหลด Settings");
-      }
-      return settingsApi.get(user.teamId);
-    },
-    enabled: !!user?.teamId,
-  });
-  const roomsQuery = useQuery({
-    queryKey: ["rooms"],
-    queryFn: () => roomsApi.getAll(),
-  });
-  const invoicesQuery = useQuery({
-    queryKey: ["invoices"],
-    queryFn: () => invoicesApi.getAll(),
-  });
-  const [reminderHistory, setReminderHistory] = React.useState<
-    Record<string, string>
-  >(() => {
-    if (typeof window === "undefined") return {};
-    try {
-      const stored = window.localStorage.getItem("staykha:readingReminders");
-      return stored ? JSON.parse(stored) : {};
-    } catch {
-      return {};
-    }
-  });
-  const [selectedGroupId, setSelectedGroupId] = React.useState<string | null>(
-    null,
-  );
-  const followUpStorageKey = "staykha:missingFollowUps";
-  const [followUps, setFollowUps] = React.useState<Record<string, string>>(
-    () => {
-      if (typeof window === "undefined") return {};
-      try {
-        const stored = window.localStorage.getItem(followUpStorageKey);
-        return stored ? JSON.parse(stored) : {};
-      } catch {
-        return {};
-      }
-    },
-  );
+  const {
+    buildingsQuery,
+    settingsQuery,
+    roomsQuery,
+    readings,
+    buildings,
+    rooms,
+    settings,
+    isLoading,
+    isWaterFixed,
+    selectedPeriod,
+    setSelectedPeriod,
+    setSelectedGroupId,
+    generatingInvoiceId,
+    setGeneratingInvoiceId,
+    periodOptions,
+    filteredReadings,
+    selectedGroup,
+    hasMixedPeriods,
+    monthLabel,
+    selectedGroupMonthLabel,
+    selectedGroupRoomLabel,
+    selectedGroupStatus,
+    hasExistingInvoice,
+    isInvoiceReady,
+    missingReadingsLabel,
+    missingReadings,
+    getStatusColor,
+    formatDateParam,
+    todayValue,
+    columns,
+    filters,
+    generateInvoiceMutation,
+    router,
+  } = useReadingsPage();
 
-  // All hooks must be called before any conditional returns
-  const readings = readingsQuery.data?.readings ?? [];
-  const buildings = buildingsQuery.data?.buildings ?? [];
-  const rooms = roomsQuery.data?.rooms ?? [];
-  const settings = settingsQuery.data?.settings;
-  const isLoading = readingsQuery.isLoading;
-  const waterBillingMode = settings?.waterBillingMode ?? "metered";
-  const isWaterFixed = waterBillingMode === "fixed";
-  const groupedReadings = readings as MeterReadingGroup[];
-  const [selectedPeriod, setSelectedPeriod] = React.useState(() =>
-    new Date().toISOString().slice(0, 7),
-  );
-
-  const periodOptions = React.useMemo(() => {
-    const options = [{ value: "all", label: "ทุกงวด" }];
-    const now = new Date();
-    for (let i = 0; i < 12; i += 1) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const value = date.toISOString().slice(0, 7);
-      const label = date.toLocaleString("th-TH", {
-        month: "long",
-        year: "numeric",
-      });
-      options.push({ value, label });
-    }
-    return options;
-  }, []);
-
-  const filteredReadings = React.useMemo(() => {
-    if (selectedPeriod === "all") {
-      return groupedReadings;
-    }
-    return groupedReadings.filter((group) =>
-      group.readingDate.startsWith(selectedPeriod),
-    );
-  }, [groupedReadings, selectedPeriod]);
-
-  const uniquePeriods = React.useMemo(() => {
-    const set = new Set<string>();
-    groupedReadings.forEach((group) => {
-      set.add(group.readingDate.slice(0, 7));
-    });
-    return set;
-  }, [groupedReadings]);
-  const hasMixedPeriods = selectedPeriod === "all" && uniquePeriods.size > 1;
-
-  // All useEffect and useMemo hooks must be called before any early returns
-  React.useEffect(() => {
-    if (!filteredReadings.length) {
-      setSelectedGroupId(null);
-      return;
-    }
-    if (
-      !selectedGroupId ||
-      !filteredReadings.some((group) => group.id === selectedGroupId)
-    ) {
-      setSelectedGroupId(filteredReadings[0].id);
-    }
-  }, [filteredReadings, selectedGroupId]);
-
-  const selectedGroup = React.useMemo(() => {
-    if (!filteredReadings.length) return null;
-    return (
-      filteredReadings.find((group) => group.id === selectedGroupId) ??
-      filteredReadings[0]
-    );
-  }, [filteredReadings, selectedGroupId]);
-
-  // Debounced localStorage writes to avoid excessive writes
-  const reminderHistoryTimeoutRef = React.useRef<NodeJS.Timeout>();
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    
-    // Clear previous timeout
-    if (reminderHistoryTimeoutRef.current) {
-      clearTimeout(reminderHistoryTimeoutRef.current);
-    }
-    
-    // Debounce localStorage write
-    reminderHistoryTimeoutRef.current = setTimeout(() => {
-      window.localStorage.setItem(
-        "staykha:readingReminders",
-        JSON.stringify(reminderHistory),
-      );
-    }, 300); // 300ms debounce
-    
-    return () => {
-      if (reminderHistoryTimeoutRef.current) {
-        clearTimeout(reminderHistoryTimeoutRef.current);
-      }
-    };
-  }, [reminderHistory]);
-
-  const followUpsTimeoutRef = React.useRef<NodeJS.Timeout>();
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    
-    // Clear previous timeout
-    if (followUpsTimeoutRef.current) {
-      clearTimeout(followUpsTimeoutRef.current);
-    }
-    
-    // Debounce localStorage write
-    followUpsTimeoutRef.current = setTimeout(() => {
-      window.localStorage.setItem(followUpStorageKey, JSON.stringify(followUps));
-    }, 300); // 300ms debounce
-    
-    return () => {
-      if (followUpsTimeoutRef.current) {
-        clearTimeout(followUpsTimeoutRef.current);
-      }
-    };
-  }, [followUps, followUpStorageKey]);
-
-  // Show settings required message if settings don't exist (AFTER all hooks)
+  // Early returns for settings and rooms
   if (settingsQuery.isSuccess && !settings) {
     return (
       <SettingsRequired
@@ -243,325 +97,22 @@ export default function ReadingsPage() {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "billed":
-        return "default";
-      case "pending":
-        return "secondary";
-      case "incomplete":
-        return "outline";
-      case "paid":
-        return "default";
-      default:
-        return "secondary";
-    }
-  };
-
-  const monthKey =
-    selectedPeriod === "all"
-      ? new Date().toISOString().slice(0, 7)
-      : selectedPeriod;
-  const monthLabel =
-    selectedPeriod === "all"
-      ? "ทุกงวด"
-      : new Date(`${monthKey}-01`).toLocaleString("th-TH", {
-          month: "long",
-          year: "numeric",
-        });
-  const readingsByRoom = new Map<string, MeterReadingGroup[]>();
-  filteredReadings.forEach((group) => {
-    if (!readingsByRoom.has(group.roomId)) {
-      readingsByRoom.set(group.roomId, []);
-    }
-    readingsByRoom.get(group.roomId)?.push(group);
-  });
-
-  const selectedGroupMonthLabel = selectedGroup
-    ? new Date(selectedGroup.readingDate).toLocaleString("th-TH", {
-        month: "long",
-        year: "numeric",
-      })
-    : "";
-  const selectedGroupRoomLabel = selectedGroup?.roomNumber ?? "—";
-  const selectedGroupStatus = selectedGroup?.status ?? "pending";
-  const invoices = invoicesQuery.data?.invoices ?? [];
-  const hasExistingInvoice = selectedGroup
-    ? invoices.some(
-        (invoice: Invoice) => invoice.readingGroupId === selectedGroup.id,
-      )
-    : false;
-  const isInvoiceReady =
-    Boolean(selectedGroup?.electric) &&
-    (isWaterFixed || Boolean(selectedGroup?.water)) &&
-    !hasExistingInvoice;
-  const missingReadingsLabel = selectedGroup
-    ? [
-        !selectedGroup.electric ? "มิเตอร์ไฟ" : null,
-        !isWaterFixed && !selectedGroup.water ? "มิเตอร์น้ำ" : null,
-      ]
-        .filter(Boolean)
-        .join(", ")
-    : "";
-
-  const _handleReminder = (roomId: string, type: "water" | "electric") => {
-    const key = `${roomId}-${type}`;
-    const timestamp = new Date().toISOString();
-    setReminderHistory((prev) => {
-      const next = { ...prev, [key]: timestamp };
-      toast({
-        title: "ตั้งค่าการแจ้งเตือนแล้ว",
-        description: `ส่งการแจ้งเตือน${type === "water" ? "มิเตอร์น้ำ" : "มิเตอร์ไฟ"}ให้ห้อง ${roomId}`,
-      });
-      return next;
-    });
-  };
-
-  const _handleScheduleFollowUp = (roomId: string) => {
-    if (followUps[roomId]) {
-      toast({
-        title: "ตั้งเวลาไว้แล้ว",
-        description: "มีการตั้งเตือนติดตามสำหรับห้องนี้แล้ว",
-      });
-      return;
-    }
-    const timestamp = new Date().toISOString();
-    setFollowUps((prev) => {
-      const next = { ...prev, [roomId]: timestamp };
-      toast({
-        title: "ตั้งการติดตามแล้ว",
-        description: `ระบบจะแจ้งเตือนห้อง ${roomId} เพื่อส่งข้อมูลมิเตอร์ที่ขาด`,
-      });
-      return next;
-    });
-  };
-
-  const missingReadings = rooms
-    .map((room: Room) => {
-      const roomGroups = readingsByRoom.get(room.id) ?? [];
-      const currentGroup = roomGroups.find((group) =>
-        group.readingDate.startsWith(monthKey),
-      );
-      const missingElectric = !currentGroup?.electric;
-      const missingWater = !isWaterFixed && !currentGroup?.water;
-      return {
-        room,
-        currentGroup,
-        missingElectric,
-        missingWater,
-        hasMissing: missingElectric || missingWater,
-      };
-    })
-    .filter((item) => item.hasMissing);
-  const formatDateParam = (value: string) => {
-    const match = value.match(/^\d{4}-\d{2}-\d{2}/);
-    if (match) return match[0];
-    const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) {
-      return parsed.toISOString().slice(0, 10);
-    }
-    return value;
-  };
-  const todayValue = (() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  })();
-
-  const columns = [
-    {
-      key: "type",
-      header: "ประเภท",
-      render: (group: MeterReadingGroup) => (
-        <div className="flex items-center gap-2">
-          {group.water ? <Droplets className="h-4 w-4 text-blue-500" /> : null}
-          {group.electric ? <Zap className="h-4 w-4 text-amber-500" /> : null}
-          {!group.water && !group.electric ? (
-            <span className="text-xs text-muted-foreground">—</span>
-          ) : null}
-        </div>
-      ),
-    },
-    {
-      key: "readingDate",
-      header: "วันที่",
-      searchable: true,
-      render: (group: MeterReadingGroup) => (
-        <span className="text-muted-foreground">
-          {new Date(group.readingDate).toLocaleDateString("th-TH")}
-        </span>
-      ),
-    },
-    {
-      key: "tenantName",
-      header: "ผู้เช่า",
-      searchable: true,
-      className: "hidden sm:table-cell",
-      render: (group: MeterReadingGroup) => (
-        <span className="font-medium text-foreground">
-          {group.tenantName || "—"}
-        </span>
-      ),
-    },
-    {
-      key: "roomNumber",
-      header: "ห้อง",
-      searchable: true,
-      render: (group: MeterReadingGroup) => (
-        <span className="text-foreground">{group.roomNumber || "—"}</span>
-      ),
-    },
-    {
-      key: "previousReading",
-      header: "ก่อนหน้า",
-      className: "hidden md:table-cell",
-      render: (group: MeterReadingGroup) => (
-        <div className="space-y-1 text-sm text-muted-foreground">
-          <div>
-            น้ำ:{" "}
-            {group.water?.previousReading?.toLocaleString() ??
-              (isWaterFixed ? "เหมาจ่าย" : "—")}
-          </div>
-          <div>
-            ไฟ: {group.electric?.previousReading?.toLocaleString() ?? "—"}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "currentReading",
-      header: "ล่าสุด",
-      className: "hidden md:table-cell",
-      render: (group: MeterReadingGroup) => (
-        <div className="space-y-1 text-sm text-foreground">
-          <div>
-            น้ำ:{" "}
-            {group.water?.currentReading?.toLocaleString() ??
-              (isWaterFixed ? "เหมาจ่าย" : "—")}
-          </div>
-          <div>
-            ไฟ: {group.electric?.currentReading?.toLocaleString() ?? "—"}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "consumption",
-      header: "หน่วยใช้",
-      render: (group: MeterReadingGroup) => (
-        <div className="space-y-1 text-sm">
-          <div className="font-semibold text-primary">
-            {group.water?.consumption?.toLocaleString() ??
-              (isWaterFixed ? "เหมาจ่าย" : "—")}{" "}
-            m³
-          </div>
-          <div className="font-semibold text-primary">
-            {group.electric?.consumption?.toLocaleString() ?? "—"} kWh
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "status",
-      header: "สถานะ",
-      render: (group: MeterReadingGroup) => (
-        <Badge variant={getStatusColor(group.status)}>
-          {group.status === "pending"
-            ? "รอออกบิล"
-            : group.status === "incomplete"
-              ? "ไม่ครบ"
-              : group.status === "billed"
-                ? "ออกบิลแล้ว"
-                : group.status === "paid"
-                  ? "ชำระแล้ว"
-                  : group.status}
-        </Badge>
-      ),
-    },
-    {
-      key: "actions",
-      header: "การดำเนินการ",
-      render: (group: MeterReadingGroup) => {
-        const items = [
-          !group.water && !isWaterFixed
-            ? {
-                label: "เพิ่มมิเตอร์น้ำ",
-                icon: Droplets,
-                onClick: () =>
-                  router.push(
-                    `/overview/readings/new?roomId=${group.roomId}&date=${group.readingDate}&meter=water&readingGroupId=${group.id}`,
-                  ),
-              }
-            : null,
-          !group.electric
-            ? {
-                label: "เพิ่มมิเตอร์ไฟ",
-                icon: Zap,
-                onClick: () =>
-                  router.push(
-                    `/overview/readings/new?roomId=${group.roomId}&date=${group.readingDate}&meter=electric&readingGroupId=${group.id}`,
-                  ),
-              }
-            : null,
-          group.status === "pending" &&
-          group.electric &&
-          (group.water || isWaterFixed)
-            ? {
-                label: "สร้างใบแจ้งหนี้",
-                icon: FileText,
-                onClick: () =>
-                  router.push(`/overview/billing?readingId=${group.id}`),
-              }
-            : null,
-        ].filter(Boolean) as {
-          label: string;
-          icon: typeof Droplets;
-          onClick: () => void;
-        }[];
-
-        return (
-          <TableRowActions
-            primary={{
-              label: "ดูรายละเอียด",
-              icon: Gauge,
-              onClick: () => router.push(`/overview/readings/${group.id}`),
-            }}
-            items={items}
-          />
-        );
-      },
-    },
-  ];
-
-  const filters = [
-    {
-      key: "meterType",
-      label: "ประเภท",
-      options: [
-        { value: "water", label: "น้ำ" },
-        { value: "electric", label: "ไฟ" },
-      ],
-      filterFn: (group: MeterReadingGroup, value: string) =>
-        value === "water" ? Boolean(group.water) : Boolean(group.electric),
-    },
-    {
-      key: "status",
-      label: "สถานะ",
-      options: [
-        { value: "incomplete", label: "ไม่ครบ" },
-        { value: "pending", label: "รอออกบิล" },
-        { value: "billed", label: "ออกบิลแล้ว" },
-        { value: "paid", label: "ชำระแล้ว" },
-      ],
-      filterFn: (group: MeterReadingGroup, value: string) =>
-        group.status === value,
-    },
-  ];
-
   return (
     <div className="space-y-6 pb-8 sm:space-y-8">
+      {/* Loading overlay when generating invoice */}
+      {generateInvoiceMutation.isPending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="text-center">กำลังสร้างใบแจ้งหนี้</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center justify-center gap-4 p-8">
+              <LoadingState message="กรุณารอสักครู่ ระบบกำลังสร้างใบแจ้งหนี้ให้คุณ..." />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <PageHeader
         title="อ่านมิเตอร์"
         description="บันทึกค่าน้ำและค่าไฟพร้อมกัน หรืออัปเดตทีละมิเตอร์ภายหลังได้"
@@ -575,11 +126,13 @@ export default function ReadingsPage() {
                 <SelectValue placeholder="เลือกงวดบิล" />
               </SelectTrigger>
               <SelectContent>
-                {periodOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+                {periodOptions.map(
+                  (option: { value: string; label: string }) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ),
+                )}
               </SelectContent>
             </Select>
             <Button
@@ -625,8 +178,9 @@ export default function ReadingsPage() {
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
               {
-                filteredReadings.filter((group) => group.status === "pending")
-                  .length
+                filteredReadings.filter(
+                  (group: MeterReadingGroup) => group.status === "pending",
+                ).length
               }
             </div>
             <p className="text-xs text-muted-foreground">รอสร้างบิล</p>
@@ -642,7 +196,7 @@ export default function ReadingsPage() {
             <div className="text-2xl font-bold text-foreground">
               {
                 filteredReadings.filter(
-                  (group) => group.status === "incomplete",
+                  (group: MeterReadingGroup) => group.status === "incomplete",
                 ).length
               }
             </div>
@@ -658,8 +212,9 @@ export default function ReadingsPage() {
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
               {
-                filteredReadings.filter((group) => group.status === "billed")
-                  .length
+                filteredReadings.filter(
+                  (group: MeterReadingGroup) => group.status === "billed",
+                ).length
               }
             </div>
             <p className="text-xs text-muted-foreground">เสร็จสิ้น</p>
@@ -682,7 +237,7 @@ export default function ReadingsPage() {
                 <SelectValue placeholder="เลือกห้อง" />
               </SelectTrigger>
               <SelectContent>
-                {filteredReadings.map((group) => (
+                {filteredReadings.map((group: MeterReadingGroup) => (
                   <SelectItem key={group.id} value={group.id}>
                     {group.roomNumber} •{" "}
                     {new Date(group.readingDate).toLocaleString("th-TH", {
@@ -774,12 +329,17 @@ export default function ReadingsPage() {
                     </Button>
                     <Button
                       size="sm"
-                      onClick={() =>
-                        router.push(
-                          `/overview/billing?readingId=${selectedGroup.id}`,
-                        )
+                      onClick={() => {
+                        if (!isInvoiceReady || hasExistingInvoice) return;
+                        setGeneratingInvoiceId(selectedGroup.id);
+                        generateInvoiceMutation.mutate(selectedGroup.id);
+                      }}
+                      disabled={
+                        !isInvoiceReady ||
+                        hasExistingInvoice ||
+                        generatingInvoiceId === selectedGroup.id ||
+                        generateInvoiceMutation.isPending
                       }
-                      disabled={!isInvoiceReady || hasExistingInvoice}
                       title={
                         hasExistingInvoice
                           ? "มีใบแจ้งหนี้แล้วสำหรับกลุ่มนี้"
@@ -788,7 +348,11 @@ export default function ReadingsPage() {
                             : undefined
                       }
                     >
-                      {hasExistingInvoice ? "มีใบแจ้งหนี้แล้ว" : "สร้างใบแจ้งหนี้"}
+                      {hasExistingInvoice
+                        ? "มีใบแจ้งหนี้แล้ว"
+                        : generatingInvoiceId === selectedGroup.id
+                          ? "กำลังสร้าง..."
+                          : "สร้างใบแจ้งหนี้"}
                     </Button>
                   </div>
                   {!isInvoiceReady &&
@@ -830,7 +394,13 @@ export default function ReadingsPage() {
                   key: "room",
                   header: "ห้อง",
                   searchable: true,
-                  render: (item) => (
+                  render: (item: {
+                    room: Room;
+                    currentGroup: MeterReadingGroup | null;
+                    missingElectric: boolean;
+                    missingWater: boolean;
+                    hasMissing: boolean;
+                  }) => (
                     <div>
                       <p className="text-sm font-medium text-foreground">
                         ห้อง {item.room.roomNumber}
@@ -844,7 +414,13 @@ export default function ReadingsPage() {
                 {
                   key: "missing",
                   header: "ที่ขาด",
-                  render: (item) => (
+                  render: (item: {
+                    room: Room;
+                    currentGroup: MeterReadingGroup | null;
+                    missingElectric: boolean;
+                    missingWater: boolean;
+                    hasMissing: boolean;
+                  }) => (
                     <div className="flex flex-wrap gap-2">
                       {item.missingWater && <Badge variant="outline">น้ำ</Badge>}
                       {item.missingElectric && (
@@ -856,7 +432,13 @@ export default function ReadingsPage() {
                 {
                   key: "actions",
                   header: "การดำเนินการ",
-                  render: (item) => (
+                  render: (item: {
+                    room: Room;
+                    currentGroup: MeterReadingGroup | null;
+                    missingElectric: boolean;
+                    missingWater: boolean;
+                    hasMissing: boolean;
+                  }) => (
                     <div className="flex flex-wrap gap-2">
                       {item.missingWater && (
                         <Button
@@ -917,7 +499,7 @@ export default function ReadingsPage() {
         <CardContent>
           {isLoading ? (
             <LoadingState message="กำลังโหลดรายการอ่านมิเตอร์..." />
-          ) : groupedReadings.length === 0 ? (
+          ) : readings.length === 0 ? (
             <EmptyState
               icon={<Gauge className="h-8 w-8 text-muted-foreground" />}
               title="ยังไม่มีการอ่านมิเตอร์"

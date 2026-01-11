@@ -101,7 +101,7 @@ export default function RoomsPage() {
       monthlyRent: number;
       deposit: number;
       status: "active";
-    }) => tenantsApi.create(payload),
+    }) => tenantsApi.create(payload as Omit<Tenant, "id">),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
@@ -142,8 +142,6 @@ export default function RoomsPage() {
       open: true,
       title: "ยืนยันการลบห้อง?",
       description: "การลบห้องนี้จะไม่สามารถกู้คืนได้",
-      confirmLabel: "ลบ",
-      cancelLabel: "ยกเลิก",
       onConfirm: async () => {
         try {
           await deleteRoomMutation.mutateAsync(id);
@@ -181,13 +179,12 @@ export default function RoomsPage() {
       open: true,
       title: "ยกเลิกผู้เช่า?",
       description: "ผู้เช่าจะถูกยกเลิกการผูกกับห้องนี้",
-      confirmLabel: "ยกเลิกการผูก",
-      cancelLabel: "ยกเลิก",
       onConfirm: async () => {
         try {
+          const { id: _, ...tenantWithoutId } = tenant;
           await updateTenantMutation.mutateAsync({
             id: tenant.id,
-            updates: { ...tenant, roomId: "" },
+            updates: { ...tenantWithoutId, roomId: null },
           });
         } catch (error) {
           console.error("Failed to unassign tenant:", error);

@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Check authentication on mount and listen for storage changes
   // Using useRef to store the latest loadUser function to avoid dependency issues
   const loadUserRef = React.useRef<() => void>();
-  
+
   const loadUser = React.useCallback(() => {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setIsLoading(false);
   }, [setUser, setIsLoading]);
-  
+
   // Keep ref updated
   loadUserRef.current = loadUser;
 

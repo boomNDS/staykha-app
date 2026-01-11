@@ -31,6 +31,7 @@ import type {
 } from "@/types/collections";
 import type {
   BuildingMapperInput,
+  InvoiceMapperInput,
   InvitationMapperInput,
   ReadingGroupMapperInput,
   SettingsMapperInput,
@@ -527,17 +528,103 @@ export const tenantsApi = {
       ...data,
       teamId,
     });
+
+    // If tenant is assigned to a room, update the room's tenantId and status
+    if (data.roomId) {
+      try {
+        await updateRecord("rooms", data.roomId, {
+          tenantId: record.id,
+          status: "occupied",
+        });
+      } catch (error) {
+        // Log error but don't fail the tenant creation
+        console.error("Failed to update room when creating tenant:", error);
+      }
+    }
+
     return { tenant: mapTenantRecord(record) };
   },
   update: async (
     id: string,
     updates: Partial<Tenant>,
   ): Promise<{ tenant: Tenant }> => {
+    // Get the current tenant to check for room changes
+    const currentTenant = await getRecord<Omit<TenantRecord, keyof RecordMeta>>(
+      "tenants",
+      id,
+    ).catch(() => null);
+
+    const previousRoomId = currentTenant?.roomId;
+    const newRoomId = updates.roomId;
+
+    // Update the tenant record
     const record = await updateRecord("tenants", id, updates);
+
+    // If room assignment changed, update both old and new rooms
+    if (previousRoomId !== newRoomId) {
+      // Unassign from previous room if it exists
+      if (previousRoomId) {
+        try {
+          const previousRoom = await getRecord<
+            Omit<RoomRecord, keyof RecordMeta>
+          >("rooms", previousRoomId).catch(() => null);
+
+          // Only update if this tenant is still assigned to the room
+          if (previousRoom?.tenantId === id) {
+            await updateRecord("rooms", previousRoomId, {
+              tenantId: null,
+              status: "vacant",
+            });
+          }
+        } catch (error) {
+          console.error("Failed to unassign tenant from previous room:", error);
+        }
+      }
+
+      // Assign to new room if provided
+      if (newRoomId) {
+        try {
+          await updateRecord("rooms", newRoomId, {
+            tenantId: id,
+            status: "occupied",
+          });
+        } catch (error) {
+          console.error("Failed to assign tenant to new room:", error);
+        }
+      }
+    }
+
     return { tenant: mapTenantRecord(record) };
   },
-  remove: async (id: string): Promise<{ ok: boolean }> =>
-    deleteRecord("tenants", id),
+  remove: async (id: string): Promise<{ ok: boolean }> => {
+    // Get the tenant to find the room before deleting
+    const tenant = await getRecord<Omit<TenantRecord, keyof RecordMeta>>(
+      "tenants",
+      id,
+    ).catch(() => null);
+
+    // Unassign from room if tenant is assigned
+    if (tenant?.roomId) {
+      try {
+        const room = await getRecord<Omit<RoomRecord, keyof RecordMeta>>(
+          "rooms",
+          tenant.roomId,
+        ).catch(() => null);
+
+        // Only update if this tenant is still assigned to the room
+        if (room?.tenantId === id) {
+          await updateRecord("rooms", tenant.roomId, {
+            tenantId: null,
+            status: "vacant",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to unassign tenant from room on delete:", error);
+      }
+    }
+
+    return deleteRecord("tenants", id);
+  },
 };
 
 const normalizeReadingDate = (value: string) => {
@@ -636,20 +723,19 @@ export const readingsApi = {
       // Fetch room and tenant info if not already stored
       let roomNumber = existingGroup.roomNumber;
       let tenantName = existingGroup.tenantName;
-      
+
       if (!roomNumber || !tenantName) {
         const room = await getRecord<Omit<RoomRecord, keyof RecordMeta>>(
           "rooms",
           data.roomId,
         ).catch(() => null);
-        
+
         if (room) {
           roomNumber = roomNumber ?? room.roomNumber;
           if (room.tenantId && !tenantName) {
-            const tenant = await getRecord<Omit<TenantRecord, keyof RecordMeta>>(
-              "tenants",
-              room.tenantId,
-            ).catch(() => null);
+            const tenant = await getRecord<
+              Omit<TenantRecord, keyof RecordMeta>
+            >("tenants", room.tenantId).catch(() => null);
             tenantName = tenant?.name;
           }
         }
@@ -661,6 +747,8 @@ export const readingsApi = {
         water: mergedWater,
         electric: mergedElectric,
         status,
+        // Ensure roomId is set (in case it was missing)
+        roomId: data.roomId,
         ...(roomNumber && { roomNumber }),
         ...(tenantName && { tenantName }),
       });
@@ -686,7 +774,7 @@ export const readingsApi = {
       "rooms",
       data.roomId,
     ).catch(() => null);
-    
+
     const tenant = room?.tenantId
       ? await getRecord<Omit<TenantRecord, keyof RecordMeta>>(
           "tenants",
@@ -696,17 +784,19 @@ export const readingsApi = {
 
     const status = resolveStatus(Boolean(data.water), Boolean(data.electric));
     try {
+      // Explicitly set all fields to ensure roomId and other info are saved
       const record = await createRecord<
         Omit<ReadingGroupRecord, keyof RecordMeta> & {
           status: MeterReadingGroup["status"];
         }
       >("reading_groups", {
-        ...data,
-        roomId: data.roomId,
-        roomNumber: room?.roomNumber,
-        tenantName: tenant?.name,
+        roomId: data.roomId, // Explicitly set roomId (required relation field)
+        roomNumber: room?.roomNumber ?? undefined,
+        tenantName: tenant?.name ?? undefined,
         readingDate,
         status,
+        water: data.water,
+        electric: data.electric,
         teamId,
       });
       return { reading: mapReadingRecord(record as ReadingGroupMapperInput) };
@@ -740,20 +830,19 @@ export const readingsApi = {
       // Fetch room and tenant info if not already stored
       let roomNumber = existingGroup.roomNumber;
       let tenantName = existingGroup.tenantName;
-      
+
       if (!roomNumber || !tenantName) {
         const room = await getRecord<Omit<RoomRecord, keyof RecordMeta>>(
           "rooms",
           data.roomId,
         ).catch(() => null);
-        
+
         if (room) {
           roomNumber = roomNumber ?? room.roomNumber;
           if (room.tenantId && !tenantName) {
-            const tenant = await getRecord<Omit<TenantRecord, keyof RecordMeta>>(
-              "tenants",
-              room.tenantId,
-            ).catch(() => null);
+            const tenant = await getRecord<
+              Omit<TenantRecord, keyof RecordMeta>
+            >("tenants", room.tenantId).catch(() => null);
             tenantName = tenant?.name;
           }
         }
@@ -765,6 +854,8 @@ export const readingsApi = {
         water: mergedWater,
         electric: mergedElectric,
         status: mergedStatus,
+        // Ensure roomId is set (in case it was missing)
+        roomId: data.roomId,
         ...(roomNumber && { roomNumber }),
         ...(tenantName && { tenantName }),
       });
@@ -817,10 +908,12 @@ export const readingsApi = {
 
 export const invoicesApi = {
   getAll: async (): Promise<{ invoices: Invoice[] }> => {
-    const items =
-      await listRecords<Omit<InvoiceRecord, keyof RecordMeta>>("invoices", {
+    const items = await listRecords<Omit<InvoiceRecord, keyof RecordMeta>>(
+      "invoices",
+      {
         expand: "tenant,room",
-      });
+      },
+    );
     return { invoices: items.map(mapInvoiceRecord) };
   },
   getById: async (id: string): Promise<{ invoice: Invoice }> => {
@@ -838,7 +931,7 @@ export const invoicesApi = {
     updates: Partial<Invoice>,
   ): Promise<{ invoice: Invoice }> => {
     const record = await updateRecord("invoices", id, updates);
-    return { invoice: mapInvoiceRecord(record) };
+    return { invoice: mapInvoiceRecord(record as InvoiceMapperInput) };
   },
   downloadPdf: async (_id: string): Promise<Blob> => {
     // PDF generation is handled client-side using jsPDF and html-to-image
@@ -894,12 +987,31 @@ export const invoicesApi = {
       "rooms",
       readingGroup.roomId,
     );
-    const tenant = room.tenantId
-      ? await getRecord<Omit<TenantRecord, keyof RecordMeta>>(
-          "tenants",
-          room.tenantId,
-        ).catch(() => null)
-      : null;
+
+    // Try to get tenant from room first, then from reading group's tenantName if room has no tenant
+    let tenant: (Omit<TenantRecord, keyof RecordMeta> & RecordMeta) | null =
+      null;
+    if (room.tenantId) {
+      tenant = await getRecord<Omit<TenantRecord, keyof RecordMeta>>(
+        "tenants",
+        room.tenantId,
+      ).catch(() => null);
+    }
+
+    // If no tenant found but reading group has tenantName, try to find tenant by name
+    // (This handles cases where tenant was removed from room but reading group still has the name)
+    if (!tenant && readingGroup.tenantName) {
+      const tenantsByRoom = await listRecords<
+        Omit<TenantRecord, keyof RecordMeta>
+      >("tenants", {
+        filter: `teamId = "${teamId}" && roomId = "${readingGroup.roomId}" && name = "${readingGroup.tenantName}"`,
+        perPage: 1,
+      });
+      if (tenantsByRoom.length > 0) {
+        tenant = tenantsByRoom[0] as Omit<TenantRecord, keyof RecordMeta> &
+          RecordMeta;
+      }
+    }
 
     // Calculate dates
     const issueDate = new Date(readingGroup.readingDate);
@@ -994,10 +1106,12 @@ export const invoicesApi = {
         "invoices",
         {
           invoiceNumber,
-          tenantId: tenant?.id,
+          tenantId: tenant?.id ?? undefined,
           roomId: readingGroup.roomId,
-          tenantName: tenant?.name ?? readingGroup.tenantName,
-          roomNumber: room.roomNumber ?? readingGroup.roomNumber,
+          tenantName: tenant?.name ?? readingGroup.tenantName ?? undefined,
+          roomNumber: room.roomNumber ?? readingGroup.roomNumber ?? undefined,
+          buildingName: room.buildingName ?? undefined,
+          floor: room.floor ?? undefined,
           billingPeriod: issueDate.toLocaleString("default", {
             month: "long",
             year: "numeric",

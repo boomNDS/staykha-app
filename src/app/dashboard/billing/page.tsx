@@ -106,16 +106,30 @@ export default function BillingPage() {
           year: "numeric",
         });
 
+  // Sync selected invoice IDs when filtered invoices change
+  // Use a ref to track previous filtered invoice IDs to prevent infinite loops
+  const prevFilteredInvoiceIdsRef = React.useRef<string>("");
+
   React.useEffect(() => {
-    setSelectedInvoiceIds((prev) => {
-      const next = new Set<string>();
-      filteredInvoices.forEach((invoice) => {
-        if (prev.has(invoice.id)) {
-          next.add(invoice.id);
-        }
+    const currentIds = filteredInvoices
+      .map((inv) => inv.id)
+      .sort()
+      .join(",");
+
+    // Only update if the filtered invoice IDs have actually changed
+    if (prevFilteredInvoiceIdsRef.current !== currentIds) {
+      prevFilteredInvoiceIdsRef.current = currentIds;
+
+      setSelectedInvoiceIds((prev) => {
+        const next = new Set<string>();
+        filteredInvoices.forEach((invoice) => {
+          if (prev.has(invoice.id)) {
+            next.add(invoice.id);
+          }
+        });
+        return next;
       });
-      return next;
-    });
+    }
   }, [filteredInvoices]);
 
   const generateInvoiceMutation = useMutation({
