@@ -25,6 +25,9 @@ const sizes = {
   'icon-512': { width: 512, height: 512 }, // Large icon
   'icon-256': { width: 256, height: 256 }, // Medium icon
   'icon-128': { width: 128, height: 128 }, // Small icon
+  'icon-light-32x32': { width: 32, height: 32 }, // Favicon light mode
+  'icon-dark-32x32': { width: 32, height: 32 }, // Favicon dark mode
+  'apple-icon': { width: 180, height: 180 }, // Apple touch icon
 };
 
 async function generatePNGs() {
@@ -37,10 +40,19 @@ async function generatePNGs() {
     for (const [name, { width, height }] of Object.entries(sizes)) {
       const outputPath = join(publicDir, `${name}.png`);
       
+      // For light/dark mode icons, use appropriate background
+      let backgroundColor = { r: 14, g: 116, b: 144, alpha: 1 }; // #0E7490 brand color (default)
+      
+      if (name === 'icon-light-32x32') {
+        backgroundColor = { r: 14, g: 116, b: 144, alpha: 1 }; // #0E7490 for light mode
+      } else if (name === 'icon-dark-32x32') {
+        backgroundColor = { r: 14, g: 116, b: 144, alpha: 1 }; // #0E7490 for dark mode (same for now)
+      }
+      
       await sharp(svgBuffer)
         .resize(width, height, {
           fit: 'contain',
-          background: { r: 14, g: 116, b: 144, alpha: 1 } // #0E7490 brand color
+          background: backgroundColor
         })
         .png()
         .toFile(outputPath);
