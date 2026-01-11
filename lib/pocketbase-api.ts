@@ -34,6 +34,7 @@ import type {
   InvoiceMapperInput,
   InvitationMapperInput,
   ReadingGroupMapperInput,
+  RoomMapperInput,
   SettingsMapperInput,
   TeamMapperInput,
 } from "@/types/mappers";
@@ -411,15 +412,15 @@ export const authApi = {
 
 export const roomsApi = {
   getAll: async (): Promise<{ rooms: Room[] }> => {
-    const items =
-      await listRecords<Omit<RoomRecord, keyof RecordMeta>>("rooms");
+    const items = await listRecords<RoomMapperInput>("rooms", {
+      expand: "buildingId",
+    });
     return { rooms: items.map(mapRoomRecord) };
   },
   getById: async (id: string): Promise<{ room: Room }> => {
-    const record = await getRecord<Omit<RoomRecord, keyof RecordMeta>>(
-      "rooms",
-      id,
-    );
+    const record = await getRecord<RoomMapperInput>("rooms", id, {
+      expand: "buildingId",
+    });
     return { room: mapRoomRecord(record) };
   },
   create: async (data: CreateRoomData): Promise<{ room: Room }> => {

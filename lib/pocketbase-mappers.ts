@@ -47,19 +47,28 @@ export const mapBuildingRecord = (record: BuildingMapperInput): Building => ({
 });
 
 export const mapRoomRecord = (record: RoomMapperInput): Room => {
-  // If status is not set, infer it from tenantId
-  let status: Room["status"] = record.status ?? "vacant";
-  if (!record.status && record.tenantId) {
+  // Prioritize tenantId over explicit status field
+  // If tenantId exists, room is occupied; otherwise use explicit status or default to vacant
+  let status: Room["status"];
+  if (record.tenantId) {
     status = "occupied";
-  } else if (!record.status && !record.tenantId) {
+  } else if (record.status) {
+    status = record.status;
+  } else {
     status = "vacant";
   }
+
+  const buildingName =
+    record.buildingName ??
+    record.expand?.buildingId?.name ??
+    record.building?.name ??
+    "";
 
   return {
     id: record.id,
     roomNumber: record.roomNumber,
     buildingId: record.buildingId,
-    buildingName: record.buildingName,
+    buildingName,
     floor: record.floor ?? 1,
     status,
     size: record.size,

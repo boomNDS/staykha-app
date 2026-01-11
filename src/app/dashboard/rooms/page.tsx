@@ -134,7 +134,9 @@ export default function RoomsPage() {
   };
 
   const getAvailableTenants = () => {
-    return tenants.filter((t) => !t.roomId || t.roomId === selectedRoom?.id);
+    // Show all tenants to allow reassignment from one room to another
+    // The backend will handle updating both old and new room statuses
+    return tenants;
   };
 
   const handleDelete = (id: string) => {
@@ -453,11 +455,21 @@ export default function RoomsPage() {
                   <SelectValue placeholder="เลือกผู้เช่า" />
                 </SelectTrigger>
                 <SelectContent>
-                  {getAvailableTenants().map((tenant) => (
-                    <SelectItem key={tenant.id} value={tenant.id}>
-                      {tenant.name} - {tenant.email}
-                    </SelectItem>
-                  ))}
+                  {getAvailableTenants().map((tenant) => {
+                    const currentRoom = tenant.roomId
+                      ? rooms.find((r) => r.id === tenant.roomId)
+                      : null;
+                    return (
+                      <SelectItem key={tenant.id} value={tenant.id}>
+                        {tenant.name} - {tenant.email}
+                        {currentRoom && (
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            (ห้อง {currentRoom.roomNumber})
+                          </span>
+                        )}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             ) : (

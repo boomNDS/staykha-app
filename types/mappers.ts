@@ -39,6 +39,10 @@ export type RoomMapperInput = RecordMeta & {
   monthlyRent?: number;
   tenantId?: string | null;
   teamId: string;
+  expand?: {
+    buildingId?: BuildingMapperInput;
+  };
+  building?: BuildingMapperInput;
 };
 
 export type TenantMapperInput = RecordMeta & {
