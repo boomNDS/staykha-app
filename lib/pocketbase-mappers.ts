@@ -58,10 +58,11 @@ export const mapRoomRecord = (record: RoomMapperInput): Room => {
     status = "vacant";
   }
 
+  const recordedBuildingName = record.buildingName?.trim();
   const buildingName =
-    record.buildingName ??
-    record.expand?.buildingId?.name ??
-    record.building?.name ??
+    recordedBuildingName ||
+    record.expand?.buildingId?.name ||
+    record.building?.name ||
     "";
 
   return {
