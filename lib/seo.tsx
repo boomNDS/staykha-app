@@ -41,7 +41,7 @@ const defaultSEO = {
     "utility billing",
     "invoice automation",
   ],
-  image: "/icon.svg",
+  image: "/og-image.png",
   url: typeof window !== "undefined" ? window.location.origin : "",
   type: "website" as const,
 };
