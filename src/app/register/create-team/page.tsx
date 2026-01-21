@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { teamsApi } from "@/lib/api-client";
+import { teamsApi, usersApi } from "@/lib/api-client";
+import { getData } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
@@ -54,35 +55,20 @@ export default function CreateTeamPage() {
 
     try {
       // Create team
-      const { team } = await teamsApi.create({ name: teamName.trim() });
-
-      // Update user with teamId using PocketBase API
-      const pocketbaseUrl =
-        import.meta.env.VITE_POCKETBASE_URL || "http://127.0.0.1:8090";
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("ต้องยืนยันตัวตนก่อน");
+      const team = getData(await teamsApi.create({ name: teamName.trim() }));
+      if (!team) {
+        throw new Error("ไม่พบข้อมูลทีมที่สร้าง");
       }
 
-      const response = await fetch(
-        `${pocketbaseUrl}/api/collections/users/records/${user.id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ teamId: team.id }),
-        },
+      const updated = getData(
+        await usersApi.update(user.id, { teamId: team.id }),
       );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "ไม่สามารถอัปเดตผู้ใช้กับทีมได้");
-      }
-
-      // Update user in context and localStorage
-      const updatedUser = { ...user, teamId: team.id, team };
+      const updatedUser = {
+        ...user,
+        ...(updated ?? {}),
+        teamId: team.id,
+        team,
+      };
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
       // Trigger auth context update

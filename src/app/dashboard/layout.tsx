@@ -19,6 +19,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const { user, isLoading, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const mobileSidebarRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     if (!isLoading && !user) {
@@ -47,8 +48,47 @@ export default function DashboardLayout({
     return null;
   }
 
+  React.useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const container = mobileSidebarRef.current;
+    if (!container) return;
+
+    const focusable = Array.from(
+      container.querySelectorAll<HTMLElement>(
+        "a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex='-1'])",
+      ),
+    );
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    first?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab" || focusable.length === 0) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMobileMenuOpen]);
+
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex min-h-dvh overflow-hidden bg-background">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <AppSidebar onLogout={logout} />
@@ -56,7 +96,9 @@ export default function DashboardLayout({
 
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
-        <div
+        <button
+          type="button"
+          aria-label="ปิดเมนู"
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -67,6 +109,12 @@ export default function DashboardLayout({
         className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:hidden ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="เมนูนำทาง"
+        aria-hidden={!isMobileMenuOpen}
+        tabIndex={-1}
+        ref={mobileSidebarRef}
       >
         <AppSidebar onLogout={logout} />
       </div>
@@ -80,6 +128,8 @@ export default function DashboardLayout({
             size="icon"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="mr-2"
+            aria-label="สลับเมนูด้านข้าง"
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? (
               <X className="h-6 w-6" />

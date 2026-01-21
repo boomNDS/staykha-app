@@ -1,8 +1,10 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import * as React from "react";
+import { useForm } from "react-hook-form";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -13,12 +15,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { buildingsApi } from "@/lib/api-client";
+import { getData } from "@/lib/api/response-helpers";
 import { useParams, useRouter } from "@/lib/router";
-import type { Building } from "@/lib/types";
+import { buildingFormSchema } from "@/lib/schemas";
+import type { z } from "zod";
 import { usePageTitle } from "@/lib/use-page-title";
+
+type BuildingFormValues = z.infer<typeof buildingFormSchema>;
 
 export default function EditBuildingPage() {
   const params = useParams();
@@ -28,14 +42,6 @@ export default function EditBuildingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [formData, setFormData] = React.useState({
-    name: "",
-    address: "",
-    totalFloors: "",
-    totalRooms: "",
-  });
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   const buildingQuery = useQuery({
     queryKey: ["buildings", buildingId],
@@ -43,60 +49,53 @@ export default function EditBuildingPage() {
     enabled: Boolean(buildingId),
   });
 
+  const building = getData(buildingQuery.data);
+
+  const form = useForm<BuildingFormValues>({
+    resolver: zodResolver(buildingFormSchema),
+    defaultValues: {
+      name: "",
+      address: "",
+      totalFloors: "",
+      totalRooms: "",
+    },
+  });
+
+  // Reset form when building data loads
   React.useEffect(() => {
-    if (buildingQuery.data?.building) {
-      const building: Building = buildingQuery.data.building;
-      setFormData({
+    if (building) {
+      form.reset({
         name: building.name,
         address: building.address,
-        totalFloors: building.totalFloors.toString(),
-        totalRooms: building.totalRooms.toString(),
+        totalFloors: String(building.totalFloors),
+        totalRooms: String(building.totalRooms),
       });
     }
-  }, [buildingQuery.data]);
+  }, [building, form]);
 
   const updateBuildingMutation = useMutation({
-    mutationFn: (payload: { id: string; updates: Partial<Building> }) =>
-      buildingsApi.update(payload.id, payload.updates),
+    mutationFn: (updates: {
+      name: string;
+      address: string;
+      totalFloors: number;
+      totalRooms: number;
+    }) => buildingsApi.update(buildingId, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["buildings"] });
     },
   });
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+  if (buildingQuery.isLoading) {
+    return <LoadingState fullScreen message="กำลังโหลดข้อมูลอาคาร..." />;
+  }
 
-    if (!formData.name.trim()) newErrors.name = "กรุณากรอกชื่ออาคาร";
-    if (!formData.address.trim()) newErrors.address = "กรุณากรอกที่อยู่";
-    if (
-      !formData.totalFloors ||
-      Number.parseInt(formData.totalFloors, 10) < 1
-    ) {
-      newErrors.totalFloors = "ต้องมีอย่างน้อย 1 ชั้น";
-    }
-    if (!formData.totalRooms || Number.parseInt(formData.totalRooms, 10) < 1) {
-      newErrors.totalRooms = "ต้องมีอย่างน้อย 1 ห้อง";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-
+  const onSubmit = async (data: BuildingFormValues) => {
     try {
       await updateBuildingMutation.mutateAsync({
-        id: buildingId,
-        updates: {
-          ...formData,
-          totalFloors: Number.parseInt(formData.totalFloors, 10),
-          totalRooms: Number.parseInt(formData.totalRooms, 10),
-        },
+        name: data.name,
+        address: data.address,
+        totalFloors: Number.parseInt(data.totalFloors, 10),
+        totalRooms: Number.parseInt(data.totalRooms, 10),
       });
 
       toast({
@@ -105,135 +104,138 @@ export default function EditBuildingPage() {
       });
 
       router.push("/overview/buildings");
-    } catch (_error) {
+    } catch (error) {
+      console.error("Failed to update building:", error);
       toast({
         title: "เกิดข้อผิดพลาด",
         description: "อัปเดตอาคารไม่สำเร็จ",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  if (buildingQuery.isLoading) {
-    return <LoadingState fullScreen message="กำลังโหลดอาคาร..." />;
-  }
-
   return (
     <div className="space-y-6">
-      <PageHeader title="แก้ไขอาคาร" description="อัปเดตข้อมูลอาคาร" showBack />
+      <PageHeader
+        title="แก้ไขอาคาร"
+        description="อัปเดตข้อมูลอาคาร"
+        showBack
+      />
 
       <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle>ข้อมูลอาคาร</CardTitle>
-          <CardDescription>แก้ไขรายละเอียดของอาคารนี้</CardDescription>
+          <CardDescription>อัปเดตรายละเอียดอาคาร</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">
-                ชื่ออาคาร
-              </label>
-              <Input
-                id="name"
-                placeholder="เช่น อาคาร A"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                disabled={isLoading}
-              />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="address" className="text-sm font-medium">
-                ที่อยู่
-              </label>
-              <Input
-                id="address"
-                placeholder="เช่น 123 ถนนสุขุมวิท กรุงเทพฯ 10110"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-                disabled={isLoading}
-              />
-              {errors.address && (
-                <p className="text-sm text-destructive">{errors.address}</p>
-              )}
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label htmlFor="totalFloors" className="text-sm font-medium">
-                  จำนวนชั้น
-                </label>
-                <Input
-                  id="totalFloors"
-                  type="number"
-                  min="1"
-                  placeholder="เช่น 3"
-                  value={formData.totalFloors}
-                  onChange={(e) =>
-                    setFormData({ ...formData, totalFloors: e.target.value })
-                  }
-                  disabled={isLoading}
-                />
-                {errors.totalFloors && (
-                  <p className="text-sm text-destructive">
-                    {errors.totalFloors}
-                  </p>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่ออาคาร</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="เช่น อาคาร A"
+                        disabled={form.formState.isSubmitting}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ที่อยู่</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="เช่น 123 ถนนสุขุมวิท กรุงเทพฯ 10110"
+                        disabled={form.formState.isSubmitting}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="totalFloors"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>จำนวนชั้น</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="เช่น 3"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="totalRooms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>จำนวนห้อง</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="เช่น 15"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="totalRooms" className="text-sm font-medium">
-                  จำนวนห้อง
-                </label>
-                <Input
-                  id="totalRooms"
-                  type="number"
-                  min="1"
-                  placeholder="เช่น 15"
-                  value={formData.totalRooms}
-                  onChange={(e) =>
-                    setFormData({ ...formData, totalRooms: e.target.value })
-                  }
-                  disabled={isLoading}
-                />
-                {errors.totalRooms && (
-                  <p className="text-sm text-destructive">
-                    {errors.totalRooms}
-                  </p>
-                )}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
+                >
+                  {form.formState.isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      กำลังบันทึก...
+                    </>
+                  ) : (
+                    "บันทึกการแก้ไข"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  disabled={form.formState.isSubmitting}
+                >
+                  ยกเลิก
+                </Button>
               </div>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    กำลังบันทึก...
-                  </>
-                ) : (
-                  "บันทึกการแก้ไข"
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={isLoading}
-              >
-                ยกเลิก
-              </Button>
-            </div>
-          </form>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

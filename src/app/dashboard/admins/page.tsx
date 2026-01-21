@@ -6,13 +6,14 @@ import { Mail, Shield, Trash2, UserCog, UserX } from "lucide-react";
 import { useState } from "react";
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
-import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { TableRowActions } from "@/components/table-row-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { adminsApi, invitationsApi } from "@/lib/api-client";
+import { getList } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminInvitation, User } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -33,8 +34,8 @@ export default function AdminsPage() {
     queryFn: () => invitationsApi.getAll(user?.teamId),
     enabled: !!user?.teamId,
   });
-  const admins = adminsQuery.data?.admins ?? [];
-  const invitations = invitationsQuery.data?.invitations ?? [];
+  const admins = getList(adminsQuery.data);
+  const invitations = getList(invitationsQuery.data);
   const isLoading = adminsQuery.isLoading || invitationsQuery.isLoading;
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
@@ -209,10 +210,6 @@ export default function AdminsPage() {
     },
   ];
 
-  if (isLoading) {
-    return <LoadingState fullScreen message="กำลังโหลดผู้ดูแล..." />;
-  }
-
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <PageHeader
@@ -238,7 +235,22 @@ export default function AdminsPage() {
             </div>
           </div>
           <div className="p-4">
-            {admins.length > 0 ? (
+            {isLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-9 w-48" />
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={`admin-row-${index}`} className="rounded-lg border p-3">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-40" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : admins.length > 0 ? (
               <DataTable
                 columns={adminColumns}
                 data={admins}
@@ -270,7 +282,22 @@ export default function AdminsPage() {
             </div>
           </div>
           <div className="p-4">
-            {invitations.length > 0 ? (
+            {isLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-9 w-40" />
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={`invite-row-${index}`} className="rounded-lg border p-3">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-40" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : invitations.length > 0 ? (
               <DataTable
                 columns={invitationColumns}
                 data={invitations}

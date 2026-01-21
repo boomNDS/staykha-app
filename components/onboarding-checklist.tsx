@@ -120,6 +120,7 @@ export function OnboardingChecklist({
         <Button
           variant="ghost"
           size="icon"
+          aria-label="ซ่อนเช็กลิสต์"
           onClick={() => {
             window.localStorage.setItem(STORAGE_KEY, "true");
             setHidden(true);
@@ -131,7 +132,7 @@ export function OnboardingChecklist({
       <CardContent className="space-y-4">
         <div className="h-2 w-full rounded-full bg-muted">
           <div
-            className="h-2 rounded-full bg-primary transition-all"
+            className="h-2 rounded-full bg-primary transition-[width] duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>

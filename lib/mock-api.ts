@@ -116,7 +116,7 @@ export const authApi = {
 export const roomsApi = {
   getAll: async () => {
     await delay();
-    return { rooms: mockRooms };
+    return { items: mockRooms };
   },
   getById: async (id: string) => {
     await delay();
@@ -124,7 +124,7 @@ export const roomsApi = {
     if (!room) {
       throw new Error("ไม่พบห้อง");
     }
-    return { room };
+    return { data: room };
   },
   create: async (data: Omit<Room, "id">) => {
     await delay();
@@ -142,7 +142,7 @@ export const roomsApi = {
       buildingName: findBuildingName(data.buildingId),
     };
     mockRooms.push(room);
-    return { room };
+    return { data: room };
   },
   update: async (id: string, data: Partial<Room>) => {
     await delay();
@@ -158,7 +158,7 @@ export const roomsApi = {
       updated.buildingName = findBuildingName(updated.buildingId);
     }
     mockRooms[index] = updated;
-    return { room: updated };
+    return { data: updated };
   },
   bulkCreate: async (data: {
     buildingId: string;
@@ -225,14 +225,14 @@ export const roomsApi = {
       }
     }
 
-    return { success: true };
+    return { ok: true };
   },
 };
 
 export const tenantsApi = {
   getAll: async () => {
     await delay();
-    return { tenants: mockTenants };
+    return { items: mockTenants };
   },
   getById: async (id: string) => {
     await delay();
@@ -240,7 +240,7 @@ export const tenantsApi = {
     if (!tenant) {
       throw new Error("ไม่พบผู้เช่า");
     }
-    return { tenant };
+    return { data: tenant };
   },
   create: async (data: Omit<Tenant, "id">) => {
     await delay();
@@ -259,7 +259,7 @@ export const tenantsApi = {
       }
     }
 
-    return { tenant };
+    return { data: tenant };
   },
   update: async (id: string, updates: Partial<Tenant>) => {
     await delay();
@@ -293,7 +293,7 @@ export const tenantsApi = {
     };
 
     mockTenants[index] = updated;
-    return { tenant: updated };
+    return { data: updated };
   },
   remove: async (id: string) => {
     await delay();
@@ -310,14 +310,14 @@ export const tenantsApi = {
       }
     }
     mockTenants.splice(index, 1);
-    return { success: true };
+    return { ok: true };
   },
 };
 
 export const buildingsApi = {
   getAll: async () => {
     await delay();
-    return { buildings: mockBuildings };
+    return { items: mockBuildings };
   },
   getById: async (id: string) => {
     await delay();
@@ -325,7 +325,7 @@ export const buildingsApi = {
     if (!building) {
       throw new Error("ไม่พบอาคาร");
     }
-    return { building };
+    return { data: building };
   },
   create: async (data: Omit<Building, "id" | "createdAt" | "updatedAt">) => {
     await delay();
@@ -336,7 +336,7 @@ export const buildingsApi = {
       updatedAt: new Date().toISOString(),
     };
     mockBuildings.push(building);
-    return { building };
+    return { data: building };
   },
   update: async (id: string, updates: Partial<Building>) => {
     await delay();
@@ -357,7 +357,7 @@ export const buildingsApi = {
       }
     });
 
-    return { building: updated };
+    return { data: updated };
   },
   remove: async (id: string) => {
     await delay();
@@ -366,14 +366,14 @@ export const buildingsApi = {
       throw new Error("ไม่พบอาคาร");
     }
     mockBuildings.splice(index, 1);
-    return { success: true };
+    return { ok: true };
   },
 };
 
 export const readingsApi = {
   getAll: async () => {
     await delay();
-    return { readings: groupReadings() };
+    return { items: groupReadings() };
   },
   getById: async (id: string) => {
     await delay();
@@ -381,7 +381,7 @@ export const readingsApi = {
     if (!group) {
       throw new Error("ไม่พบกลุ่มการอ่านมิเตอร์");
     }
-    return { reading: group };
+    return { data: group };
   },
   create: async (data: {
     roomId: string;
@@ -473,7 +473,7 @@ export const readingsApi = {
     }
 
     return {
-      reading: groupReadings().find(
+      data: groupReadings().find(
         (item) => item.id === `${data.roomId}-${readingDate}`,
       ),
     };
@@ -489,14 +489,14 @@ export const readingsApi = {
       ...updates,
     };
     mockReadings[index] = updated;
-    return { reading: updated };
+    return { data: updated };
   },
 };
 
 export const invoicesApi = {
   getAll: async () => {
     await delay();
-    return { invoices: mockInvoices };
+    return { items: mockInvoices };
   },
   getById: async (id: string) => {
     await delay();
@@ -504,7 +504,7 @@ export const invoicesApi = {
     if (!invoice) {
       throw new Error("ไม่พบใบแจ้งหนี้");
     }
-    return { invoice };
+    return { data: invoice };
   },
   update: async (id: string, updates: Partial<Invoice>) => {
     await delay();
@@ -514,7 +514,7 @@ export const invoicesApi = {
     }
     const updated = { ...mockInvoices[index], ...updates };
     mockInvoices[index] = updated;
-    return { invoice: updated };
+    return { data: updated };
   },
   downloadPdf: async (id: string) => {
     await delay();
@@ -607,7 +607,7 @@ export const invoicesApi = {
     };
 
     mockInvoices.push(invoice);
-    return { invoice };
+    return { data: invoice };
   },
 };
 
@@ -615,7 +615,7 @@ export const adminsApi = {
   getAll: async () => {
     await delay();
     const admins = mockUsers.filter((user) => user.role === "admin");
-    return { admins };
+    return { items: admins };
   },
   remove: async (id: string) => {
     await delay();
@@ -623,14 +623,14 @@ export const adminsApi = {
     if (!admin) {
       throw new Error("ไม่พบผู้ดูแล");
     }
-    return { success: true };
+    return { ok: true };
   },
 };
 
 export const invitationsApi = {
   getAll: async () => {
     await delay();
-    return { invitations: mockInvitations };
+    return { items: mockInvitations };
   },
   create: async (
     data: Pick<AdminInvitation, "email"> & { name: string; message?: string },
@@ -656,7 +656,7 @@ export const invitationsApi = {
     };
 
     mockInvitations.push(invitation);
-    return { invitation };
+    return { data: invitation };
   },
   remove: async (id: string) => {
     await delay();
@@ -665,18 +665,18 @@ export const invitationsApi = {
       throw new Error("ไม่พบคำเชิญ");
     }
     mockInvitations.splice(index, 1);
-    return { success: true };
+    return { ok: true };
   },
 };
 
 export const settingsApi = {
   get: async () => {
     await delay();
-    return { settings };
+    return { data: settings };
   },
   update: async (updates: Partial<AdminSettings>) => {
     await delay();
     settings = { ...settings, ...updates };
-    return { success: true, settings };
+    return { data: settings };
   },
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, type Variants } from "framer-motion";
+import { motion, type Variants, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -48,14 +48,21 @@ const Typewriter = ({
     },
   },
 }: TypewriterProps) => {
+  const shouldReduceMotion = useReducedMotion();
   const [displayText, setDisplayText] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
 
   const texts = Array.isArray(text) ? text : [text];
+  const staticText = texts[0] ?? "";
 
   useEffect(() => {
+    if (shouldReduceMotion) {
+      setDisplayText(staticText);
+      return undefined;
+    }
+
     let timeout: NodeJS.Timeout;
 
     const currentText = texts[currentTextIndex];
@@ -107,7 +114,18 @@ const Typewriter = ({
     texts,
     currentTextIndex,
     loop,
+    shouldReduceMotion,
+    staticText,
   ]);
+
+  if (shouldReduceMotion) {
+    return (
+      <div className={`inline whitespace-pre-wrap tracking-tight ${className}`}>
+        <span>{staticText}</span>
+        {showCursor && <span className={cn(cursorClassName)}>{cursorChar}</span>}
+      </div>
+    );
+  }
 
   return (
     <div className={`inline whitespace-pre-wrap tracking-tight ${className}`}>

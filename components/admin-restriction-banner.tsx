@@ -17,13 +17,13 @@ export function AdminRestrictionBanner({
   return (
     <Alert
       variant="default"
-      className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950"
+      className="border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950"
     >
-      <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-      <AlertTitle className="text-amber-900 dark:text-amber-100">
+      <AlertCircle className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+      <AlertTitle className="text-slate-900 dark:text-slate-100">
         {title}
       </AlertTitle>
-      <AlertDescription className="text-amber-800 dark:text-amber-200">
+      <AlertDescription className="text-slate-700 dark:text-slate-200">
         {message}
         {action && <span className="mt-1 block font-medium">{action}</span>}
       </AlertDescription>

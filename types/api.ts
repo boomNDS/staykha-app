@@ -7,19 +7,11 @@ import type { User } from "@/lib/types";
 // Auth API response types
 export type LoginResponse = {
   token: string;
-  record: {
-    id: string;
-    email: string;
-    name?: string;
-    role?: User["role"];
-  };
+  user: User;
 };
 
 export type RegisterResponse = {
-  id: string;
-  email: string;
-  name?: string;
-  role?: User["role"];
+  user: User;
 };
 
 // Room API request types

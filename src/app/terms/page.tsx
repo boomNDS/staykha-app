@@ -1,26 +1,36 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, FileText } from "lucide-react";
 import { StayKhaLogo } from "@/components/staykha-logo";
 import { Button } from "@/components/ui/button";
+import { SEO } from "@/lib/seo";
 import { usePageTitle } from "@/lib/use-page-title";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-};
 
 export default function TermsPage() {
   usePageTitle("ข้อกำหนดและนโยบายความเป็นส่วนตัว");
+  const shouldReduceMotion = useReducedMotion();
+  const fadeUp = {
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 18 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: shouldReduceMotion ? 0 : 0.5, ease: "easeOut" },
+    },
+  };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,116,144,0.15),_transparent_45%),radial-gradient(circle_at_bottom,_rgba(56,189,248,0.12),_transparent_55%)]">
+    <>
+      <SEO
+        title="ข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัว"
+        description="ข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัวของ StayKha สำหรับการจัดการที่พักและข้อมูลผู้เช่า"
+      />
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,116,144,0.15),_transparent_45%),radial-gradient(circle_at_bottom,_rgba(56,189,248,0.12),_transparent_55%)]">
       <motion.header
-        initial={{ opacity: 0, y: -10 }}
+        initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease: "easeOut" }}
         className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6"
       >
         <div className="flex items-center gap-3">
@@ -46,13 +56,13 @@ export default function TermsPage() {
 
       <main className="mx-auto w-full max-w-4xl px-6 pb-20 pt-10">
         <motion.div
-          initial="hidden"
+          initial={shouldReduceMotion ? false : "hidden"}
           animate="show"
           variants={{
             hidden: { opacity: 0 },
             show: {
               opacity: 1,
-              transition: { staggerChildren: 0.1 },
+              transition: shouldReduceMotion ? undefined : { staggerChildren: 0.1 },
             },
           }}
           className="space-y-8"
@@ -169,9 +179,9 @@ export default function TermsPage() {
                     2.5 บริการจากบุคคลที่สาม
                   </h3>
                   <p>
-                    StayKha ใช้ PocketBase เป็นระบบหลังบ้าน ข้อมูลของคุณจะถูกจัดเก็บ
-                    อย่างปลอดภัยบนเซิร์ฟเวอร์ของ PocketBase โปรดอ่านนโยบายความเป็นส่วนตัว
-                    ของ PocketBase สำหรับรายละเอียดเพิ่มเติม
+                    StayKha ใช้ระบบหลังบ้านผ่าน API ที่มีการยืนยันตัวตนด้วยโทเคน
+                    ข้อมูลของคุณจะถูกจัดเก็บอย่างปลอดภัยบนเซิร์ฟเวอร์ของผู้ให้บริการ
+                    โปรดอ่านนโยบายความเป็นส่วนตัวของผู้ให้บริการสำหรับรายละเอียดเพิ่มเติม
                   </p>
                 </div>
               </section>
@@ -247,6 +257,7 @@ export default function TermsPage() {
           </motion.div>
         </motion.div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }

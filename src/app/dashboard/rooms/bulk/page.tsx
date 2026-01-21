@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { buildingsApi, roomsApi, settingsApi } from "@/lib/api-client";
+import { getData, getList } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
@@ -52,7 +53,7 @@ export default function BulkRoomPage() {
     },
     enabled: !!user?.teamId,
   });
-  const buildings = buildingsQuery.data?.buildings ?? [];
+  const buildings = getList(buildingsQuery.data);
 
   const [formData, setFormData] = React.useState<BulkRoomFormValues>({
     buildingId: "",
@@ -67,7 +68,7 @@ export default function BulkRoomPage() {
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const settings = settingsQuery.data?.settings;
+  const settings = getData(settingsQuery.data);
 
   if (buildingsQuery.isSuccess && buildings.length === 0) {
     return (

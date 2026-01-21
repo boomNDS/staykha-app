@@ -19,7 +19,7 @@ export default function NotFoundPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
       <div className="w-full max-w-lg space-y-6 rounded-3xl border border-border/60 bg-card/80 p-8 text-center shadow-xl backdrop-blur">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-500/10 text-slate-600">
           <AlertTriangle className="h-7 w-7" />
         </div>
         <div className="space-y-2">

@@ -2,10 +2,14 @@
 
 import { Features } from "@/components/feature";
 import { CookieConsent } from "@/components/cookie-consent";
-import { LandingCTA } from "@/components/landing/landing-cta";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { LandingHeader } from "@/components/landing/landing-header";
 import { LandingHero } from "@/components/landing/landing-hero";
+import { LandingProblems } from "@/components/landing/landing-problems";
+import { LandingProof } from "@/components/landing/landing-proof";
+import { LandingSocialProof } from "@/components/landing/landing-social-proof";
+import { LandingWaitlist } from "@/components/landing/landing-waitlist";
+import { LandingWorkflow } from "@/components/landing/landing-workflow";
 import { SEO } from "@/lib/seo";
 import { usePageTitle } from "@/lib/use-page-title";
 
@@ -45,15 +49,36 @@ export default function HomePage() {
         ]}
         url={typeof window !== "undefined" ? window.location.origin : ""}
       />
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(14,116,144,0.15),_transparent_45%),radial-gradient(circle_at_bottom,_rgba(56,189,248,0.12),_transparent_55%)]">
+      <div className="relative min-h-screen overflow-hidden bg-white">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(148,163,184,0.08),_transparent_50%)]"
+        />
+        <a
+          href="#main"
+          className="sr-only z-30 rounded-full bg-background px-4 py-2 text-sm font-semibold text-foreground shadow-lg focus:not-sr-only focus:absolute focus:left-6 focus:top-6"
+        >
+          ข้ามไปยังเนื้อหา
+        </a>
         <LandingHeader />
 
-        <main className="mx-auto w-full max-w-6xl px-6 pb-20 pt-10">
+        <main
+          id="main"
+          className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-28 pt-14 sm:pt-20"
+        >
           <LandingHero />
+
+          <LandingSocialProof />
+
+          <LandingProof />
+
+          <LandingProblems />
 
           <Features />
 
-          <LandingCTA />
+          <LandingWorkflow />
+
+          <LandingWaitlist />
         </main>
 
         <LandingFooter />

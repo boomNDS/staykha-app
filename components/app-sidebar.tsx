@@ -16,6 +16,7 @@ import { StayKhaLogo } from "@/components/staykha-logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { teamsApi } from "@/lib/api-client";
+import { getData } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { usePathname } from "@/lib/router";
 import { cn } from "@/lib/utils";
@@ -64,7 +65,7 @@ const navigation = [
     roles: ["owner"],
   },
   {
-    name: "Settings",
+    name: "ตั้งค่า",
     href: "/overview/settings",
     icon: Settings,
     roles: ["owner", "admin"],
@@ -92,7 +93,7 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
     enabled: !!user?.teamId && !user?.team,
   });
 
-  const team = user?.team || teamQuery.data?.team;
+  const team = user?.team || getData(teamQuery.data);
   const filteredNavigation = navigation.filter((item) =>
     item.roles.includes(user?.role || "admin"),
   );
@@ -100,7 +101,7 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
   return (
     <div
       className={cn(
-        "relative flex h-screen flex-col border-r border-border bg-sidebar transition-all duration-300",
+        "relative flex h-dvh flex-col border-r border-border bg-sidebar transition-[width] duration-300",
         isCollapsed ? "w-16" : "w-64",
         className,
       )}
@@ -158,7 +159,7 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-3">
+      <nav className="flex-1 space-y-1 p-3" aria-label="เมนูหลัก">
         {filteredNavigation.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -176,7 +177,7 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
                 isCollapsed && "justify-center",
               )}
             >
-              <Link to={item.href}>
+              <Link to={item.href} aria-current={isActive ? "page" : undefined}>
                 <Icon className="h-5 w-5 shrink-0" />
                 {!isCollapsed && <span>{item.name}</span>}
               </Link>
@@ -204,8 +205,9 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
       <button
         type="button"
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border border-sidebar-border bg-sidebar shadow-sm hover:bg-sidebar-accent"
+        className="absolute -right-4 top-20 flex h-9 w-9 items-center justify-center rounded-full border border-sidebar-border bg-sidebar shadow-sm hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
         aria-label={isCollapsed ? "ขยายแถบเมนู" : "ย่อแถบเมนู"}
+        aria-pressed={isCollapsed}
       >
         <ChevronRight
           className={cn(

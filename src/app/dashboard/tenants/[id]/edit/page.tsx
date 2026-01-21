@@ -1,7 +1,9 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
+import { useForm } from "react-hook-form";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -12,8 +14,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -22,10 +31,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { roomsApi, tenantsApi } from "@/lib/api-client";
+import { getData, getList } from "@/lib/api/response-helpers";
 import { useParams, useRouter } from "@/lib/router";
-import { mapZodErrors, tenantFormSchema } from "@/lib/schemas";
+import { tenantFormSchema } from "@/lib/schemas";
 import type { Room } from "@/lib/types";
+import type { z } from "zod";
 import { usePageTitle } from "@/lib/use-page-title";
+
+type TenantFormValues = z.infer<typeof tenantFormSchema>;
 
 export default function EditTenantPage() {
   const params = useParams();
@@ -34,22 +47,6 @@ export default function EditTenantPage() {
 
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [loading, setLoading] = React.useState(false);
-  const [formData, setFormData] = React.useState({
-    name: "",
-    email: "",
-    phone: "",
-    roomId: "",
-    moveInDate: "",
-    contractEndDate: "",
-    monthlyRent: "",
-    deposit: "",
-    idCardNumber: "",
-    emergencyContact: "",
-    emergencyPhone: "",
-    status: "active",
-  });
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   const tenantQuery = useQuery({
     queryKey: ["tenants", tenantId],
@@ -60,15 +57,35 @@ export default function EditTenantPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  const rooms = (roomsQuery.data?.rooms ?? []).filter(
+  const rooms = getList(roomsQuery.data).filter(
     (room: Room) =>
-      room.status === "vacant" || room.id === tenantQuery.data?.tenant?.roomId,
+      room.status === "vacant" || room.id === getData(tenantQuery.data)?.roomId,
   );
 
+  const tenant = getData(tenantQuery.data);
+
+  const form = useForm<TenantFormValues>({
+    resolver: zodResolver(tenantFormSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      roomId: "",
+      moveInDate: "",
+      contractEndDate: "",
+      monthlyRent: "",
+      deposit: "",
+      idCardNumber: "",
+      emergencyContact: "",
+      emergencyPhone: "",
+      status: "active",
+    },
+  });
+
+  // Reset form when tenant data loads
   React.useEffect(() => {
-    if (tenantQuery.data?.tenant) {
-      const tenant = tenantQuery.data.tenant;
-      setFormData({
+    if (tenant) {
+      form.reset({
         name: tenant.name,
         email: tenant.email,
         phone: tenant.phone,
@@ -83,11 +100,15 @@ export default function EditTenantPage() {
         status: tenant.status,
       });
     }
-  }, [tenantQuery.data]);
+  }, [tenant, form]);
 
   const updateTenantMutation = useMutation({
-    mutationFn: (payload: { id: string; updates: typeof formData }) =>
-      tenantsApi.update(payload.id, payload.updates),
+    mutationFn: (updates: TenantFormValues) =>
+      tenantsApi.update(tenantId, {
+        ...updates,
+        monthlyRent: Number.parseFloat(updates.monthlyRent || "0"),
+        deposit: Number.parseFloat(updates.deposit || "0"),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
@@ -98,36 +119,22 @@ export default function EditTenantPage() {
     return <LoadingState fullScreen message="กำลังโหลดผู้เช่า..." />;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const result = tenantFormSchema.safeParse(formData);
-    if (!result.success) {
-      setErrors(mapZodErrors(result.error));
-      return;
-    }
-    setErrors({});
-    setLoading(true);
-
+  const onSubmit = async (data: TenantFormValues) => {
     try {
-      await updateTenantMutation.mutateAsync({
-        id: tenantId,
-        updates: {
-          ...formData,
-          monthlyRent: Number.parseFloat(formData.monthlyRent || "0"),
-          deposit: Number.parseFloat(formData.deposit || "0"),
-        },
-      });
+      await updateTenantMutation.mutateAsync(data);
       router.push("/overview/tenants");
     } catch (error) {
       console.error("Failed to update tenant:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="แก้ไขผู้เช่า" description="อัปเดตข้อมูลผู้เช่า" showBack />
+      <PageHeader
+        title="แก้ไขผู้เช่า"
+        description="อัปเดตข้อมูลผู้เช่า"
+        showBack
+      />
 
       <Card>
         <CardHeader>
@@ -135,221 +142,263 @@ export default function EditTenantPage() {
           <CardDescription>อัปเดตรายละเอียดผู้เช่า</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">ชื่อ-นามสกุล *</Label>
-                <Input
-                  id="name"
-                  required
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className={errors.name ? "border-destructive" : ""}
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-6"
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ชื่อ-นามสกุล *</FormLabel>
+                      <FormControl>
+                        <Input
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name}</p>
-                )}
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>อีเมล *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>เบอร์โทรศัพท์ *</FormLabel>
+                      <FormControl>
+                        <Input
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="roomId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ผูกห้อง *</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={form.formState.isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="เลือกห้อง" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {rooms.map((room) => (
+                            <SelectItem key={room.id} value={room.id}>
+                              {room.roomNumber} - {room.buildingName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="moveInDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>วันที่ย้ายเข้า *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contractEndDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>วันสิ้นสุดสัญญา</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="monthlyRent"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ค่าเช่ารายเดือน (บาท)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="deposit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>เงินประกัน (บาท)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="idCardNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>เลขบัตรประชาชน</FormLabel>
+                      <FormControl>
+                        <Input
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="emergencyContact"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ชื่อผู้ติดต่อฉุกเฉิน</FormLabel>
+                      <FormControl>
+                        <Input
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="emergencyPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>เบอร์ผู้ติดต่อฉุกเฉิน</FormLabel>
+                      <FormControl>
+                        <Input
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>สถานะ</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={form.formState.isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">ใช้งาน</SelectItem>
+                          <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
+                          <SelectItem value="expired">หมดอายุ</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">อีเมล *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className={errors.email ? "border-destructive" : ""}
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">เบอร์โทรศัพท์ *</Label>
-                <Input
-                  id="phone"
-                  required
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                  className={errors.phone ? "border-destructive" : ""}
-                />
-                {errors.phone && (
-                  <p className="text-sm text-destructive">{errors.phone}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="roomId">ผูกห้อง *</Label>
-                <Select
-                  value={formData.roomId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, roomId: value })
-                  }
+              <div className="flex gap-3">
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
                 >
-                  <SelectTrigger
-                    id="roomId"
-                    className={errors.roomId ? "border-destructive" : ""}
-                  >
-                    <SelectValue placeholder="เลือกห้อง" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rooms.map((room) => (
-                      <SelectItem key={room.id} value={room.id}>
-                        {room.roomNumber} - {room.buildingName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.roomId && (
-                  <p className="text-sm text-destructive">{errors.roomId}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="moveInDate">วันที่ย้ายเข้า *</Label>
-                <Input
-                  id="moveInDate"
-                  type="date"
-                  required
-                  value={formData.moveInDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, moveInDate: e.target.value })
-                  }
-                  className={errors.moveInDate ? "border-destructive" : ""}
-                />
-                {errors.moveInDate && (
-                  <p className="text-sm text-destructive">
-                    {errors.moveInDate}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contractEndDate">วันสิ้นสุดสัญญา</Label>
-                <Input
-                  id="contractEndDate"
-                  type="date"
-                  value={formData.contractEndDate}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      contractEndDate: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="monthlyRent">ค่าเช่ารายเดือน (บาท)</Label>
-                <Input
-                  id="monthlyRent"
-                  type="number"
-                  value={formData.monthlyRent}
-                  onChange={(e) =>
-                    setFormData({ ...formData, monthlyRent: e.target.value })
-                  }
-                  className={errors.monthlyRent ? "border-destructive" : ""}
-                />
-                {errors.monthlyRent && (
-                  <p className="text-sm text-destructive">
-                    {errors.monthlyRent}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="deposit">เงินประกัน (บาท)</Label>
-                <Input
-                  id="deposit"
-                  type="number"
-                  value={formData.deposit}
-                  onChange={(e) =>
-                    setFormData({ ...formData, deposit: e.target.value })
-                  }
-                  className={errors.deposit ? "border-destructive" : ""}
-                />
-                {errors.deposit && (
-                  <p className="text-sm text-destructive">{errors.deposit}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="idCardNumber">เลขบัตรประชาชน</Label>
-                <Input
-                  id="idCardNumber"
-                  value={formData.idCardNumber}
-                  onChange={(e) =>
-                    setFormData({ ...formData, idCardNumber: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="emergencyContact">ชื่อผู้ติดต่อฉุกเฉิน</Label>
-                <Input
-                  id="emergencyContact"
-                  value={formData.emergencyContact}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      emergencyContact: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="emergencyPhone">เบอร์ผู้ติดต่อฉุกเฉิน</Label>
-                <Input
-                  id="emergencyPhone"
-                  value={formData.emergencyPhone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, emergencyPhone: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">สถานะ</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, status: value })
-                  }
+                  {form.formState.isSubmitting
+                    ? "กำลังบันทึก..."
+                    : "บันทึกการแก้ไข"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
                 >
-                  <SelectTrigger id="status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">ใช้งาน</SelectItem>
-                    <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
-                    <SelectItem value="expired">หมดอายุ</SelectItem>
-                  </SelectContent>
-                </Select>
+                  ยกเลิก
+                </Button>
               </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button type="submit" disabled={loading}>
-                {loading ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-              >
-                ยกเลิก
-              </Button>
-            </div>
-          </form>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

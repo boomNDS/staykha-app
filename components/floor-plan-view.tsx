@@ -49,11 +49,11 @@ export function FloorPlanView({
   const getStatusColor = (status: Room["status"]) => {
     switch (status) {
       case "occupied":
-        return "bg-emerald-500/20 border-emerald-500/50 hover:bg-emerald-500/30";
+        return "bg-slate-400/20 border-slate-400/50 hover:bg-slate-400/30";
       case "vacant":
-        return "bg-blue-500/20 border-blue-500/50 hover:bg-blue-500/30";
+        return "bg-slate-300/25 border-slate-300/50 hover:bg-slate-300/35";
       case "maintenance":
-        return "bg-amber-500/20 border-amber-500/50 hover:bg-amber-500/30";
+        return "bg-slate-500/15 border-slate-500/40 hover:bg-slate-500/20";
       default:
         return "bg-muted";
     }
@@ -62,11 +62,11 @@ export function FloorPlanView({
   const getStatusIcon = (status: Room["status"]) => {
     switch (status) {
       case "occupied":
-        return <User className="h-5 w-5 text-emerald-600" />;
+        return <User className="h-5 w-5 text-slate-600" />;
       case "vacant":
-        return <DoorOpen className="h-5 w-5 text-blue-600" />;
+        return <DoorOpen className="h-5 w-5 text-slate-500" />;
       case "maintenance":
-        return <Wrench className="h-5 w-5 text-amber-600" />;
+        return <Wrench className="h-5 w-5 text-slate-600" />;
     }
   };
 
@@ -86,15 +86,15 @@ export function FloorPlanView({
       {/* Legend */}
       <div className="flex flex-wrap gap-4 rounded-lg bg-muted/50 p-4">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-emerald-500/30 border border-emerald-500/50" />
+          <div className="w-4 h-4 rounded bg-slate-400/30 border border-slate-400/50" />
           <span className="text-sm text-muted-foreground">มีผู้เช่า</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-blue-500/30 border border-blue-500/50" />
+          <div className="w-4 h-4 rounded bg-slate-300/40 border border-slate-300/50" />
           <span className="text-sm text-muted-foreground">ว่าง</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-amber-500/30 border border-amber-500/50" />
+          <div className="w-4 h-4 rounded bg-slate-500/20 border border-slate-500/40" />
           <span className="text-sm text-muted-foreground">ซ่อมบำรุง</span>
         </div>
       </div>
@@ -120,7 +120,7 @@ export function FloorPlanView({
                         type="button"
                         onClick={() => onRoomClick?.(room)}
                         className={cn(
-                          "relative flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all hover:scale-105 hover:shadow-lg",
+                          "relative flex flex-col items-center justify-center rounded-lg border-2 p-4 transition-[transform,box-shadow] duration-200 hover:scale-105 hover:shadow-lg",
                           getStatusColor(room.status),
                           onRoomClick && "cursor-pointer",
                         )}

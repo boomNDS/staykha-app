@@ -13,6 +13,7 @@ import {
   roomsApi,
   settingsApi,
 } from "@/lib/api-client";
+import { getData, getList } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
@@ -74,11 +75,16 @@ export function useReadingsPage() {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       queryClient.invalidateQueries({ queryKey: ["readings"] });
       setGeneratingInvoiceId(null);
+      const invoice = getData(data);
       toast({
         title: "สร้างใบแจ้งหนี้แล้ว",
-        description: `สร้างใบแจ้งหนี้ ${data.invoice.id} สำเร็จ`,
+        description: invoice
+          ? `สร้างใบแจ้งหนี้ ${invoice.id} สำเร็จ`
+          : "สร้างใบแจ้งหนี้สำเร็จ",
       });
-      router.push(`/overview/billing/${data.invoice.id}`);
+      if (invoice) {
+        router.push(`/overview/billing/${invoice.id}`);
+      }
     },
     onError: (error: any, readingGroupId: string) => {
       setGeneratingInvoiceId(null);
@@ -96,10 +102,10 @@ export function useReadingsPage() {
   });
 
   // Data extraction
-  const readings = readingsQuery.data?.readings ?? [];
-  const buildings = buildingsQuery.data?.buildings ?? [];
-  const rooms = roomsQuery.data?.rooms ?? [];
-  const settings = settingsQuery.data?.settings;
+  const readings = getList(readingsQuery.data);
+  const buildings = getList(buildingsQuery.data);
+  const rooms = getList(roomsQuery.data);
+  const settings = getData(settingsQuery.data);
   const isLoading = readingsQuery.isLoading;
   const waterBillingMode = settings?.waterBillingMode ?? "metered";
   const isWaterFixed = waterBillingMode === "fixed";
@@ -232,7 +238,7 @@ export function useReadingsPage() {
   const selectedGroupRoomLabel = selectedGroup?.roomNumber ?? "—";
   const selectedGroupStatus = selectedGroup?.status ?? "pending";
 
-  const invoices = invoicesQuery.data?.invoices ?? [];
+  const invoices = getList(invoicesQuery.data);
   const hasExistingInvoice = selectedGroup
     ? invoices.some(
         (invoice: Invoice) => invoice.readingGroupId === selectedGroup.id,

@@ -8,6 +8,23 @@ const numberString = (label: string) =>
       `${label} ต้องเป็นตัวเลข`,
     );
 
+export const buildingFormSchema = z.object({
+  name: z.string().min(1, "กรุณากรอกชื่ออาคาร"),
+  address: z.string().min(1, "กรุณากรอกที่อยู่"),
+  totalFloors: z
+    .string()
+    .refine(
+      (value) => Number.isInteger(Number(value)) && Number(value) >= 1,
+      "ต้องมีอย่างน้อย 1 ชั้น",
+    ),
+  totalRooms: z
+    .string()
+    .refine(
+      (value) => Number.isInteger(Number(value)) && Number(value) >= 1,
+      "ต้องมีอย่างน้อย 1 ห้อง",
+    ),
+});
+
 export const tenantDraftSchema = z.object({
   name: z.string().min(1, "กรุณากรอกชื่อ"),
   email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),

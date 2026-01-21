@@ -20,6 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { invoicesApi } from "@/lib/api-client";
+import { getData } from "@/lib/api/response-helpers";
 import { useParams, useRouter } from "@/lib/router";
 import type { Invoice } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -41,7 +42,7 @@ export default function InvoiceDetailPage() {
     queryFn: () => invoicesApi.getById(invoiceId),
     enabled: Boolean(invoiceId),
   });
-  const invoice = invoiceQuery.data?.invoice ?? null;
+  const invoice = getData(invoiceQuery.data);
   const queryClient = useQueryClient();
   const updateInvoiceMutation = useMutation({
     mutationFn: (payload: { id: string; updates: Partial<Invoice> }) =>
@@ -304,7 +305,7 @@ export default function InvoiceDetailPage() {
                   <tr className="border-t">
                     <td className="px-4 py-3 font-medium text-foreground">
                       <span className="inline-flex items-center gap-2">
-                        <Droplets className="h-4 w-4 text-blue-500" />
+                        <Droplets className="h-4 w-4 text-slate-500" />
                         ค่าน้ำ {isWaterFixed ? "(เหมาจ่าย)" : ""}
                       </span>
                     </td>
@@ -329,7 +330,7 @@ export default function InvoiceDetailPage() {
                   <tr className="border-t">
                     <td className="px-4 py-3 font-medium text-foreground">
                       <span className="inline-flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-amber-500" />
+                        <Zap className="h-4 w-4 text-slate-500" />
                         ค่าไฟ
                       </span>
                     </td>

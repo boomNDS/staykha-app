@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit, Eye, Plus, Trash2, User, UserPlus, UserX } from "lucide-react";
 import * as React from "react";
 import { DataTable } from "@/components/data-table";
-import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { TenantInlineForm } from "@/components/rooms/tenant-inline-form";
 import { TableRowActions } from "@/components/table-row-actions";
@@ -26,7 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { roomsApi, tenantsApi } from "@/lib/api-client";
+import { getList } from "@/lib/api/response-helpers";
 import { useRouter } from "@/lib/router";
 import { mapZodErrors, tenantDraftSchema } from "@/lib/schemas";
 import type { Room, Tenant, TenantDraft } from "@/lib/types";
@@ -71,8 +72,8 @@ export default function RoomsPage() {
     description: "",
   });
 
-  const rooms = roomsQuery.data?.rooms ?? [];
-  const tenants = tenantsQuery.data?.tenants ?? [];
+  const rooms = getList(roomsQuery.data);
+  const tenants = getList(tenantsQuery.data);
   const loading = roomsQuery.isLoading || tenantsQuery.isLoading;
 
   const deleteRoomMutation = useMutation({
@@ -266,10 +267,10 @@ export default function RoomsPage() {
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
               room.status === "occupied"
-                ? "bg-blue-500/10 text-blue-500"
+                ? "bg-slate-500/10 text-slate-600"
                 : room.status === "vacant"
-                  ? "bg-green-500/10 text-green-500"
-                  : "bg-yellow-500/10 text-yellow-500"
+                  ? "bg-slate-400/10 text-slate-600"
+                  : "bg-slate-500/10 text-slate-600"
             }`}
           >
             {room.status === "occupied" && <User className="h-3 w-3" />}
@@ -348,10 +349,6 @@ export default function RoomsPage() {
     },
   ];
 
-  if (loading) {
-    return <LoadingState fullScreen message="กำลังโหลดห้อง..." />;
-  }
-
   return (
     <>
       <div className="space-y-6">
@@ -377,51 +374,99 @@ export default function RoomsPage() {
           }
         />
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <div className="rounded-xl border bg-card p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              จำนวนห้องทั้งหมด
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">
-              {rooms.length}
-            </p>
+        {loading ? (
+          <>
+            <div className="grid gap-4 md:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={`room-stat-${index}`} className="rounded-xl border bg-card p-4">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="mt-3 h-7 w-16" />
+                </div>
+              ))}
+            </div>
+            <div className="rounded-2xl border border-border bg-white shadow-sm p-6">
+              <Skeleton className="h-10 w-56" />
+              <div className="mt-4 space-y-3">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <div key={`room-row-${index}`} className="rounded-lg border p-3">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-40" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : rooms.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
+            <div className="flex flex-col items-center justify-center gap-3 py-10 text-center text-sm text-muted-foreground">
+              <p>ยังไม่มีห้องพัก เริ่มเพิ่มห้องเพื่อจัดการผู้เช่าและการอ่านมิเตอร์</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/overview/rooms/bulk")}
+                >
+                  เพิ่มหลายห้อง
+                </Button>
+                <Button onClick={() => router.push("/overview/rooms/new")}>
+                  เพิ่มห้อง
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="rounded-xl border bg-card p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              เข้าพัก
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-blue-600">
-              {rooms.filter((room) => room.status === "occupied").length}
-            </p>
-          </div>
-          <div className="rounded-xl border bg-card p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              ว่าง
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-emerald-600">
-              {rooms.filter((room) => room.status === "vacant").length}
-            </p>
-          </div>
-          <div className="rounded-xl border bg-card p-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              ซ่อมบำรุง
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-amber-600">
-              {rooms.filter((room) => room.status === "maintenance").length}
-            </p>
-          </div>
-        </div>
+        ) : (
+          <>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="rounded-xl border bg-card p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  จำนวนห้องทั้งหมด
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">
+                  {rooms.length}
+                </p>
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  เข้าพัก
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-600">
+                  {rooms.filter((room) => room.status === "occupied").length}
+                </p>
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  ว่าง
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-600">
+                  {rooms.filter((room) => room.status === "vacant").length}
+                </p>
+              </div>
+              <div className="rounded-xl border bg-card p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  ซ่อมบำรุง
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-600">
+                  {rooms.filter((room) => room.status === "maintenance").length}
+                </p>
+              </div>
+            </div>
 
-        <div className="rounded-2xl border border-border bg-white shadow-sm p-6">
-          <DataTable
-            data={rooms}
-            columns={columns}
-            searchPlaceholder="ค้นหาห้อง..."
-            filters={filters}
-            pageSize={4}
-            forcePagination
-          />
-        </div>
+            <div className="rounded-2xl border border-border bg-white shadow-sm p-6">
+              <DataTable
+                data={rooms}
+                columns={columns}
+                searchPlaceholder="ค้นหาห้อง..."
+                filters={filters}
+                pageSize={4}
+                forcePagination
+              />
+            </div>
+          </>
+        )}
       </div>
 
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>

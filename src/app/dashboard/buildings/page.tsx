@@ -14,7 +14,6 @@ import * as React from "react";
 import { AdminRestrictionBanner } from "@/components/admin-restriction-banner";
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
-import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { TableRowActions } from "@/components/table-row-actions";
 import {
@@ -28,8 +27,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { buildingsApi } from "@/lib/api-client";
+import { getList } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@/lib/router";
 import type { Building } from "@/lib/types";
@@ -47,7 +48,7 @@ export default function BuildingsPage() {
     queryKey: ["buildings"],
     queryFn: () => buildingsApi.getAll(),
   });
-  const buildings = buildingsQuery.data?.buildings ?? [];
+  const buildings = getList(buildingsQuery.data);
   const isLoading = buildingsQuery.isLoading;
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
@@ -183,10 +184,6 @@ export default function BuildingsPage() {
     );
   }
 
-  if (isLoading) {
-    return <LoadingState fullScreen message="กำลังโหลดอาคาร..." />;
-  }
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -200,7 +197,24 @@ export default function BuildingsPage() {
         }
       />
 
-      {buildings.length === 0 ? (
+      {isLoading ? (
+        <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
+          <Skeleton className="h-10 w-56" />
+          <div className="mt-4 space-y-3">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={`building-row-${index}`} className="rounded-lg border p-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-40" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : buildings.length === 0 ? (
         <EmptyState
           icon={<Home className="h-8 w-8 text-muted-foreground" />}
           title="ยังไม่มีอาคาร"

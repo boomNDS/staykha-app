@@ -94,6 +94,9 @@ export function ImageUpload({
             src={preview || "/placeholder.svg"}
             alt="ตัวอย่างรูป"
             className="h-full w-full object-cover"
+            width={640}
+            height={256}
+            loading="lazy"
           />
           {!disabled && (
             <Button
@@ -102,6 +105,7 @@ export function ImageUpload({
               size="icon"
               className="absolute right-2 top-2 h-8 w-8"
               onClick={handleRemove}
+              aria-label="ลบรูปภาพ"
             >
               <X className="h-4 w-4" />
             </Button>

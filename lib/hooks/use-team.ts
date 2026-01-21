@@ -1,24 +1,20 @@
 /**
- * Hook to manage team state using Jotai + React Query
- * Team data is fetched via React Query but also stored in Jotai for easy access
+ * Hook to manage team state using React Query
+ * Simplified to use React Query directly without Jotai sync
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAtom, useAtomValue } from "jotai";
-import { useEffect } from "react";
+import { useAtomValue } from "jotai";
 import { teamsApi } from "../api-client";
 import {
   isOwnerAtom,
-  teamAtom,
-  teamLoadingAtom,
   userTeamIdAtom,
 } from "../atoms";
+import { getData } from "../api/response-helpers";
 import type { Team } from "../types";
 
 export function useTeam() {
   const teamId = useAtomValue(userTeamIdAtom);
   const isOwner = useAtomValue(isOwnerAtom);
-  const [team, setTeam] = useAtom(teamAtom);
-  const [, setLoading] = useAtom(teamLoadingAtom);
   const queryClient = useQueryClient();
 
   const teamQuery = useQuery({
@@ -32,14 +28,6 @@ export function useTeam() {
     enabled: !!teamId && isOwner,
   });
 
-  // Sync React Query data to Jotai atom
-  useEffect(() => {
-    if (teamQuery.data?.team) {
-      setTeam(teamQuery.data.team);
-    }
-    setLoading(teamQuery.isLoading);
-  }, [teamQuery.data, teamQuery.isLoading, setTeam, setLoading]);
-
   const updateTeamMutation = useMutation({
     mutationFn: (updates: Partial<Team>) => {
       if (!teamId) {
@@ -48,14 +36,13 @@ export function useTeam() {
       return teamsApi.update(teamId, updates);
     },
     onSuccess: (data) => {
-      // Update both React Query cache and Jotai atom
+      // Update React Query cache
       queryClient.setQueryData(["team", teamId], data);
-      setTeam(data.team);
     },
   });
 
   return {
-    team: team ?? teamQuery.data?.team ?? null,
+    team: getData(teamQuery.data) ?? null,
     isLoading: teamQuery.isLoading,
     isUpdating: updateTeamMutation.isPending,
     updateTeam: updateTeamMutation.mutateAsync,

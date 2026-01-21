@@ -2,8 +2,6 @@
 
 ![Vite 6.1.0](https://img.shields.io/badge/Vite-6.1.0-646CFF?logo=vite&logoColor=white)
 ![React 19.2.0](https://img.shields.io/badge/React-19.2.0-61DAFB?logo=react&logoColor=0B0F1A)
-![PocketBase latest](https://img.shields.io/badge/PocketBase-latest-0A0A0A?logo=pocketbase&logoColor=white)
-
 A modern dormitory and room management system with automated meter reading and billing capabilities. StayKha helps property owners manage buildings, rooms, tenants, capture monthly utility readings, and generate invoices seamlessly.
 
 ## Features
@@ -32,7 +30,7 @@ A modern dormitory and room management system with automated meter reading and b
 - **Framer Motion** - Animations
 
 ### Backend
-- **PocketBase** - Backend-as-a-Service (BaaS) with built-in database, authentication, and file storage
+- **REST API** - Custom backend exposed under `/v1` with Bearer token auth
 
 ### Development Tools
 - **Biome** - Linting and formatting
@@ -41,9 +39,7 @@ A modern dormitory and room management system with automated meter reading and b
 ## Prerequisites
 
 - **Node.js** 18+ and **pnpm** installed
-- **PocketBase** instance running (see setup guide below)
-  - **Option 1 (Recommended):** Docker and Docker Compose
-  - **Option 2:** Manual PocketBase installation
+- **API server** running and reachable at `VITE_API_URL` (default: `http://localhost:3000`)
 - Modern web browser
 
 ## Installation
@@ -61,7 +57,7 @@ pnpm install
 
 3. Create a `.env` file in the root directory:
 ```bash
-VITE_POCKETBASE_URL=http://127.0.0.1:8090
+VITE_API_URL=http://localhost:3000
 ```
 
 4. Start the development server:
@@ -71,74 +67,41 @@ pnpm dev
 
 5. Open your browser and navigate to `http://localhost:5173`
 
-## PocketBase Setup Guide
+## Backend API Setup Guide
 
-StayKha uses PocketBase as its backend. For detailed setup instructions, see **[SETUP_GUIDE.md](./SETUP_GUIDE.md)**.
+StayKha expects a REST API exposed under `/v1` with Bearer token authentication. Ensure your API provides endpoints for auth and the core resources (teams, buildings, rooms, tenants, readings, invoices, settings, admins, invitations).
 
-### Quick Start (Docker)
+Minimal requirements:
+- `POST /v1/auth/login` returns `{ token, user }`
+- `POST /v1/auth/register` returns `{ user }`
+- Resource endpoints under `/v1/<resource>` (e.g., `/v1/rooms`, `/v1/invoices`)
 
-1. **Start PocketBase:**
-   ```bash
-   docker-compose up -d
-   ```
+For detailed field definitions and access rules, see [SETUP_GUIDE.md](./SETUP_GUIDE.md).
 
-2. **Access PocketBase Admin UI:**
-   - Open http://localhost:8090/_/ in your browser
-   - Create your admin account
-   - Follow the detailed setup guide: [SETUP_GUIDE.md](./SETUP_GUIDE.md)
+## User Flow Overview
 
-3. **Verify it's running:**
-   ```bash
-   docker-compose ps
-   curl http://localhost:8090/api/health
-   ```
+```mermaid
+flowchart TD
+    A[Start] --> B{Login or Register}
+    B -->|Owner| C[Create Team]
+    B -->|Admin| D[Join Team via Invite Code]
+    C --> E[Setup Checklist]
+    D --> E
 
-### Manual Installation
+    E --> E1[Add Building]
+    E1 --> E2[Create Rooms]
+    E2 --> E3[Set Billing Settings]
+    E3 --> E4[Invite Admins]
+    E4 --> E5[Add Tenants]
 
-If you prefer to run PocketBase manually:
-
-1. **Install PocketBase:**
-   - **macOS**: `brew install pocketbase` or download from [releases](https://github.com/pocketbase/pocketbase/releases)
-   - **Linux/Windows**: Download from [PocketBase Releases](https://github.com/pocketbase/pocketbase/releases/latest)
-
-2. **Start PocketBase:**
-   ```bash
-   ./pocketbase serve
-   ```
-
-3. **Follow setup guide:** See [SETUP_GUIDE.md](./SETUP_GUIDE.md) for collection configuration and setup steps.
-
-### Collections Overview
-
-The application requires the following PocketBase collections:
-- `teams` - Organizations/companies that own buildings and settings
-- `users` (with custom `role` and `teamId` fields)
-- `buildings`
-- `rooms`
-- `tenants`
-- `reading_groups`
-- `invoices`
-- `settings` (linked to teams via `teamId`)
-- `admin_invitations`
-
-### Recommended Unique Indexes
-
-Add these indexes in PocketBase to enforce data integrity:
-- `rooms`: `teamId`, `buildingId`, `roomNumber`
-- `reading_groups`: `teamId`, `roomId`, `readingDate`
-- `settings`: `teamId`
-- `teams`: `name`
-- `invoices`: `readingGroupId`
-
-**Access Control**: The application implements role-based and team-based access control:
-- Only **owners** and **admins** can access data
-- Users can only access data from their own team (`teamId = @request.auth.teamId`)
-- **CRITICAL**: All collections (rooms, tenants, reading_groups, invoices) MUST have a `teamId` field to enforce team isolation at the database level
-- Only **owners** can create/update/delete teams, buildings, and settings
-- **Admins** can view and update (but not delete) rooms, tenants, readings, and invoices within their team
-- Without `teamId` fields, admins from different teams could access each other's data
-
-For detailed field definitions and access rules, see [SETUP_GUIDE.md](./SETUP_GUIDE.md) or [docs/pocketbase-er.md](./docs/pocketbase-er.md).
+    E5 --> F{Monthly Workflow}
+    F --> F1[Capture Meter Readings]
+    F1 --> F2[Review Readings]
+    F2 --> F3[Generate Invoices]
+    F3 --> F4[Send / Share Invoices]
+    F4 --> F5[Track Payments]
+    F5 --> F6[Reports & Dashboard]
+```
 
 ## Entity Relationship Diagram
 
@@ -327,14 +290,12 @@ staykha-app-nextjs/
 │   ├── data-table.tsx         # Reusable data table
 │   └── ...                    # Other components
 ├── lib/                       # Utilities and API clients
-│   ├── pocketbase-api.ts      # PocketBase API client
-│   ├── api-client.ts          # API client exports
+│   ├── api-client.ts          # API client
 │   ├── types.ts               # TypeScript type definitions
 │   ├── schemas.ts             # Zod validation schemas
 │   ├── auth-context.tsx       # Authentication context
 │   └── utils.ts               # Utility functions
 ├── docs/                      # Documentation
-│   └── pocketbase-er.md       # PocketBase architecture docs
 ├── public/                    # Static assets
 ├── package.json
 ├── vite.config.ts
@@ -369,7 +330,7 @@ pnpm format
 
 ## API Integration
 
-The application uses PocketBase as the backend. All API calls are made through the `lib/pocketbase-api.ts` client, which uses `ofetch` to communicate with PocketBase's REST API.
+The application uses a REST API under `/v1`. All API calls go through `lib/api-client.ts`, which uses `ofetch` with Bearer token auth.
 
 ### Authentication
 
@@ -377,59 +338,13 @@ The application uses PocketBase as the backend. All API calls are made through t
 The application implements login and registration. Owners must create a team, and admins join a team. The app stores the auth token in `localStorage` and includes it in API requests via the `Authorization` header.
 
 **Available Authentication Features:**
-PocketBase supports additional authentication features that can be implemented:
+The API supports additional authentication features that can be implemented:
 
 - ✅ **Login** - Implemented
 - ✅ **User Registration** - Implemented
 - ⚠️ **Password Reset / Forgot Password** - API available, UI not yet implemented
 - ⚠️ **Email Verification** - API available, UI not yet implemented
 - ⚠️ **Password Change** - API available, UI not yet implemented
-
-**Adding Registration, Password Reset, and Other Auth Features:**
-
-To add these features, you can extend the `authApi` in `lib/pocketbase-api.ts`:
-
-```typescript
-// User Registration
-register: async (email: string, password: string, passwordConfirm: string, name?: string) => {
-  const response = await authClient.post("/records", {
-    email,
-    password,
-    passwordConfirm,
-    name,
-    emailVisibility: false,
-  })
-  return response
-}
-
-// Request Password Reset
-requestPasswordReset: async (email: string) => {
-  return await authClient.post("/request-password-reset", { email })
-}
-
-// Confirm Password Reset
-confirmPasswordReset: async (token: string, password: string, passwordConfirm: string) => {
-  return await authClient.post("/confirm-password-reset", {
-    token,
-    password,
-    passwordConfirm,
-  })
-}
-
-// Verify Email
-verifyEmail: async (token: string) => {
-  return await authClient.post("/verify-email", { token })
-}
-
-// Change Password (requires authentication)
-changePassword: async (oldPassword: string, password: string, passwordConfirm: string) => {
-  return await authClient.post("/change-password", {
-    oldPassword,
-    password,
-    passwordConfirm,
-  })
-}
-```
 
 Existing pages:
 - `src/app/register/page.tsx` - User registration page
@@ -441,30 +356,45 @@ Optional pages to add:
 - `src/app/reset-password/page.tsx` - Confirm password reset
 - `src/app/verify-email/page.tsx` - Email verification
 
-**PocketBase Email Configuration:**
-To enable email-based features (password reset, email verification), configure SMTP settings in PocketBase admin panel:
-1. Go to **Settings** → **Mail settings**
-2. Configure your SMTP server (Gmail, SendGrid, etc.)
-3. Set up email templates for password reset and verification
+**Email Configuration:**
+To enable email-based features (password reset, email verification), configure SMTP settings in your backend.
 
 ### API Structure
 
+The API uses a class-based service pattern with a unified API client factory.
+
+**API Client Pattern**:
+- Single `createApi(token?)` factory handles both authenticated and public requests
+- If token is undefined, auto-gets from localStorage
+- If token is null, makes public request (for auth endpoints)
+- All services extend `BaseApiService` for consistent error handling
+
+**Service Usage**:
 - **Buildings**: `buildingsApi.getAll()`, `buildingsApi.create()`, etc.
 - **Rooms**: `roomsApi.getAll()`, `roomsApi.create()`, `roomsApi.bulkCreate()`, etc.
 - **Tenants**: `tenantsApi.getAll()`, `tenantsApi.create()`, etc.
 - **Readings**: `readingsApi.getAll()`, `readingsApi.create()`, etc.
 - **Invoices**: `invoicesApi.getAll()`, `invoicesApi.update()`, etc.
-- **Settings**: `settingsApi.get()`, `settingsApi.update()`
-- **Auth**: `authApi.login()`
-- **Auth**: `authApi.register()`, `authApi.requestPasswordReset()`, `authApi.confirmPasswordReset()`, `authApi.verifyEmail()`
+- **Settings**: `settingsApi.get(teamId)`, `settingsApi.update(teamId, updates)`
+- **Auth**: `authApi.login()`, `authApi.register()`, etc.
 
-All API methods return data that matches the TypeScript interfaces defined in `lib/types.ts`.
+All API methods return data that matches the TypeScript interfaces defined in `lib/types.ts` and `lib/api/services/*-types.ts`.
+
+**Error Handling**:
+- All API errors are automatically transformed into typed `ApiError` instances
+- Errors are logged in development mode
+- Services use consistent error handling via `BaseApiService.handleError()`
 
 ## Environment Variables
 
+**Required**:
+- `VITE_API_URL` - Base URL for the API server (e.g., `http://localhost:3000`)
+
+The app validates required environment variables on startup and will show warnings in development if they're missing.
+
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `VITE_POCKETBASE_URL` | PocketBase server URL | `http://127.0.0.1:8090` |
+| `VITE_API_URL` | API server URL | `http://localhost:3000` |
 
 ## License
 

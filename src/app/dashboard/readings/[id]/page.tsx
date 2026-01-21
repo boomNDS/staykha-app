@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { readingsApi, roomsApi, settingsApi } from "@/lib/api-client";
+import { getData } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { useParams } from "@/lib/router";
 import type { MeterReadingGroup } from "@/lib/types";
@@ -28,7 +29,7 @@ export default function ReadingDetailPage() {
     queryFn: () => readingsApi.getById(readingId),
     enabled: Boolean(readingId),
   });
-  const roomId = readingQuery.data?.reading?.roomId;
+  const roomId = getData(readingQuery.data)?.roomId;
   const roomQuery = useQuery({
     queryKey: ["rooms", roomId],
     queryFn: () => {
@@ -57,8 +58,8 @@ export default function ReadingDetailPage() {
     return <LoadingState fullScreen message="กำลังโหลดการอ่านมิเตอร์..." />;
   }
 
-  const reading = readingQuery.data?.reading as MeterReadingGroup | undefined;
-  const room = roomQuery.data?.room;
+  const reading = getData(readingQuery.data) as MeterReadingGroup | null;
+  const room = getData(roomQuery.data);
 
   if (!reading) {
     return <div className="py-12 text-center">ไม่พบการอ่านมิเตอร์</div>;
@@ -70,7 +71,7 @@ export default function ReadingDetailPage() {
       : reading.status === "pending"
         ? "secondary"
         : "default";
-  const settings = settingsQuery.data?.settings;
+  const settings = getData(settingsQuery.data);
 
   // Show settings required message if settings don't exist
   if (settingsQuery.isSuccess && !settings) {
@@ -164,7 +165,7 @@ export default function ReadingDetailPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Droplets className="h-5 w-5 text-blue-500" /> มิเตอร์น้ำ
+              <Droplets className="h-5 w-5 text-slate-500" /> มิเตอร์น้ำ
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -197,6 +198,9 @@ export default function ReadingDetailPage() {
                       src={reading.water.previousPhotoUrl}
                       alt="รูปมิเตอร์น้ำก่อนหน้า"
                       className="h-36 w-full object-cover"
+                      width={320}
+                      height={144}
+                      loading="lazy"
                     />
                   </div>
                   <div className="overflow-hidden rounded-lg border border-border">
@@ -204,6 +208,9 @@ export default function ReadingDetailPage() {
                       src={reading.water.currentPhotoUrl}
                       alt="รูปมิเตอร์น้ำล่าสุด"
                       className="h-36 w-full object-cover"
+                      width={320}
+                      height={144}
+                      loading="lazy"
                     />
                   </div>
                 </div>
@@ -235,7 +242,7 @@ export default function ReadingDetailPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-amber-500" /> มิเตอร์ไฟ
+              <Zap className="h-5 w-5 text-slate-500" /> มิเตอร์ไฟ
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -268,6 +275,9 @@ export default function ReadingDetailPage() {
                       src={reading.electric.previousPhotoUrl}
                       alt="รูปมิเตอร์ไฟก่อนหน้า"
                       className="h-36 w-full object-cover"
+                      width={320}
+                      height={144}
+                      loading="lazy"
                     />
                   </div>
                   <div className="overflow-hidden rounded-lg border border-border">
@@ -275,6 +285,9 @@ export default function ReadingDetailPage() {
                       src={reading.electric.currentPhotoUrl}
                       alt="รูปมิเตอร์ไฟล่าสุด"
                       className="h-36 w-full object-cover"
+                      width={320}
+                      height={144}
+                      loading="lazy"
                     />
                   </div>
                 </div>

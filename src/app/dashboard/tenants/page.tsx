@@ -13,12 +13,13 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { DataTable } from "@/components/data-table";
-import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { TableRowActions } from "@/components/table-row-actions";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { roomsApi, tenantsApi } from "@/lib/api-client";
+import { getList } from "@/lib/api/response-helpers";
 import { useRouter } from "@/lib/router";
 import type { Tenant } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -37,8 +38,8 @@ export default function TenantsPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  const tenants = tenantsQuery.data?.tenants ?? [];
-  const rooms = roomsQuery.data?.rooms ?? [];
+  const tenants = getList(tenantsQuery.data);
+  const rooms = getList(roomsQuery.data);
   const loading = tenantsQuery.isLoading || roomsQuery.isLoading;
   const [confirmState, setConfirmState] = React.useState<{
     open: boolean;
@@ -157,8 +158,8 @@ export default function TenantsPage() {
         <span
           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
             tenant.status === "active"
-              ? "bg-green-500/10 text-green-500"
-              : "bg-yellow-500/10 text-yellow-500"
+              ? "bg-slate-500/10 text-slate-600"
+              : "bg-slate-400/10 text-slate-600"
           }`}
         >
           {getTenantStatusLabel(tenant.status)}
@@ -207,10 +208,6 @@ export default function TenantsPage() {
     },
   ];
 
-  if (loading) {
-    return <LoadingState fullScreen message="กำลังโหลดผู้เช่า..." />;
-  }
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -228,14 +225,38 @@ export default function TenantsPage() {
       />
 
       <div className="rounded-2xl border border-border bg-white shadow-sm p-6">
-        <DataTable
-          data={tenants}
-          columns={columns}
-          filters={filters}
-          searchPlaceholder="ค้นหาผู้เช่า..."
-          pageSize={10}
-          forcePagination
-        />
+        {loading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-64" />
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={`tenant-row-${index}`} className="rounded-lg border p-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-40" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : tenants.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-10 text-center text-sm text-muted-foreground">
+            <p>ยังไม่มีผู้เช่า เริ่มเพิ่มรายชื่อเพื่อจัดการสัญญาได้ทันที</p>
+            <Button onClick={() => router.push("/overview/tenants/new")}>
+              เพิ่มผู้เช่า
+            </Button>
+          </div>
+        ) : (
+          <DataTable
+            data={tenants}
+            columns={columns}
+            filters={filters}
+            searchPlaceholder="ค้นหาผู้เช่า..."
+            pageSize={10}
+            forcePagination
+          />
+        )}
       </div>
       <ConfirmDialog
         open={confirmState.open}

@@ -22,6 +22,7 @@ import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SettingsRequired } from "@/components/settings-required";
 import { useReadingsPage } from "@/lib/hooks/use-readings-page";
 import type { MeterReadingGroup, Room } from "@/lib/types";
@@ -282,7 +283,7 @@ export default function ReadingsPage() {
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   น้ำ
                 </p>
-                <p className="text-2xl font-semibold text-blue-600">
+                <p className="text-2xl font-semibold text-slate-600">
                   {selectedGroup.water
                     ? `${selectedGroup.water.consumption.toLocaleString()} m³`
                     : isWaterFixed
@@ -301,7 +302,7 @@ export default function ReadingsPage() {
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   ไฟ
                 </p>
-                <p className="text-2xl font-semibold text-amber-600">
+                <p className="text-2xl font-semibold text-slate-600">
                   {selectedGroup.electric
                     ? `${selectedGroup.electric.consumption.toLocaleString()} kWh`
                     : "ยังไม่บันทึก"}
@@ -498,7 +499,26 @@ export default function ReadingsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <LoadingState message="กำลังโหลดรายการอ่านมิเตอร์..." />
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-64" />
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={`reading-row-${index}`} className="rounded-lg border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-9 w-9 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-32" />
+                        <Skeleton className="h-3 w-28" />
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-right">
+                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : readings.length === 0 ? (
             <EmptyState
               icon={<Gauge className="h-8 w-8 text-muted-foreground" />}

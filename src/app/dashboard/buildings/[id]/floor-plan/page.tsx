@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildingsApi, roomsApi } from "@/lib/api-client";
+import { getData, getList } from "@/lib/api/response-helpers";
 import { useParams, useRouter } from "@/lib/router";
 import type { Room } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -27,8 +28,8 @@ export default function BuildingFloorPlanPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  const building = buildingQuery.data?.building ?? null;
-  const rooms = (roomsQuery.data?.rooms ?? []).filter(
+  const building = getData(buildingQuery.data);
+  const rooms = getList(roomsQuery.data).filter(
     (room: Room) => room.buildingId === buildingId,
   );
   const isLoading = buildingQuery.isLoading || roomsQuery.isLoading;
@@ -116,7 +117,7 @@ export default function BuildingFloorPlanPage() {
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">เข้าพัก</p>
-          <p className="text-2xl font-bold text-emerald-600">
+          <p className="text-2xl font-bold text-slate-600">
             {rooms.filter((r) => r.status === "occupied").length}
           </p>
         </div>

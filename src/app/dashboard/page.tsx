@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { DollarSign, Gauge, Home, Users } from "lucide-react";
 import { DataTable } from "@/components/data-table";
 import { LoadingState } from "@/components/loading-state";
@@ -8,7 +9,9 @@ import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   buildingsApi,
   invoicesApi,
@@ -17,6 +20,7 @@ import {
   settingsApi,
   tenantsApi,
 } from "@/lib/api-client";
+import { getData, getList } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import type { MeterReadingGroup, Tenant } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -57,12 +61,12 @@ export default function DashboardPage() {
     enabled: !!user?.teamId,
   });
 
-  const tenants = tenantsQuery.data?.tenants ?? [];
-  const rooms = roomsQuery.data?.rooms ?? [];
-  const readings = readingsQuery.data?.readings ?? [];
-  const invoices = invoicesQuery.data?.invoices ?? [];
-  const buildings = buildingsQuery.data?.buildings ?? [];
-  const settingsConfigured = Boolean(settingsQuery.data?.settings);
+  const tenants = getList(tenantsQuery.data);
+  const rooms = getList(roomsQuery.data);
+  const readings = getList(readingsQuery.data);
+  const invoices = getList(invoicesQuery.data);
+  const buildings = getList(buildingsQuery.data);
+  const settingsConfigured = Boolean(getData(settingsQuery.data));
   const isLoading =
     tenantsQuery.isLoading ||
     roomsQuery.isLoading ||
@@ -76,6 +80,11 @@ export default function DashboardPage() {
   const pendingReadings = (readings as MeterReadingGroup[]).filter(
     (r) => r.status === "pending" || r.status === "incomplete",
   ).length;
+  const readingStatusLabels: Record<MeterReadingGroup["status"], string> = {
+    pending: "รอตรวจ",
+    incomplete: "ข้อมูลไม่ครบ",
+    completed: "เสร็จสิ้น",
+  };
 
   const stats = [
     {
@@ -108,9 +117,16 @@ export default function DashboardPage() {
       description: "จากใบแจ้งหนี้เดือนนี้",
       icon: DollarSign,
       trend: { value: 15, label: "เทียบเดือนที่แล้ว" },
-      iconClassName: "bg-green-500/10",
+      iconClassName: "bg-slate-500/10",
     },
   ];
+
+  const primaryAction =
+    buildings.length === 0
+      ? { label: "สร้างอาคารใหม่", href: "/overview/buildings/new" }
+      : rooms.length === 0
+        ? { label: "เพิ่มห้องพัก", href: "/overview/rooms/new" }
+        : { label: "บันทึกการอ่านมิเตอร์", href: "/overview/readings/new" };
 
   const tenantColumns = [
     {
@@ -161,7 +177,15 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-8 sm:space-y-8">
-      <PageHeader title="ภาพรวม" description="ภาพรวมการจัดการ StayKha ของคุณ" />
+      <PageHeader
+        title="ภาพรวม"
+        description="ภาพรวมการจัดการ StayKha ของคุณ"
+        actions={
+          <Button asChild>
+            <Link to={primaryAction.href}>{primaryAction.label}</Link>
+          </Button>
+        }
+      />
 
       <OnboardingChecklist
         buildingsCount={buildings.length}
@@ -173,9 +197,17 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <StatCard key={stat.id} {...stat} />
-        ))}
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, index) => (
+              <Card key={`stat-skeleton-${index}`} className="p-6">
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-3 w-40" />
+                </div>
+              </Card>
+            ))
+          : stats.map((stat) => <StatCard key={stat.id} {...stat} />)}
       </div>
 
       {/* Recent Activity */}
@@ -192,10 +224,25 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <LoadingState message="กำลังโหลดผู้เช่า..." />
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={`tenant-skeleton-${index}`} className="rounded-lg border p-3">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : tenants.length === 0 ? (
-              <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                ยังไม่มีผู้เช่า
+              <div className="flex flex-col items-center justify-center gap-3 py-8 text-center text-sm text-muted-foreground">
+                <p>ยังไม่มีผู้เช่า เริ่มเพิ่มรายชื่อเพื่อจัดการสัญญาได้ทันที</p>
+                <Button asChild>
+                  <Link to="/overview/tenants/new">เพิ่มผู้เช่า</Link>
+                </Button>
               </div>
             ) : (
               <DataTable
@@ -205,6 +252,13 @@ export default function DashboardPage() {
                 hideSearch
                 hidePagination
               />
+            )}
+            {!isLoading && tenants.length > 0 && (
+              <div className="mt-4 flex justify-end">
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/overview/tenants">ดูทั้งหมด</Link>
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -221,10 +275,31 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <LoadingState message="กำลังโหลดการอ่านมิเตอร์..." />
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={`reading-skeleton-${index}`} className="rounded-lg border p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-3 w-32" />
+                          <Skeleton className="h-3 w-28" />
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-right">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : readings.length === 0 ? (
-              <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                ยังไม่มีการอ่านมิเตอร์
+              <div className="flex flex-col items-center justify-center gap-3 py-8 text-center text-sm text-muted-foreground">
+                <p>ยังไม่มีการอ่านมิเตอร์ เพิ่มการอ่านเพื่อเริ่มออกบิลได้ทันที</p>
+                <Button asChild>
+                  <Link to="/overview/readings/new">เพิ่มการอ่านมิเตอร์</Link>
+                </Button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -237,7 +312,7 @@ export default function DashboardPage() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="rounded-full bg-muted p-2">
-                          <Gauge className="h-4 w-4 text-blue-500" />
+                          <Gauge className="h-4 w-4 text-slate-500" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-foreground">
@@ -268,11 +343,18 @@ export default function DashboardPage() {
                           }
                           className="text-xs"
                         >
-                          {reading.status}
+                          {readingStatusLabels[reading.status] ?? reading.status}
                         </Badge>
                       </div>
                     </div>
                   ))}
+              </div>
+            )}
+            {!isLoading && readings.length > 0 && (
+              <div className="mt-4 flex justify-end">
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/overview/readings">ดูทั้งหมด</Link>
+                </Button>
               </div>
             )}
           </CardContent>

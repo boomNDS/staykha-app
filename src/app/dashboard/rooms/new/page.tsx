@@ -1,8 +1,10 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
 import * as React from "react";
+import { useForm } from "react-hook-form";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -13,8 +15,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -24,12 +33,15 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { buildingsApi, roomsApi, settingsApi } from "@/lib/api-client";
+import { getData, getList } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
-import { mapZodErrors, roomFormSchema } from "@/lib/schemas";
-import type { RoomFormValues } from "@/lib/types";
+import { roomFormSchema } from "@/lib/schemas";
+import type { z } from "zod";
 import { usePageTitle } from "@/lib/use-page-title";
+
+type RoomFormValues = z.infer<typeof roomFormSchema>;
 
 export default function NewRoomPage() {
   usePageTitle("เพิ่มห้องใหม่");
@@ -52,19 +64,32 @@ export default function NewRoomPage() {
     },
     enabled: !!user?.teamId,
   });
-  const buildings = buildingsQuery.data?.buildings ?? [];
-  const [loading, setLoading] = React.useState(false);
-  const [formData, setFormData] = React.useState<RoomFormValues>({
-    roomNumber: "",
-    buildingId: "",
-    floor: "1",
-    status: "vacant",
-    monthlyRent: "",
-    size: "",
-  });
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const buildings = getList(buildingsQuery.data);
+  const settings = getData(settingsQuery.data);
 
-  const settings = settingsQuery.data?.settings;
+  const form = useForm<RoomFormValues>({
+    resolver: zodResolver(roomFormSchema),
+    defaultValues: {
+      roomNumber: "",
+      buildingId: "",
+      floor: "1",
+      status: "vacant",
+      monthlyRent: "",
+      size: "",
+    },
+  });
+
+  // Set default values from settings
+  React.useEffect(() => {
+    if (settings) {
+      if (!form.getValues("monthlyRent") && settings.defaultRoomRent) {
+        form.setValue("monthlyRent", String(settings.defaultRoomRent));
+      }
+      if (!form.getValues("size") && settings.defaultRoomSize) {
+        form.setValue("size", String(settings.defaultRoomSize));
+      }
+    }
+  }, [settings, form]);
 
   if (buildingsQuery.isSuccess && buildings.length === 0) {
     return (
@@ -77,16 +102,6 @@ export default function NewRoomPage() {
       />
     );
   }
-
-  React.useEffect(() => {
-    if (settings) {
-      setFormData((prev) => ({
-        ...prev,
-        monthlyRent: prev.monthlyRent || String(settings.defaultRoomRent ?? ""),
-        size: prev.size || String(settings.defaultRoomSize ?? ""),
-      }));
-    }
-  }, [settings]);
 
   const createRoomMutation = useMutation({
     mutationFn: (payload: {
@@ -101,28 +116,18 @@ export default function NewRoomPage() {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
   });
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
 
+  const onSubmit = async (data: RoomFormValues) => {
     try {
-      const roomResult = roomFormSchema.safeParse(formData);
-      if (!roomResult.success) {
-        setErrors(mapZodErrors(roomResult.error));
-        setLoading(false);
-        return;
-      }
-      setErrors({});
-
       await createRoomMutation.mutateAsync({
-        roomNumber: formData.roomNumber,
-        buildingId: formData.buildingId,
-        floor: Number.parseInt(formData.floor, 10),
-        status: formData.status as "occupied" | "vacant" | "maintenance",
-        monthlyRent: formData.monthlyRent
-          ? Number.parseFloat(formData.monthlyRent)
+        roomNumber: data.roomNumber,
+        buildingId: data.buildingId,
+        floor: Number.parseInt(data.floor, 10),
+        status: data.status,
+        monthlyRent: data.monthlyRent
+          ? Number.parseFloat(data.monthlyRent)
           : undefined,
-        size: formData.size ? Number.parseFloat(formData.size) : undefined,
+        size: data.size ? Number.parseFloat(data.size) : undefined,
       });
       router.push("/overview/rooms");
     } catch (error) {
@@ -130,8 +135,8 @@ export default function NewRoomPage() {
         scope: "rooms",
         action: "create",
         metadata: {
-          buildingId: formData.buildingId,
-          roomNumber: formData.roomNumber,
+          buildingId: data.buildingId,
+          roomNumber: data.roomNumber,
         },
       });
       toast({
@@ -139,14 +144,16 @@ export default function NewRoomPage() {
         description: getErrorMessage(error, "ไม่สามารถเพิ่มห้องได้"),
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="เพิ่มห้องใหม่" description="สร้างห้องใหม่ในระบบ" showBack />
+      <PageHeader
+        title="เพิ่มห้องใหม่"
+        description="สร้างห้องใหม่ในระบบ"
+        showBack
+      />
 
       <Card>
         <CardHeader>
@@ -154,134 +161,163 @@ export default function NewRoomPage() {
           <CardDescription>กรอกรายละเอียดห้องใหม่</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="roomNumber">เลขห้อง *</Label>
-                <Input
-                  id="roomNumber"
-                  required
-                  value={formData.roomNumber}
-                  onChange={(e) =>
-                    setFormData({ ...formData, roomNumber: e.target.value })
-                  }
-                  placeholder="101"
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-6"
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="roomNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>เลขห้อง *</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="101"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {errors.roomNumber && (
-                  <p className="text-sm text-destructive">
-                    {errors.roomNumber}
-                  </p>
-                )}
+
+                <FormField
+                  control={form.control}
+                  name="buildingId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>อาคาร *</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={form.formState.isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="เลือกอาคาร" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {buildings.map((building) => (
+                            <SelectItem key={building.id} value={building.id}>
+                              {building.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="floor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ชั้น *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>สถานะ</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={form.formState.isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="vacant">ว่าง</SelectItem>
+                          <SelectItem value="occupied">เข้าพัก</SelectItem>
+                          <SelectItem value="maintenance">ซ่อมบำรุง</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="size"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ขนาดห้อง (ตร.ม.)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="monthlyRent"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ค่าเช่ารายเดือน</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="buildingName">อาคาร *</Label>
-                <Select
-                  value={formData.buildingId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, buildingId: value })
-                  }
+              <div className="flex gap-3">
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
                 >
-                  <SelectTrigger id="buildingName">
-                    <SelectValue placeholder="เลือกอาคาร" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {buildings.map((building) => (
-                      <SelectItem key={building.id} value={building.id}>
-                        {building.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.buildingId && (
-                  <p className="text-sm text-destructive">
-                    {errors.buildingId}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="floor">ชั้น *</Label>
-                <Input
-                  id="floor"
-                  type="number"
-                  required
-                  min="1"
-                  value={formData.floor}
-                  onChange={(e) =>
-                    setFormData({ ...formData, floor: e.target.value })
-                  }
-                />
-                {errors.floor && (
-                  <p className="text-sm text-destructive">{errors.floor}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">สถานะ</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, status: value })
-                  }
+                  {form.formState.isSubmitting
+                    ? "กำลังสร้าง..."
+                    : "สร้างห้อง"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
                 >
-                  <SelectTrigger id="status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vacant">ว่าง</SelectItem>
-                    <SelectItem value="occupied">เข้าพัก</SelectItem>
-                    <SelectItem value="maintenance">ซ่อมบำรุง</SelectItem>
-                  </SelectContent>
-                </Select>
+                  ยกเลิก
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="size">ขนาดห้อง (ตร.ม.)</Label>
-                <Input
-                  id="size"
-                  type="number"
-                  min="0"
-                  value={formData.size}
-                  onChange={(e) =>
-                    setFormData({ ...formData, size: e.target.value })
-                  }
-                />
-                {errors.size && (
-                  <p className="text-sm text-destructive">{errors.size}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="monthlyRent">ค่าเช่ารายเดือน</Label>
-                <Input
-                  id="monthlyRent"
-                  type="number"
-                  min="0"
-                  value={formData.monthlyRent}
-                  onChange={(e) =>
-                    setFormData({ ...formData, monthlyRent: e.target.value })
-                  }
-                />
-                {errors.monthlyRent && (
-                  <p className="text-sm text-destructive">
-                    {errors.monthlyRent}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button type="submit" disabled={loading}>
-                {loading ? "กำลังสร้าง..." : "สร้างห้อง"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-              >
-                ยกเลิก
-              </Button>
-            </div>
-          </form>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

@@ -1,8 +1,10 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import * as React from "react";
+import { useForm } from "react-hook-form";
 import { AdminRestrictionBanner } from "@/components/admin-restriction-banner";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -13,13 +15,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { buildingsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
+import { buildingFormSchema } from "@/lib/schemas";
+import type { z } from "zod";
 import { usePageTitle } from "@/lib/use-page-title";
+
+type BuildingFormValues = z.infer<typeof buildingFormSchema>;
 
 export default function NewBuildingPage() {
   usePageTitle("เพิ่มอาคารใหม่");
@@ -27,12 +41,17 @@ export default function NewBuildingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   // Show restriction banner for admins
   if (user?.role !== "owner") {
     return (
       <div className="space-y-6">
-        <PageHeader title="เพิ่มอาคารใหม่" description="สร้างอาคารใหม่" showBack />
+        <PageHeader
+          title="เพิ่มอาคารใหม่"
+          description="สร้างอาคารใหม่"
+          showBack
+        />
         <AdminRestrictionBanner
           title="ต้องให้เจ้าของดำเนินการ"
           message="เฉพาะเจ้าของเท่านั้นที่สามารถสร้างอาคารได้ โปรดติดต่อเจ้าของทีมเพื่อสร้างอาคารก่อน"
@@ -41,34 +60,16 @@ export default function NewBuildingPage() {
       </div>
     );
   }
-  const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [formData, setFormData] = React.useState({
-    name: "",
-    address: "",
-    totalFloors: "",
-    totalRooms: "",
+
+  const form = useForm<BuildingFormValues>({
+    resolver: zodResolver(buildingFormSchema),
+    defaultValues: {
+      name: "",
+      address: "",
+      totalFloors: "",
+      totalRooms: "",
+    },
   });
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) newErrors.name = "กรุณากรอกชื่ออาคาร";
-    if (!formData.address.trim()) newErrors.address = "กรุณากรอกที่อยู่";
-    if (
-      !formData.totalFloors ||
-      Number.parseInt(formData.totalFloors, 10) < 1
-    ) {
-      newErrors.totalFloors = "ต้องมีอย่างน้อย 1 ชั้น";
-    }
-    if (!formData.totalRooms || Number.parseInt(formData.totalRooms, 10) < 1) {
-      newErrors.totalRooms = "ต้องมีอย่างน้อย 1 ห้อง";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const createBuildingMutation = useMutation({
     mutationFn: (payload: {
@@ -83,18 +84,13 @@ export default function NewBuildingPage() {
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-
+  const onSubmit = async (data: BuildingFormValues) => {
     try {
       await createBuildingMutation.mutateAsync({
-        ...formData,
-        totalFloors: Number.parseInt(formData.totalFloors, 10),
-        totalRooms: Number.parseInt(formData.totalRooms, 10),
+        name: data.name,
+        address: data.address,
+        totalFloors: Number.parseInt(data.totalFloors, 10),
+        totalRooms: Number.parseInt(data.totalRooms, 10),
         ownerId: user?.id || "",
       });
 
@@ -115,14 +111,16 @@ export default function NewBuildingPage() {
         description: getErrorMessage(error, "สร้างอาคารไม่สำเร็จ"),
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="เพิ่มอาคารใหม่" description="สร้างอาคารใหม่" showBack />
+      <PageHeader
+        title="เพิ่มอาคารใหม่"
+        description="สร้างอาคารใหม่"
+        showBack
+      />
 
       <Card className="max-w-2xl">
         <CardHeader>
@@ -130,110 +128,114 @@ export default function NewBuildingPage() {
           <CardDescription>กรอกรายละเอียดอาคาร</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">
-                ชื่ออาคาร
-              </label>
-              <Input
-                id="name"
-                placeholder="เช่น อาคาร A"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                disabled={isLoading}
-              />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="address" className="text-sm font-medium">
-                ที่อยู่
-              </label>
-              <Input
-                id="address"
-                placeholder="เช่น 123 ถนนสุขุมวิท กรุงเทพฯ 10110"
-                value={formData.address}
-                onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
-                }
-                disabled={isLoading}
-              />
-              {errors.address && (
-                <p className="text-sm text-destructive">{errors.address}</p>
-              )}
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label htmlFor="totalFloors" className="text-sm font-medium">
-                  จำนวนชั้น
-                </label>
-                <Input
-                  id="totalFloors"
-                  type="number"
-                  min="1"
-                  placeholder="เช่น 3"
-                  value={formData.totalFloors}
-                  onChange={(e) =>
-                    setFormData({ ...formData, totalFloors: e.target.value })
-                  }
-                  disabled={isLoading}
-                />
-                {errors.totalFloors && (
-                  <p className="text-sm text-destructive">
-                    {errors.totalFloors}
-                  </p>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4"
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่ออาคาร</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="เช่น อาคาร A"
+                        disabled={form.formState.isSubmitting}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ที่อยู่</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="เช่น 123 ถนนสุขุมวิท กรุงเทพฯ 10110"
+                        disabled={form.formState.isSubmitting}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="totalFloors"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>จำนวนชั้น</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="เช่น 3"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="totalRooms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>จำนวนห้อง</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="เช่น 15"
+                          disabled={form.formState.isSubmitting}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="totalRooms" className="text-sm font-medium">
-                  จำนวนห้อง
-                </label>
-                <Input
-                  id="totalRooms"
-                  type="number"
-                  min="1"
-                  placeholder="เช่น 15"
-                  value={formData.totalRooms}
-                  onChange={(e) =>
-                    setFormData({ ...formData, totalRooms: e.target.value })
-                  }
-                  disabled={isLoading}
-                />
-                {errors.totalRooms && (
-                  <p className="text-sm text-destructive">
-                    {errors.totalRooms}
-                  </p>
-                )}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
+                >
+                  {form.formState.isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      กำลังสร้าง...
+                    </>
+                  ) : (
+                    "สร้างอาคาร"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  disabled={form.formState.isSubmitting}
+                >
+                  ยกเลิก
+                </Button>
               </div>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    กำลังสร้าง...
-                  </>
-                ) : (
-                  "สร้างอาคาร"
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={isLoading}
-              >
-                ยกเลิก
-              </Button>
-            </div>
-          </form>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

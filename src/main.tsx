@@ -4,8 +4,12 @@ import { Analytics } from "@vercel/analytics/react";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { AuthProvider } from "@/lib/auth-context";
+import { validateEnv } from "@/lib/env";
 import { router } from "./router";
 import "./app/globals.css";
+
+// Validate environment variables on app startup
+validateEnv();
 
 const queryClient = new QueryClient({
   defaultOptions: {

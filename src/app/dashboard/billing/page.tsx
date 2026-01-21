@@ -31,8 +31,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { invoicesApi } from "@/lib/api-client";
+import { getData, getList } from "@/lib/api/response-helpers";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter, useSearchParams } from "@/lib/router";
 import type { Invoice } from "@/lib/types";
@@ -51,7 +53,7 @@ export default function BillingPage() {
     queryKey: ["invoices"],
     queryFn: () => invoicesApi.getAll(),
   });
-  const invoices = invoicesQuery.data?.invoices ?? [];
+  const invoices = getList(invoicesQuery.data);
   const isLoading = invoicesQuery.isLoading;
   const hasGenerated = React.useRef(false);
   const [selectedInvoiceIds, setSelectedInvoiceIds] = React.useState<
@@ -136,12 +138,17 @@ export default function BillingPage() {
     mutationFn: (id: string) => invoicesApi.generateFromReadingGroup(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      const invoice = getData(data);
       toast({
         title: "สร้างใบแจ้งหนี้แล้ว",
-        description: `สร้าง ${data.invoice.id} จากการอ่านมิเตอร์รายเดือน`,
+        description: invoice
+          ? `สร้าง ${invoice.id} จากการอ่านมิเตอร์รายเดือน`
+          : "สร้างใบแจ้งหนี้จากการอ่านมิเตอร์รายเดือน",
       });
       // Only navigate after successful creation
-      router.push(`/overview/billing/${data.invoice.id}`);
+      if (invoice) {
+        router.push(`/overview/billing/${invoice.id}`);
+      }
     },
     onError: (error: any) => {
       // Reset the ref so user can try again
@@ -414,13 +421,13 @@ export default function BillingPage() {
       render: (invoice: Invoice) => (
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Droplets className="h-3 w-3 text-blue-500" />
+            <Droplets className="h-3 w-3 text-slate-500" />
             {invoice.waterBillingMode === "fixed"
               ? "เหมาจ่าย"
               : `${invoice.waterUsage} m³`}
           </span>
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Zap className="h-3 w-3 text-amber-500" />
+            <Zap className="h-3 w-3 text-slate-500" />
             {invoice.electricUsage} kWh
           </span>
         </div>
@@ -635,7 +642,7 @@ export default function BillingPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div className="text-2xl font-bold text-slate-700 dark:text-slate-300">
               {formatCurrency(paidAmount)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -651,7 +658,7 @@ export default function BillingPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {formatCurrency(pendingAmount)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -672,7 +679,7 @@ export default function BillingPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+            <div className="text-2xl font-bold text-slate-600 dark:text-slate-300">
               {formatCurrency(overdueAmount)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -689,7 +696,26 @@ export default function BillingPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <LoadingState message="กำลังโหลดใบแจ้งหนี้..." />
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-64" />
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={`invoice-row-${index}`} className="rounded-lg border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-9 w-9 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-3 w-40" />
+                        <Skeleton className="h-3 w-28" />
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-right">
+                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : invoices.length === 0 ? (
             <EmptyState
               icon={<FileText className="h-8 w-8 text-muted-foreground" />}

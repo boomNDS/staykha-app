@@ -35,6 +35,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useToast } from "@/hooks/use-toast";
 import { readingsApi, roomsApi, settingsApi } from "@/lib/api-client";
+import { getData, getList } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
@@ -116,12 +117,12 @@ export function ReadingForm({
     enabled: Boolean(readingGroupId),
   });
   const [isLoading, setIsLoading] = React.useState(false);
-  const rooms = roomsQuery.data?.rooms ?? [];
+  const rooms = getList(roomsQuery.data);
   const normalizedInitialDate = normalizeDateParam(initialDate || todayValue());
   const [inputMode, setInputMode] = React.useState<InputMode>("ocr");
   const [meterScope, setMeterScope] =
     React.useState<MeterScope>(initialMeterScope);
-  const existingGroup = readingGroupQuery.data?.reading;
+  const existingGroup = getData(readingGroupQuery.data);
   const [formData, setFormData] = React.useState<ReadingFormValues>({
     roomId: initialRoomId,
     readingDate: normalizedInitialDate,
@@ -152,7 +153,7 @@ export function ReadingForm({
     return new Date(Number(year), Number(month) - 1, Number(day));
   };
 
-  const settings = settingsQuery.data?.settings;
+  const settings = getData(settingsQuery.data);
   const isWaterFixed = settings?.waterBillingMode === "fixed";
   const selectedDate = parseDateString(formData.readingDate) ?? new Date();
 
@@ -592,7 +593,7 @@ export function ReadingForm({
             {includesWater ? (
               <MeterReadingSection
                 title="มิเตอร์น้ำ"
-                icon={<Droplets className="h-5 w-5 text-blue-500" />}
+                icon={<Droplets className="h-5 w-5 text-slate-500" />}
                 unit="m³"
                 mode={inputMode}
                 previousReading={formData.waterPreviousReading}
@@ -632,7 +633,7 @@ export function ReadingForm({
             {includesElectric ? (
               <MeterReadingSection
                 title="มิเตอร์ไฟ"
-                icon={<Zap className="h-5 w-5 text-amber-500" />}
+                icon={<Zap className="h-5 w-5 text-slate-500" />}
                 unit="kWh"
                 mode={inputMode}
                 previousReading={formData.electricPreviousReading}

@@ -58,7 +58,7 @@ function LabelWithInfo({
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              className="inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="ข้อมูลเพิ่มเติม"
             >
               <Info className="h-3.5 w-3.5" />

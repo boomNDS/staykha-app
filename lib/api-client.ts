@@ -1,2 +1,12 @@
-// Export PocketBase API client (not mock API)
-export * from "@/lib/pocketbase-api";
+export { FetchError, api, auth, apiFetch, authFetch } from "@/lib/api/client";
+export { authApi } from "@/lib/api/services/auth-api";
+export { teamsApi } from "@/lib/api/services/teams-api";
+export { buildingsApi } from "@/lib/api/services/buildings-api";
+export { usersApi } from "@/lib/api/services/users-api";
+export { roomsApi } from "@/lib/api/services/rooms-api";
+export { tenantsApi } from "@/lib/api/services/tenants-api";
+export { readingsApi } from "@/lib/api/services/readings-api";
+export { invoicesApi } from "@/lib/api/services/invoices-api";
+export { settingsApi } from "@/lib/api/services/settings-api";
+export { adminsApi } from "@/lib/api/services/admins-api";
+export { invitationsApi } from "@/lib/api/services/invitations-api";

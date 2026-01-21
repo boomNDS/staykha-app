@@ -1,115 +1,149 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Typewriter } from "@/components/typewriter";
 import { Button } from "@/components/ui/button";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-};
-
 export function LandingHero() {
+  const shouldReduceMotion = useReducedMotion();
+  const fadeUp = {
+    hidden: { opacity: 0, y: shouldReduceMotion ? 0 : 18 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: shouldReduceMotion ? 0 : 0.5, ease: "easeOut" },
+    },
+  };
+
   return (
     <motion.section
       variants={{
         hidden: { opacity: 0 },
-        show: { opacity: 1, transition: { staggerChildren: 0.12 } },
+        show: {
+          opacity: 1,
+          transition: shouldReduceMotion ? undefined : { staggerChildren: 0.12 },
+        },
       }}
-      initial="hidden"
+      initial={shouldReduceMotion ? false : "hidden"}
       animate="show"
-      className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center"
+      className="space-y-12"
     >
-      <motion.div variants={fadeUp} className="space-y-6">
-        <motion.div
-          variants={fadeUp}
-          className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-primary"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          เวิร์กโฟลว์สำหรับเจ้าของหอพัก
+      {/* Hero Content */}
+      <div className="text-center space-y-6 max-w-4xl mx-auto">
+        <motion.div variants={fadeUp} className="space-y-6">
+          <motion.h1
+            variants={fadeUp}
+            className="font-heading text-balance text-5xl font-bold leading-tight text-slate-900 sm:text-6xl lg:text-7xl"
+          >
+            <Typewriter
+              text={[
+                "จัดการหอพักและบ้านเช่าแบบครบวงจร",
+                "ออกบิลอัตโนมัติในมุมมองเดียว",
+                "ทีมงานทำงานพร้อมกันได้ทันที",
+              ]}
+              speed={50}
+              initialDelay={400}
+              waitTime={2400}
+              deleteSpeed={30}
+              loop={true}
+              className="block"
+              showCursor={true}
+              cursorChar="|"
+              cursorClassName="ml-1 text-slate-600"
+            />
+          </motion.h1>
+          <motion.p
+            variants={fadeUp}
+            className="text-pretty text-lg text-slate-600 sm:text-xl max-w-2xl mx-auto"
+          >
+            ลดเวลาทำงานจาก 4-6 ชั่วโมงเหลือ 30 นาทีต่อเดือน
+            <br />
+            ด้วยระบบอัตโนมัติที่ช่วยจัดการอาคาร ห้อง ผู้เช่า อ่านมิเตอร์
+            และออกบิลได้ในที่เดียว
+          </motion.p>
+          <motion.div
+            variants={fadeUp}
+            className="flex flex-wrap items-center justify-center gap-3"
+          >
+            <Button
+              asChild
+              size="lg"
+              className="bg-slate-900 text-white hover:bg-slate-900/90 text-base px-8 py-6"
+            >
+              <Link to="/login">
+                เริ่มใช้งานฟรี
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-base px-8 py-6"
+            >
+              <Link to="/overview/billing">ดูตัวอย่างบิล</Link>
+            </Button>
+          </motion.div>
         </motion.div>
-        <motion.h1
-          variants={fadeUp}
-          className="font-heading text-balance text-4xl font-semibold leading-tight text-foreground sm:text-5xl min-h-[3.5rem] sm:min-h-[4rem]"
-        >
-          <Typewriter
-            text={[
-              "จัดการที่พักได้ง่ายขึ้น",
-              "เวิร์กโฟลว์ออกบิลอัตโนมัติ",
-              "ทำงานร่วมกับหลายผู้ดูแล",
-            ]}
-            speed={50}
-            initialDelay={500}
-            waitTime={3000}
-            deleteSpeed={30}
-            loop={true}
-            className="block"
-            showCursor={true}
-            cursorChar="|"
-            cursorClassName="ml-1 text-primary"
-          />
-        </motion.h1>
-        <motion.p
-          variants={fadeUp}
-          className="text-pretty text-base text-muted-foreground sm:text-lg"
-        >
-          จัดการอาคาร ห้องพัก ผู้เช่า การอ่านมิเตอร์ และการออกบิลแบบอัตโนมัติในเวิร์กโฟลว์เดียว
-        </motion.p>
-        <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
-          <Button asChild size="lg">
-            <Link to="/login">
-              เริ่มจัดการ
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link to="/overview">ดูตัวอย่างระบบ</Link>
-          </Button>
-        </motion.div>
-      </motion.div>
+      </div>
 
+      {/* Large Central Visual Placeholder */}
       <motion.div
         variants={fadeUp}
-        className="rounded-3xl border border-border/60 bg-card/80 p-6 shadow-2xl backdrop-blur"
+        className="relative max-w-5xl mx-auto"
       >
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-border bg-background/70 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              สรุปรายเดือน
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-foreground">
-              เก็บแล้ว ฿48,320
-            </p>
-            <p className="text-sm text-muted-foreground">
-              ชำระแล้ว 12 • ค้างชำระ 3
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-border bg-background/70 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                การเข้าพัก
-              </p>
-              <p className="mt-2 text-xl font-semibold text-foreground">
-                48 / 52
-              </p>
-              <p className="text-xs text-muted-foreground">เต็ม 92%</p>
+        <motion.div
+          animate={{
+            scale: [1, 1.01, 1],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="pointer-events-none absolute -inset-8 rounded-3xl bg-gradient-to-br from-slate-200/30 via-slate-100/20 to-transparent blur-3xl"
+        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 40 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          whileHover={{ scale: 1.01 }}
+          className="relative overflow-hidden rounded-2xl border border-slate-200/50 bg-white shadow-2xl"
+        >
+          {/* Large Dashboard Preview Placeholder */}
+          <div className="aspect-[16/10] bg-gradient-to-br from-slate-50 via-white to-slate-50">
+            <div className="flex h-full items-center justify-center p-8">
+              <div className="w-full h-full space-y-4">
+                {/* Simulated Dashboard UI */}
+                <div className="grid grid-cols-3 gap-4 h-full">
+                  {[1, 2, 3].map((i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.2 + 0.5 }}
+                      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                    >
+                      <div className="space-y-3">
+                        <div className="h-3 w-20 bg-slate-200 rounded" />
+                        <div className="h-8 w-full bg-slate-100 rounded" />
+                        <div className="h-4 w-16 bg-slate-200 rounded" />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="text-center pt-4">
+                  <p className="text-sm font-medium text-slate-400">
+                    Dashboard Preview
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="rounded-2xl border border-border bg-background/70 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                การอ่านมิเตอร์
-              </p>
-              <p className="mt-2 text-xl font-semibold text-foreground">
-                52 ห้อง
-              </p>
-              <p className="text-xs text-muted-foreground">ขาด 4 ห้อง</p>
-            </div>
           </div>
-          <div className="rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-primary">
-            บันทึกค่าน้ำ/ไฟในครั้งเดียว และสร้างใบแจ้งหนี้อัตโนมัติสำหรับทุกห้อง
-          </div>
-        </div>
+        </motion.div>
       </motion.div>
     </motion.section>
   );
