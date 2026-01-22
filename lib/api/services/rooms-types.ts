@@ -1,6 +1,10 @@
 import type { ApiListResponse, ApiResponse, OkResponse } from "@/lib/api/response";
 import type { Room } from "@/lib/types";
 
+// Direct array response (not wrapped)
+export type RoomsDirectListResponse = Room[];
+// Direct room response (not wrapped)
+export type RoomDirectResponse = Room;
 export type RoomsListResponse = ApiListResponse<Room>;
 export type RoomResponse = ApiResponse<Room>;
 export type RoomDeleteResponse = OkResponse;
@@ -9,12 +13,14 @@ export type CreateRoomData = {
   roomNumber: string;
   buildingId: string;
   floor: number;
-  status: "occupied" | "vacant" | "maintenance";
+  status?: "OCCUPIED" | "VACANT" | "MAINTENANCE"; // Optional, defaults to "VACANT" on backend
   monthlyRent?: number;
   size?: number;
 };
 
-export type RoomUpdateRequest = Partial<CreateRoomData>;
+export type RoomUpdateRequest = Partial<CreateRoomData> & {
+  tenantId?: string | null;
+};
 
 export type BulkCreateRoomsData = {
   buildingId: string;
@@ -22,7 +28,7 @@ export type BulkCreateRoomsData = {
   floorEnd: number;
   roomsPerFloor: number;
   startIndex: number;
-  status: "occupied" | "vacant" | "maintenance";
+  status?: "OCCUPIED" | "VACANT" | "MAINTENANCE"; // Optional, defaults to "VACANT" on backend
   monthlyRent?: number;
   size?: number;
 };

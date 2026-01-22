@@ -35,6 +35,7 @@ import { getData, getList } from "@/lib/api/response-helpers";
 import { useParams, useRouter } from "@/lib/router";
 import { tenantFormSchema } from "@/lib/schemas";
 import type { Room } from "@/lib/types";
+import { TenantStatus } from "@/lib/types";
 import type { z } from "zod";
 import { usePageTitle } from "@/lib/use-page-title";
 
@@ -57,12 +58,36 @@ export default function EditTenantPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  const rooms = getList(roomsQuery.data).filter(
-    (room: Room) =>
-      room.status === "vacant" || room.id === getData(tenantQuery.data)?.roomId,
+  // Rooms API returns array directly
+  const rooms = (roomsQuery.data ?? []).filter(
+    (room: Room) => {
+      const tenantRoomId = tenantQuery.data?.room?.id || tenantQuery.data?.roomId;
+      return room.status === "vacant" || room.id === tenantRoomId;
+    },
   );
 
-  const tenant = getData(tenantQuery.data);
+  // Tenants API returns tenant object directly
+  const tenant = tenantQuery.data ?? null;
+
+  // Debug logging
+  if (import.meta.env.DEV) {
+    console.log("[Tenant Edit] Debug Info:", {
+      tenant: tenant ? {
+        id: tenant.id,
+        name: tenant.name,
+        roomId: tenant.roomId,
+        room: tenant.room ? {
+          id: tenant.room.id,
+          roomNumber: tenant.room.roomNumber,
+          building: tenant.room.building,
+        } : null,
+      } : null,
+      roomsCount: rooms.length,
+      rooms: rooms.map((r) => ({ id: r.id, roomNumber: r.roomNumber, buildingName: r.buildingName })),
+      roomsQueryLoading: roomsQuery.isLoading,
+      tenantQueryLoading: tenantQuery.isLoading,
+    });
+  }
 
   const form = useForm<TenantFormValues>({
     resolver: zodResolver(tenantFormSchema),
@@ -78,37 +103,90 @@ export default function EditTenantPage() {
       idCardNumber: "",
       emergencyContact: "",
       emergencyPhone: "",
-      status: "active",
+      status: TenantStatus.ACTIVE,
     },
   });
 
-  // Reset form when tenant data loads
+  // Reset form when tenant and rooms data loads
   React.useEffect(() => {
-    if (tenant) {
+    if (import.meta.env.DEV) {
+      console.log("[Tenant Edit] useEffect triggered:", {
+        hasTenant: !!tenant,
+        hasRoomsData: !!roomsQuery.data,
+        tenantRoomId: tenant?.roomId,
+        tenantRoom: tenant?.room,
+      });
+    }
+
+    if (tenant && roomsQuery.data) {
+      // Convert ISO date to YYYY-MM-DD format for date input
+      const formatDateForInput = (dateString: string | null | undefined): string => {
+        if (!dateString) return "";
+        try {
+          const date = new Date(dateString);
+          return date.toISOString().split("T")[0];
+        } catch {
+          return "";
+        }
+      };
+
+      // Get roomId from tenant.room.id if available, otherwise use tenant.roomId
+      const roomId = tenant.room?.id || tenant.roomId || "";
+
+      if (import.meta.env.DEV) {
+        console.log("[Tenant Edit] Extracted roomId:", {
+          fromRoomObject: tenant.room?.id,
+          fromRoomId: tenant.roomId,
+          finalRoomId: roomId,
+          roomsAvailable: rooms.map((r) => r.id),
+          roomIdInRoomsList: rooms.some((r) => r.id === roomId),
+        });
+      }
+
       form.reset({
         name: tenant.name,
         email: tenant.email,
         phone: tenant.phone,
-        roomId: tenant.roomId || "",
-        moveInDate: tenant.moveInDate,
-        contractEndDate: tenant.contractEndDate ?? "",
+        roomId: roomId, // Set roomId directly in reset instead of empty string
+        moveInDate: formatDateForInput(tenant.moveInDate),
+        contractEndDate: formatDateForInput(tenant.contractEndDate),
         monthlyRent: tenant.monthlyRent?.toString() ?? "",
         deposit: tenant.deposit?.toString() ?? "",
         idCardNumber: tenant.idCardNumber ?? "",
         emergencyContact: tenant.emergencyContact ?? "",
         emergencyPhone: tenant.emergencyPhone ?? "",
         status: tenant.status,
+      }, {
+        keepDefaultValues: false,
       });
+
+      if (import.meta.env.DEV) {
+        console.log("[Tenant Edit] Form reset completed, current roomId value:", form.getValues("roomId"));
+      }
+
+      // Explicitly set roomId after reset to ensure Select component updates
+      // Use setTimeout to ensure it happens after the reset is complete
+      if (roomId) {
+        setTimeout(() => {
+          if (import.meta.env.DEV) {
+            console.log("[Tenant Edit] Setting roomId via setValue (delayed):", roomId);
+          }
+          form.setValue("roomId", roomId, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
+          
+          if (import.meta.env.DEV) {
+            console.log("[Tenant Edit] After setValue (delayed), roomId value:", form.getValues("roomId"));
+          }
+        }, 0);
+      } else {
+        if (import.meta.env.DEV) {
+          console.log("[Tenant Edit] No roomId to set, roomId is empty");
+        }
+      }
     }
-  }, [tenant, form]);
+  }, [tenant, roomsQuery.data, form]);
 
   const updateTenantMutation = useMutation({
-    mutationFn: (updates: TenantFormValues) =>
-      tenantsApi.update(tenantId, {
-        ...updates,
-        monthlyRent: Number.parseFloat(updates.monthlyRent || "0"),
-        deposit: Number.parseFloat(updates.deposit || "0"),
-      }),
+    mutationFn: (updates: any) => tenantsApi.update(tenantId, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
@@ -121,7 +199,18 @@ export default function EditTenantPage() {
 
   const onSubmit = async (data: TenantFormValues) => {
     try {
-      await updateTenantMutation.mutateAsync(data);
+      // Zod schema already transforms empty strings to null, but ensure numbers are converted
+      const payload = {
+        ...data,
+        monthlyRent: Number.parseFloat(data.monthlyRent || "0"),
+        deposit: Number.parseFloat(data.deposit || "0"),
+      };
+      
+      if (import.meta.env.DEV) {
+        console.log("[Tenant Edit] Submitting payload:", payload);
+      }
+      
+      await updateTenantMutation.mutateAsync(payload);
       router.push("/overview/tenants");
     } catch (error) {
       console.error("Failed to update tenant:", error);
@@ -203,30 +292,51 @@ export default function EditTenantPage() {
                 <FormField
                   control={form.control}
                   name="roomId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ผูกห้อง *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={form.formState.isSubmitting}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="เลือกห้อง" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {rooms.map((room) => (
-                            <SelectItem key={room.id} value={room.id}>
-                              {room.roomNumber} - {room.buildingName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    if (import.meta.env.DEV) {
+                      console.log("[Tenant Edit] Select render:", {
+                        fieldValue: field.value,
+                        roomsCount: rooms.length,
+                        roomsIds: rooms.map((r) => r.id),
+                        fieldValueInRooms: rooms.some((r) => r.id === field.value),
+                      });
+                    }
+                    return (
+                      <FormItem>
+                        <FormLabel>ผูกห้อง *</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            if (import.meta.env.DEV) {
+                              console.log("[Tenant Edit] Select onValueChange:", value, "Previous value:", field.value);
+                            }
+                            // Only update if value is not empty or if it's a valid room ID
+                            if (value || !field.value) {
+                              field.onChange(value);
+                            } else if (import.meta.env.DEV) {
+                              console.log("[Tenant Edit] Ignoring empty value change, keeping:", field.value);
+                            }
+                          }}
+                          value={field.value || ""}
+                          disabled={form.formState.isSubmitting}
+                          key={`room-select-${tenant?.room?.id || tenant?.roomId || "none"}-${field.value || "empty"}`}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกห้อง" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {rooms.map((room) => (
+                              <SelectItem key={room.id} value={room.id}>
+                                {room.roomNumber} - {room.buildingName || room.building?.name || ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
@@ -369,9 +479,9 @@ export default function EditTenantPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="active">ใช้งาน</SelectItem>
-                          <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
-                          <SelectItem value="expired">หมดอายุ</SelectItem>
+                          <SelectItem value={TenantStatus.ACTIVE}>ใช้งาน</SelectItem>
+                          <SelectItem value={TenantStatus.INACTIVE}>ไม่ใช้งาน</SelectItem>
+                          <SelectItem value={TenantStatus.EXPIRED}>หมดอายุ</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TenantStatus } from "@/lib/types";
 
 const numberString = (label: string) =>
   z
@@ -88,19 +89,25 @@ export const bulkRoomSchema = z
     }
   });
 
+// Helper to transform empty strings to null for optional fields
+const optionalStringToNull = z
+  .string()
+  .transform((val) => (val === "" ? null : val))
+  .nullable();
+
 export const tenantFormSchema = z.object({
   name: z.string().min(1, "กรุณากรอกชื่อ"),
   email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
   phone: z.string().min(1, "กรุณากรอกเบอร์โทร"),
   roomId: z.string().min(1, "กรุณาเลือกห้อง"),
   moveInDate: z.string().min(1, "กรุณาเลือกวันที่ย้ายเข้า"),
-  contractEndDate: z.string().optional(),
+  contractEndDate: optionalStringToNull,
   monthlyRent: numberString("ค่าเช่ารายเดือน"),
   deposit: numberString("เงินประกัน"),
-  idCardNumber: z.string().optional(),
-  emergencyContact: z.string().optional(),
-  emergencyPhone: z.string().optional(),
-  status: z.enum(["active", "inactive", "expired"]),
+  idCardNumber: optionalStringToNull,
+  emergencyContact: optionalStringToNull,
+  emergencyPhone: optionalStringToNull,
+  status: z.nativeEnum(TenantStatus),
 });
 
 export const createReadingFormSchema = (

@@ -22,6 +22,7 @@ import { roomsApi, tenantsApi } from "@/lib/api-client";
 import { getList } from "@/lib/api/response-helpers";
 import { useRouter } from "@/lib/router";
 import type { Tenant } from "@/lib/types";
+import { TenantStatus } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatDate } from "@/lib/utils";
 
@@ -38,8 +39,10 @@ export default function TenantsPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  const tenants = getList(tenantsQuery.data);
-  const rooms = getList(roomsQuery.data);
+  // Tenants API returns array directly
+  const tenants = tenantsQuery.data ?? [];
+  // Rooms API returns array directly
+  const rooms = roomsQuery.data ?? [];
   const loading = tenantsQuery.isLoading || roomsQuery.isLoading;
   const [confirmState, setConfirmState] = React.useState<{
     open: boolean;
@@ -61,18 +64,30 @@ export default function TenantsPage() {
   });
   const isDeleting = deleteTenantMutation.isPending;
 
-  const getRoomInfo = (roomId: string) => {
-    const room = rooms.find((r) => r.id === roomId);
-    return room ? `${room.roomNumber} (${room.buildingName})` : "—";
+  const getRoomInfo = (tenant: Tenant) => {
+    // Use room from tenant object if available (from API response)
+    if (tenant.room) {
+      const buildingName = tenant.room.building?.name || "";
+      return `${tenant.room.roomNumber}${buildingName ? ` (${buildingName})` : ""}`;
+    }
+    // Fallback to looking up in rooms array
+    if (tenant.roomId) {
+      const room = rooms.find((r) => r.id === tenant.roomId);
+      if (room) {
+        const buildingName = room.buildingName || room.building?.name || "";
+        return `${room.roomNumber}${buildingName ? ` (${buildingName})` : ""}`;
+      }
+    }
+    return "—";
   };
 
   const getTenantStatusLabel = (status: Tenant["status"]) => {
     switch (status) {
-      case "active":
+      case TenantStatus.ACTIVE:
         return "ใช้งาน";
-      case "inactive":
+      case TenantStatus.INACTIVE:
         return "ไม่ใช้งาน";
-      case "expired":
+      case TenantStatus.EXPIRED:
         return "หมดสัญญา";
       default:
         return status;
@@ -84,8 +99,6 @@ export default function TenantsPage() {
       open: true,
       title: "ยืนยันการลบผู้เช่า?",
       description: "การลบผู้เช่านี้จะไม่สามารถกู้คืนได้",
-      confirmLabel: "ลบ",
-      cancelLabel: "ยกเลิก",
       onConfirm: async () => {
         try {
           await deleteTenantMutation.mutateAsync(id);
@@ -119,7 +132,7 @@ export default function TenantsPage() {
         <div className="flex items-center gap-2">
           <Home className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium">
-            {getRoomInfo(tenant.roomId)}
+            {getRoomInfo(tenant)}
           </span>
         </div>
       ),
@@ -157,7 +170,7 @@ export default function TenantsPage() {
       render: (tenant: Tenant) => (
         <span
           className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            tenant.status === "active"
+            tenant.status === TenantStatus.ACTIVE
               ? "bg-slate-500/10 text-slate-600"
               : "bg-slate-400/10 text-slate-600"
           }`}
@@ -200,11 +213,12 @@ export default function TenantsPage() {
       key: "status",
       label: "สถานะ",
       options: [
-        { label: "ใช้งาน", value: "active" },
-        { label: "ไม่ใช้งาน", value: "inactive" },
-        { label: "หมดสัญญา", value: "expired" },
+        { label: "ใช้งาน", value: TenantStatus.ACTIVE },
+        { label: "ไม่ใช้งาน", value: TenantStatus.INACTIVE },
+        { label: "หมดสัญญา", value: TenantStatus.EXPIRED },
       ],
-      filterFn: (tenant: Tenant, value: string) => tenant.status === value,
+      filterFn: (tenant: Tenant, value: string) =>
+        tenant.status === value,
     },
   ];
 

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { invitationsApi } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@/lib/router";
 import { usePageTitle } from "@/lib/use-page-title";
 
@@ -19,6 +20,7 @@ export default function InviteAdminPage() {
   usePageTitle("เชิญผู้ดูแล");
 
   const router = useRouter();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     email: "",
@@ -28,8 +30,17 @@ export default function InviteAdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createInvitationMutation = useMutation({
-    mutationFn: (payload: { email: string; name: string; message?: string }) =>
-      invitationsApi.create(payload),
+    mutationFn: (payload: { email: string; name: string; message?: string }) => {
+      if (!user?.teamId) {
+        throw new Error("Team ID is required to create invitation");
+      }
+      return invitationsApi.create({
+        email: payload.email,
+        name: payload.name,
+        teamId: user.teamId,
+        message: payload.message,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
     },

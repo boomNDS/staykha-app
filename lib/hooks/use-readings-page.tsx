@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth-context";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import type { Invoice, MeterReadingGroup, Room } from "@/lib/types";
+import { WaterBillingMode } from "@/lib/types";
 
 /**
  * Hook for managing the readings page state and data
@@ -35,18 +36,20 @@ export function useReadingsPage() {
   const [selectedGroupId, setSelectedGroupId] = React.useState<string | null>(
     null,
   );
-  const [selectedPeriod, setSelectedPeriod] = React.useState(() =>
-    new Date().toISOString().slice(0, 7),
-  );
+  const [selectedPeriod, setSelectedPeriod] = React.useState("all");
 
-  // Queries
+  const hasTeam = !!user?.teamId;
+  
+  // Queries - only enabled if user has team
   const readingsQuery = useQuery({
     queryKey: ["readings"],
     queryFn: () => readingsApi.getAll(),
+    enabled: hasTeam, // Only fetch if user has team
   });
   const buildingsQuery = useQuery({
     queryKey: ["buildings"],
     queryFn: () => buildingsApi.getAll(),
+    enabled: hasTeam, // Only fetch if user has team
   });
   const settingsQuery = useQuery({
     queryKey: ["settings", user?.teamId],
@@ -56,15 +59,17 @@ export function useReadingsPage() {
       }
       return settingsApi.get(user.teamId);
     },
-    enabled: !!user?.teamId,
+    enabled: hasTeam, // Only fetch if user has team
   });
   const roomsQuery = useQuery({
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
+    enabled: hasTeam, // Only fetch if user has team
   });
   const invoicesQuery = useQuery({
     queryKey: ["invoices"],
     queryFn: () => invoicesApi.getAll(),
+    enabled: hasTeam, // Only fetch if user has team
   });
 
   // Mutation
@@ -103,13 +108,35 @@ export function useReadingsPage() {
 
   // Data extraction
   const readings = getList(readingsQuery.data);
-  const buildings = getList(buildingsQuery.data);
-  const rooms = getList(roomsQuery.data);
+  // Buildings API returns array directly
+  const buildings = buildingsQuery.data ?? [];
+  // Rooms API returns array directly
+  const rooms = roomsQuery.data ?? [];
   const settings = getData(settingsQuery.data);
   const isLoading = readingsQuery.isLoading;
-  const waterBillingMode = settings?.waterBillingMode ?? "metered";
-  const isWaterFixed = waterBillingMode === "fixed";
-  const groupedReadings = readings as MeterReadingGroup[];
+  const waterBillingMode = settings?.waterBillingMode ?? WaterBillingMode.METERED;
+  const isWaterFixed = waterBillingMode === WaterBillingMode.FIXED;
+  
+  // Enrich readings with tenant information from rooms
+  const groupedReadings = React.useMemo(() => {
+    const readingsList = readings as MeterReadingGroup[];
+    if (!rooms.length) return readingsList;
+    
+    // Create a map of roomId -> room for quick lookup
+    const roomsMap = new Map(rooms.map((room: Room) => [room.id, room]));
+    
+    // Enrich each reading group with tenant info from the room
+    return readingsList.map((group: MeterReadingGroup) => {
+      const room = roomsMap.get(group.roomId);
+      if (room?.tenant) {
+        return {
+          ...group,
+          tenantName: room.tenant.name,
+        };
+      }
+      return group;
+    });
+  }, [readings, rooms]);
 
   // Computed values
   const periodOptions = React.useMemo(() => {
@@ -259,11 +286,17 @@ export function useReadingsPage() {
 
   const missingReadings = React.useMemo(() => {
     return rooms
-      .map((room: Room) => {
+      .map((room: Room): {
+        room: Room;
+        currentGroup: MeterReadingGroup | null;
+        missingElectric: boolean;
+        missingWater: boolean;
+        hasMissing: boolean;
+      } => {
         const roomGroups = readingsByRoom.get(room.id) ?? [];
         const currentGroup = roomGroups.find((group: MeterReadingGroup) =>
           group.readingDate.startsWith(monthKey),
-        );
+        ) ?? null;
         const missingElectric = !currentGroup?.electric;
         const missingWater = !isWaterFixed && !currentGroup?.water;
         return {
@@ -274,15 +307,7 @@ export function useReadingsPage() {
           hasMissing: missingElectric || missingWater,
         };
       })
-      .filter(
-        (item: {
-          room: Room;
-          currentGroup: MeterReadingGroup | null;
-          missingElectric: boolean;
-          missingWater: boolean;
-          hasMissing: boolean;
-        }) => item.hasMissing,
-      );
+      .filter((item) => item.hasMissing);
   }, [rooms, readingsByRoom, monthKey, isWaterFixed]);
 
   // Table columns

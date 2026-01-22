@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { DollarSign, Gauge, Home, Users } from "lucide-react";
@@ -12,17 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  buildingsApi,
-  invoicesApi,
-  readingsApi,
-  roomsApi,
-  settingsApi,
-  tenantsApi,
-} from "@/lib/api-client";
-import { getData, getList } from "@/lib/api/response-helpers";
+import { overviewApi, settingsApi } from "@/lib/api-client";
+import { getData } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
-import type { MeterReadingGroup, Tenant } from "@/lib/types";
+import type { MeterReadingGroup } from "@/lib/types";
+import { InvoiceStatus, TenantStatus } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatCurrency } from "@/lib/utils";
 
@@ -30,25 +25,12 @@ export default function DashboardPage() {
   usePageTitle("ภาพรวม");
 
   const { user } = useAuth();
-  const tenantsQuery = useQuery({
-    queryKey: ["tenants"],
-    queryFn: () => tenantsApi.getAll(),
-  });
-  const roomsQuery = useQuery({
-    queryKey: ["rooms"],
-    queryFn: () => roomsApi.getAll(),
-  });
-  const readingsQuery = useQuery({
-    queryKey: ["readings"],
-    queryFn: () => readingsApi.getAll(),
-  });
-  const buildingsQuery = useQuery({
-    queryKey: ["buildings"],
-    queryFn: () => buildingsApi.getAll(),
-  });
-  const invoicesQuery = useQuery({
-    queryKey: ["invoices"],
-    queryFn: () => invoicesApi.getAll(),
+  const hasTeam = !!user?.teamId;
+  
+  const overviewQuery = useQuery({
+    queryKey: ["overview"],
+    queryFn: () => overviewApi.get(),
+    enabled: hasTeam,
   });
   const settingsQuery = useQuery({
     queryKey: ["settings", user?.teamId],
@@ -61,45 +43,40 @@ export default function DashboardPage() {
     enabled: !!user?.teamId,
   });
 
-  const tenants = getList(tenantsQuery.data);
-  const rooms = getList(roomsQuery.data);
-  const readings = getList(readingsQuery.data);
-  const invoices = getList(invoicesQuery.data);
-  const buildings = getList(buildingsQuery.data);
+  const overview = overviewQuery.data;
   const settingsConfigured = Boolean(getData(settingsQuery.data));
-  const isLoading =
-    tenantsQuery.isLoading ||
-    roomsQuery.isLoading ||
-    readingsQuery.isLoading ||
-    invoicesQuery.isLoading ||
-    buildingsQuery.isLoading ||
-    settingsQuery.isLoading;
+  const isLoading = overviewQuery.isLoading || settingsQuery.isLoading;
 
-  const occupiedRooms = rooms.filter((r) => r.status === "occupied").length;
-  const totalRevenue = invoices.reduce((sum, inv) => sum + inv.total, 0);
-  const pendingReadings = (readings as MeterReadingGroup[]).filter(
-    (r) => r.status === "pending" || r.status === "incomplete",
-  ).length;
+  // Extract data from overview response
+  const summary = overview?.summary;
+  const revenue = overview?.revenue;
+  const recentInvoices = overview?.recentInvoices ?? [];
+  const pendingReadingsList = overview?.pendingReadings ?? [];
+
+  const occupiedRooms = summary?.rooms.byStatus.OCCUPIED ?? 0;
+  const totalRevenue = revenue?.totalPaid ? (typeof revenue.totalPaid === "string" ? Number.parseFloat(revenue.totalPaid) : revenue.totalPaid) : 0;
+  const pendingReadings = (summary?.readingGroups.byStatus.INCOMPLETE ?? 0) + (summary?.readingGroups.byStatus.PENDING ?? 0);
   const readingStatusLabels: Record<MeterReadingGroup["status"], string> = {
     pending: "รอตรวจ",
     incomplete: "ข้อมูลไม่ครบ",
-    completed: "เสร็จสิ้น",
+    billed: "ออกบิลแล้ว",
+    paid: "ชำระแล้ว",
   };
 
   const stats = [
     {
       id: "tenants",
       title: "ผู้เช่าทั้งหมด",
-      value: tenants.length,
-      description: `${tenants.filter((t) => t.status === "active").length} ผู้เช่าที่กำลังอยู่`,
+      value: summary?.tenants.total ?? 0,
+      description: `${summary?.tenants.byStatus.ACTIVE ?? 0} ผู้เช่าที่กำลังอยู่`,
       icon: Users,
       trend: { value: 12, label: "เทียบเดือนที่แล้ว" },
     },
     {
       id: "occupied-rooms",
       title: "ห้องที่มีผู้เช่า",
-      value: `${occupiedRooms}/${rooms.length}`,
-      description: `${rooms.length ? ((occupiedRooms / rooms.length) * 100).toFixed(0) : "0"}% มีผู้เช่า`,
+      value: `${occupiedRooms}/${summary?.rooms.total ?? 0}`,
+      description: `${summary?.rooms.total ? ((occupiedRooms / summary.rooms.total) * 100).toFixed(0) : "0"}% มีผู้เช่า`,
       icon: Home,
       trend: { value: 8, label: "เทียบเดือนที่แล้ว" },
     },
@@ -122,58 +99,12 @@ export default function DashboardPage() {
   ];
 
   const primaryAction =
-    buildings.length === 0
+    (summary?.buildings ?? 0) === 0
       ? { label: "สร้างอาคารใหม่", href: "/overview/buildings/new" }
-      : rooms.length === 0
+      : (summary?.rooms.total ?? 0) === 0
         ? { label: "เพิ่มห้องพัก", href: "/overview/rooms/new" }
         : { label: "บันทึกการอ่านมิเตอร์", href: "/overview/readings/new" };
 
-  const tenantColumns = [
-    {
-      key: "name",
-      header: "ผู้เช่า",
-      searchable: true,
-      render: (tenant: Tenant) => (
-        <span className="font-medium text-foreground">{tenant.name}</span>
-      ),
-    },
-    {
-      key: "email",
-      header: "อีเมล",
-      searchable: true,
-      className: "hidden md:table-cell",
-      render: (tenant: Tenant) => (
-        <span className="text-sm text-muted-foreground">{tenant.email}</span>
-      ),
-    },
-    {
-      key: "phone",
-      header: "โทรศัพท์",
-      searchable: true,
-      className: "hidden lg:table-cell",
-      render: (tenant: Tenant) => (
-        <span className="text-sm text-muted-foreground">{tenant.phone}</span>
-      ),
-    },
-    {
-      key: "room",
-      header: "ห้อง",
-      searchable: true,
-      render: (tenant: Tenant) => {
-        const room = rooms.find((r) => r.id === tenant.roomId);
-        return (
-          <div className="flex flex-col">
-            <span className="font-medium text-foreground">
-              {room?.roomNumber || tenant.roomId}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {room?.buildingName || "—"}
-            </span>
-          </div>
-        );
-      },
-    },
-  ];
 
   return (
     <div className="space-y-6 pb-8 sm:space-y-8">
@@ -188,11 +119,11 @@ export default function DashboardPage() {
       />
 
       <OnboardingChecklist
-        buildingsCount={buildings.length}
-        roomsCount={rooms.length}
+        buildingsCount={summary?.buildings ?? 0}
+        roomsCount={summary?.rooms.total ?? 0}
         settingsConfigured={settingsConfigured}
-        tenantsCount={tenants.length}
-        readingsCount={readings.length}
+        tenantsCount={summary?.tenants.total ?? 0}
+        readingsCount={summary?.readingGroups.total ?? 0}
       />
 
       {/* Stats Grid */}
@@ -218,7 +149,7 @@ export default function DashboardPage() {
             <CardTitle className="flex items-center justify-between">
               <span>ผู้เช่าล่าสุด</span>
               <Badge variant="secondary" className="font-normal">
-                {tenants.length} ทั้งหมด
+                {summary?.tenants.total ?? 0} ทั้งหมด
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -237,7 +168,7 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            ) : tenants.length === 0 ? (
+            ) : (summary?.tenants.total ?? 0) === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-8 text-center text-sm text-muted-foreground">
                 <p>ยังไม่มีผู้เช่า เริ่มเพิ่มรายชื่อเพื่อจัดการสัญญาได้ทันที</p>
                 <Button asChild>
@@ -245,15 +176,55 @@ export default function DashboardPage() {
                 </Button>
               </div>
             ) : (
-              <DataTable
-                data={tenants.slice(0, 5)}
-                columns={tenantColumns}
-                pageSize={5}
-                hideSearch
-                hidePagination
-              />
+              <div className="space-y-3">
+                {recentInvoices.slice(0, 5).map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-full bg-muted p-2">
+                        <Users className="h-4 w-4 text-slate-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {invoice.tenant.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {invoice.room.roomNumber} • {invoice.room.building.name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-foreground">
+                        {formatCurrency(typeof invoice.total === "string" ? Number.parseFloat(invoice.total) : invoice.total)}
+                      </p>
+                      <Badge
+                        variant={
+                          invoice.status === InvoiceStatus.PAID
+                            ? "default"
+                            : invoice.status === InvoiceStatus.PENDING
+                              ? "secondary"
+                              : "outline"
+                        }
+                        className="text-xs"
+                      >
+                        {invoice.status === InvoiceStatus.PAID
+                          ? "ชำระแล้ว"
+                          : invoice.status === InvoiceStatus.PENDING
+                            ? "รอชำระ"
+                            : invoice.status === InvoiceStatus.SENT
+                              ? "ส่งแล้ว"
+                              : invoice.status === InvoiceStatus.OVERDUE
+                                ? "ค้างชำระ"
+                                : "ร่าง"}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
-            {!isLoading && tenants.length > 0 && (
+            {!isLoading && (summary?.tenants.total ?? 0) > 0 && (
               <div className="mt-4 flex justify-end">
                 <Button asChild variant="ghost" size="sm">
                   <Link to="/overview/tenants">ดูทั้งหมด</Link>
@@ -269,7 +240,7 @@ export default function DashboardPage() {
             <CardTitle className="flex items-center justify-between">
               <span>การอ่านมิเตอร์ล่าสุด</span>
               <Badge variant="secondary" className="font-normal">
-                {readings.length} เดือนนี้
+                {pendingReadingsList.length} เดือนนี้
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -294,7 +265,7 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            ) : readings.length === 0 ? (
+            ) : (summary?.readingGroups.total ?? 0) === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-8 text-center text-sm text-muted-foreground">
                 <p>ยังไม่มีการอ่านมิเตอร์ เพิ่มการอ่านเพื่อเริ่มออกบิลได้ทันที</p>
                 <Button asChild>
@@ -303,54 +274,58 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {(readings as MeterReadingGroup[])
-                  .slice(0, 5)
-                  .map((reading) => (
-                    <div
-                      key={reading.id}
-                      className="flex items-center justify-between rounded-lg border p-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-full bg-muted p-2">
-                          <Gauge className="h-4 w-4 text-slate-500" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {reading.tenantName}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            ห้อง {reading.roomNumber} • การอ่านรายเดือน
-                          </p>
-                        </div>
+                {pendingReadingsList.slice(0, 5).map((reading) => (
+                  <div
+                    key={reading.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-full bg-muted p-2">
+                        <Gauge className="h-4 w-4 text-slate-500" />
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-foreground">
-                          {reading.water
-                            ? `${reading.water.consumption} m³`
-                            : "—"}{" "}
-                          /{" "}
-                          {reading.electric
-                            ? `${reading.electric.consumption} kWh`
-                            : "—"}
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {reading.tenantName || "—"}
                         </p>
-                        <Badge
-                          variant={
-                            reading.status === "incomplete"
-                              ? "outline"
-                              : reading.status === "pending"
-                                ? "secondary"
-                                : "default"
-                          }
-                          className="text-xs"
-                        >
-                          {readingStatusLabels[reading.status] ?? reading.status}
-                        </Badge>
+                        <p className="text-xs text-muted-foreground">
+                          ห้อง {reading.roomNumber} • {reading.buildingName}
+                        </p>
                       </div>
                     </div>
-                  ))}
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-foreground">
+                        {reading.water
+                          ? `${typeof reading.water.consumption === "string" ? Number.parseFloat(reading.water.consumption) : reading.water.consumption} m³`
+                          : "—"}{" "}
+                        /{" "}
+                        {reading.electric
+                          ? `${typeof reading.electric.consumption === "string" ? Number.parseFloat(reading.electric.consumption) : reading.electric.consumption} kWh`
+                          : "—"}
+                      </p>
+                      <Badge
+                        variant={
+                          reading.status === "INCOMPLETE"
+                            ? "outline"
+                            : reading.status === "PENDING"
+                              ? "secondary"
+                              : "default"
+                        }
+                        className="text-xs"
+                      >
+                        {reading.status === "INCOMPLETE"
+                          ? "ข้อมูลไม่ครบ"
+                          : reading.status === "PENDING"
+                            ? "รอตรวจ"
+                            : reading.status === "BILLED"
+                              ? "ออกบิลแล้ว"
+                              : "ชำระแล้ว"}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
-            {!isLoading && readings.length > 0 && (
+            {!isLoading && (summary?.readingGroups.total ?? 0) > 0 && (
               <div className="mt-4 flex justify-end">
                 <Button asChild variant="ghost" size="sm">
                   <Link to="/overview/readings">ดูทั้งหมด</Link>

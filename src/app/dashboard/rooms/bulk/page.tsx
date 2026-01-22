@@ -53,7 +53,8 @@ export default function BulkRoomPage() {
     },
     enabled: !!user?.teamId,
   });
-  const buildings = getList(buildingsQuery.data);
+  // Buildings API returns array directly
+  const buildings = buildingsQuery.data ?? [];
 
   const [formData, setFormData] = React.useState<BulkRoomFormValues>({
     buildingId: "",
@@ -102,7 +103,13 @@ export default function BulkRoomPage() {
       status: "occupied" | "vacant" | "maintenance";
       monthlyRent?: number;
       size?: number;
-    }) => roomsApi.bulkCreate(payload),
+    }) =>
+      roomsApi.bulkCreate({
+        ...payload,
+        status: payload.status
+          ? (payload.status.toUpperCase() as "OCCUPIED" | "VACANT" | "MAINTENANCE")
+          : undefined,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
@@ -225,7 +232,7 @@ export default function BulkRoomPage() {
                   <Label htmlFor="status">สถานะเริ่มต้น</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) =>
+                    onValueChange={(value: "occupied" | "vacant" | "maintenance") =>
                       setFormData({ ...formData, status: value })
                     }
                   >

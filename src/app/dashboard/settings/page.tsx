@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { Info, Loader2, Save } from "lucide-react";
 import * as React from "react";
 import { AdminRestrictionBanner } from "@/components/admin-restriction-banner";
@@ -31,8 +32,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { useSettings } from "@/lib/hooks/use-settings";
+import { settingsApi } from "@/lib/api-client";
 import { useTeam } from "@/lib/hooks/use-team";
 import type { AdminSettings } from "@/lib/types";
+import { WaterBillingMode } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatCurrency } from "@/lib/utils";
 
@@ -78,6 +81,7 @@ export default function SettingsPage() {
 
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { settings, isLoading, updateSettings } = useSettings();
   const { team, isUpdating: isSavingTeam, updateTeam } = useTeam();
   const [isSaving, setIsSaving] = React.useState(false);
@@ -87,7 +91,7 @@ export default function SettingsPage() {
   const [formSettings, setFormSettings] = React.useState<AdminSettings>({
     teamId: user?.teamId || "",
     waterRatePerUnit: 25,
-    waterBillingMode: "metered",
+    waterBillingMode: WaterBillingMode.METERED,
     waterFixedFee: 0,
     electricRatePerUnit: 4.5,
     taxRate: 7,
@@ -132,10 +136,33 @@ export default function SettingsPage() {
     setIsSaving(true);
     try {
       // Ensure teamId is set
+      const teamId = formSettings.teamId || user?.teamId || "";
+      if (!teamId) {
+        throw new Error("ไม่พบข้อมูลทีม");
+      }
+
       const settingsToSave = {
         ...formSettings,
-        teamId: formSettings.teamId || user?.teamId || "",
+        teamId,
+        // waterBillingMode is already an enum value (METERED | FIXED)
       };
+
+      // GET /v1/settings auto-creates defaults if they don't exist,
+      // so we can always use PATCH to update
+      // If settings is null, we'll initialize first, then update
+      if (!settings) {
+        if (import.meta.env.DEV) {
+          console.log("[Settings] Initializing settings first, then updating");
+        }
+        // Initialize to ensure settings exist
+        await settingsApi.initialize();
+        // Invalidate to refetch the newly created settings
+        await queryClient.invalidateQueries({ queryKey: ["settings", teamId] });
+      }
+
+      if (import.meta.env.DEV) {
+        console.log("[Settings] Updating settings:", settingsToSave);
+      }
       await updateSettings(settingsToSave);
       toast({
         title: "บันทึกสำเร็จ",
@@ -320,7 +347,7 @@ export default function SettingsPage() {
                   onValueChange={(value) =>
                     setFormSettings({
                       ...formSettings,
-                      waterBillingMode: value as "metered" | "fixed",
+                      waterBillingMode: value as WaterBillingMode,
                     })
                   }
                 >
@@ -328,8 +355,8 @@ export default function SettingsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="metered">ตามมิเตอร์ (ต่อ m³)</SelectItem>
-                    <SelectItem value="fixed">เหมาจ่ายรายเดือน</SelectItem>
+                    <SelectItem value={WaterBillingMode.METERED}>ตามมิเตอร์ (ต่อ m³)</SelectItem>
+                    <SelectItem value={WaterBillingMode.FIXED}>เหมาจ่ายรายเดือน</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -356,11 +383,11 @@ export default function SettingsPage() {
                         waterFixedFee: Number.parseFloat(e.target.value),
                       })
                     }
-                    disabled={formSettings.waterBillingMode !== "fixed"}
+                    disabled={formSettings.waterBillingMode !== WaterBillingMode.FIXED}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {formSettings.waterBillingMode === "fixed"
+                  {formSettings.waterBillingMode === WaterBillingMode.FIXED
                     ? `คิดต่อเดือน: ${formatCurrency(formSettings.waterFixedFee, formSettings.currency)}`
                     : "เปลี่ยนเป็นเหมาจ่ายเพื่อใช้งาน"}
                 </p>
@@ -388,7 +415,7 @@ export default function SettingsPage() {
                         waterRatePerUnit: Number.parseFloat(e.target.value),
                       })
                     }
-                    disabled={formSettings.waterBillingMode === "fixed"}
+                    disabled={formSettings.waterBillingMode === WaterBillingMode.FIXED}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">

@@ -8,6 +8,7 @@ import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { TenantInlineForm } from "@/components/rooms/tenant-inline-form";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Card,
   CardContent,
@@ -24,6 +25,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -31,11 +33,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { User, UserPlus, UserX } from "lucide-react";
 import { buildingsApi, roomsApi, tenantsApi } from "@/lib/api-client";
+import type { TenantCreateRequest } from "@/lib/api/services/tenants-types";
 import { getData, getList } from "@/lib/api/response-helpers";
+import { useAuth } from "@/lib/auth-context";
 import { useParams, useRouter } from "@/lib/router";
 import { roomFormSchema, tenantDraftSchema } from "@/lib/schemas";
-import type { TenantDraft } from "@/lib/types";
+import type { Tenant, TenantDraft } from "@/lib/types";
+import { TenantStatus } from "@/lib/types";
 import type { z } from "zod";
 import { usePageTitle } from "@/lib/use-page-title";
 
@@ -49,7 +55,10 @@ export default function EditRoomPage() {
 
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [assignTenantNow, setAssignTenantNow] = React.useState(false);
+  const [createTenantMode, setCreateTenantMode] = React.useState(false);
+  const [selectedTenantId, setSelectedTenantId] = React.useState("");
   const [tenantData, setTenantData] = React.useState<TenantDraft>({
     name: "",
     email: "",
@@ -60,6 +69,18 @@ export default function EditRoomPage() {
   const [tenantErrors, setTenantErrors] = React.useState<
     Record<string, string>
   >({});
+  const [confirmState, setConfirmState] = React.useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm?: () => void;
+  }>({
+    open: false,
+    title: "",
+    description: "",
+  });
+  const [pendingFormData, setPendingFormData] =
+    React.useState<RoomFormValues | null>(null);
 
   const roomQuery = useQuery({
     queryKey: ["rooms", roomId],
@@ -70,9 +91,23 @@ export default function EditRoomPage() {
     queryKey: ["buildings"],
     queryFn: () => buildingsApi.getAll(),
   });
-  const buildings = getList(buildingsQuery.data);
+  const tenantsQuery = useQuery({
+    queryKey: ["tenants"],
+    queryFn: () => tenantsApi.getAll(),
+  });
+  const allRoomsQuery = useQuery({
+    queryKey: ["rooms"],
+    queryFn: () => roomsApi.getAll(),
+  });
+  // Buildings API returns array directly
+  const buildings = buildingsQuery.data ?? [];
+  // Tenants API returns array directly
+  const tenants = tenantsQuery.data ?? [];
+  // Rooms API returns array directly (for checking current room assignments)
+  const allRooms = allRoomsQuery.data ?? [];
 
-  const room = getData(roomQuery.data);
+  // Rooms API returns room object directly
+  const room = roomQuery.data ?? null;
 
   const form = useForm<RoomFormValues>({
     resolver: zodResolver(roomFormSchema),
@@ -86,57 +121,88 @@ export default function EditRoomPage() {
     },
   });
 
-  // Reset form when room data loads
+  // Reset form when room data loads (wait for both room and buildings)
   React.useEffect(() => {
-    if (room) {
-      form.reset({
-        roomNumber: room.roomNumber,
-        buildingId: room.buildingId,
-        floor: String(room.floor),
-        status: room.status,
-        monthlyRent: room.monthlyRent ? String(room.monthlyRent) : "",
-        size: room.size ? String(room.size) : "",
-      });
+    if (room && buildings.length > 0) {
+      // Ensure buildingId exists in buildings array before setting
+      const buildingId = String(room.buildingId);
+      const buildingExists = buildings.some(
+        (b) => String(b.id) === buildingId,
+      );
+      
+      if (buildingExists) {
+        // Ensure status is lowercase for form
+        const statusLower = (
+          room.status?.toLowerCase() ?? "vacant"
+        ) as "occupied" | "vacant" | "maintenance";
+        
+        form.reset({
+          roomNumber: room.roomNumber,
+          buildingId: buildingId,
+          floor: String(room.floor),
+          status: statusLower,
+          monthlyRent: room.monthlyRent ? String(room.monthlyRent) : "",
+          size: room.size ? String(room.size) : "",
+        }, {
+          keepDefaultValues: false,
+        });
+        
+        // Explicitly set values to ensure Select components update
+        form.setValue("buildingId", buildingId, { shouldValidate: false });
+        form.setValue("status", statusLower, { shouldValidate: false });
+      }
     }
-  }, [room, form]);
+  }, [room, buildings, form]);
 
   const updateRoomMutation = useMutation({
     mutationFn: (updates: {
       roomNumber: string;
       buildingId: string;
       floor: number;
-      status: string;
+      status: "OCCUPIED" | "VACANT" | "MAINTENANCE";
       monthlyRent?: number;
       size?: number;
     }) => roomsApi.update(roomId, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["tenants"] });
     },
   });
   const createTenantMutation = useMutation({
-    mutationFn: (payload: {
-      name: string;
-      email: string;
-      phone: string;
-      moveInDate: string;
-      deposit: number;
-      roomId: string;
-      monthlyRent: number;
-      status: "active";
-    }) => tenantsApi.create(payload),
+    mutationFn: (payload: TenantCreateRequest) => tenantsApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
   });
 
-  if (roomQuery.isLoading || buildingsQuery.isLoading) {
+  const updateTenantMutation = useMutation({
+    mutationFn: (payload: { id: string; updates: Partial<Tenant> }) =>
+      tenantsApi.update(payload.id, payload.updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+    },
+  });
+
+  const getAvailableTenants = () => {
+    // Show all tenants to allow reassignment from one room to another
+    return tenants;
+  };
+
+  if (
+    roomQuery.isLoading ||
+    buildingsQuery.isLoading ||
+    tenantsQuery.isLoading ||
+    allRoomsQuery.isLoading
+  ) {
     return <LoadingState fullScreen message="กำลังโหลดข้อมูลห้อง..." />;
   }
 
   const onSubmit = async (data: RoomFormValues) => {
     try {
-      if (assignTenantNow) {
+      // Validate tenant data only if creating new tenant
+      if (assignTenantNow && createTenantMode) {
         const tenantResult = tenantDraftSchema.safeParse(tenantData);
         if (!tenantResult.success) {
           setTenantErrors(
@@ -156,36 +222,143 @@ export default function EditRoomPage() {
         setTenantErrors({});
       }
 
+      // Validate that a tenant is selected if assigning existing tenant
+      if (assignTenantNow && !createTenantMode && !selectedTenantId) {
+        setTenantErrors({
+          form: "กรุณาเลือกผู้เช่าหรือสร้างผู้เช่าใหม่",
+        });
+        return;
+      }
+
+      // Check if status is changing to "vacant" and room was previously occupied
+      const isChangingToVacant =
+        data.status === "vacant" && room?.status === "occupied";
+
+      if (isChangingToVacant) {
+        // Store form data and show confirmation dialog
+        setPendingFormData(data);
+        setConfirmState({
+          open: true,
+          title: "ยืนยันการเปลี่ยนสถานะเป็นว่าง?",
+          description:
+            "การเปลี่ยนสถานะเป็นว่างจะทำให้ผู้เช่าถูกยกเลิกการผูกกับห้องนี้ คุณต้องการดำเนินการต่อหรือไม่?",
+          onConfirm: async () => {
+            await performRoomUpdate(data);
+          },
+        });
+        return;
+      }
+
+      // Proceed with update if not changing to vacant
+      await performRoomUpdate(data);
+    } catch (error) {
+      console.error("Failed to update room:", error);
+    }
+  };
+
+  const handleUnassignTenant = () => {
+    if (!room?.tenant || !room?.tenantId) return;
+    setConfirmState({
+      open: true,
+      title: "ยกเลิกผู้เช่า?",
+      description: "ผู้เช่าจะถูกยกเลิกการผูกกับห้องนี้ และสถานะห้องจะเปลี่ยนเป็นว่าง",
+      onConfirm: async () => {
+        try {
+          // Fetch tenant to get full data for update
+          // Tenants API returns tenant object directly
+          const tenant = await tenantsApi.getById(room.tenantId!);
+          if (!tenant) {
+            throw new Error("ไม่พบข้อมูลผู้เช่า");
+          }
+          const { id: tenantId, ...tenantWithoutId } = tenant;
+          await updateTenantMutation.mutateAsync({
+            id: tenantId,
+            updates: { ...tenantWithoutId, roomId: null },
+          });
+          // Also update room status to vacant
+          await updateRoomMutation.mutateAsync({
+            roomNumber: form.getValues("roomNumber"),
+            buildingId: form.getValues("buildingId"),
+            floor: Number.parseInt(form.getValues("floor"), 10),
+            status: "VACANT",
+            monthlyRent: form.getValues("monthlyRent")
+              ? Number.parseFloat(form.getValues("monthlyRent"))
+              : undefined,
+            size: form.getValues("size")
+              ? Number.parseFloat(form.getValues("size"))
+              : undefined,
+          });
+          setConfirmState((prev) => ({ ...prev, open: false }));
+          router.push("/overview/rooms");
+        } catch (error) {
+          console.error("Failed to unassign tenant:", error);
+        }
+      },
+    });
+  };
+
+  const performRoomUpdate = async (data: RoomFormValues) => {
+    try {
       await updateRoomMutation.mutateAsync({
         roomNumber: data.roomNumber,
         buildingId: data.buildingId,
         floor: Number.parseInt(data.floor, 10),
-        status: data.status,
+        status: data.status.toUpperCase() as "OCCUPIED" | "VACANT" | "MAINTENANCE",
         monthlyRent: data.monthlyRent
           ? Number.parseFloat(data.monthlyRent)
           : undefined,
         size: data.size ? Number.parseFloat(data.size) : undefined,
       });
 
+      // Handle tenant assignment if enabled
       if (assignTenantNow && room?.status !== "occupied") {
-        await createTenantMutation.mutateAsync({
-          name: tenantData.name,
-          email: tenantData.email,
-          phone: tenantData.phone,
-          moveInDate: tenantData.moveInDate,
-          deposit: tenantData.deposit
-            ? Number.parseFloat(tenantData.deposit)
-            : 0,
-          roomId,
-          monthlyRent: data.monthlyRent
-            ? Number.parseFloat(data.monthlyRent)
-            : 0,
-          status: "active",
-        });
+        if (createTenantMode) {
+          // Create new tenant
+          if (!user?.teamId) {
+            throw new Error("ไม่พบข้อมูลทีม");
+          }
+          await createTenantMutation.mutateAsync({
+            name: tenantData.name,
+            email: tenantData.email,
+            phone: tenantData.phone,
+            moveInDate: tenantData.moveInDate,
+            deposit: tenantData.deposit || "0",
+            roomId,
+            monthlyRent: data.monthlyRent || "0",
+            status: TenantStatus.ACTIVE,
+            teamId: user.teamId,
+          });
+        } else if (selectedTenantId) {
+          // Assign existing tenant
+          const tenant = tenants.find((t) => t.id === selectedTenantId);
+          if (!tenant) {
+            throw new Error("ไม่พบข้อมูลผู้เช่า");
+          }
+          const { id: tenantId, ...tenantWithoutId } = tenant;
+          await updateTenantMutation.mutateAsync({
+            id: tenantId,
+            updates: {
+              ...tenantWithoutId,
+              roomId,
+              monthlyRent:
+                typeof tenantWithoutId.monthlyRent === "string"
+                  ? Number.parseFloat(tenantWithoutId.monthlyRent)
+                  : tenantWithoutId.monthlyRent,
+              deposit:
+                typeof tenantWithoutId.deposit === "string"
+                  ? Number.parseFloat(tenantWithoutId.deposit)
+                  : tenantWithoutId.deposit,
+            },
+          });
+        }
       }
+      // Wait a bit to ensure queries are invalidated, then navigate
+      await queryClient.refetchQueries({ queryKey: ["rooms"] });
+      await queryClient.refetchQueries({ queryKey: ["tenants"] });
       router.push("/overview/rooms");
     } catch (error) {
       console.error("Failed to update room:", error);
+      throw error;
     }
   };
 
@@ -229,30 +402,37 @@ export default function EditRoomPage() {
                 <FormField
                   control={form.control}
                   name="buildingId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>อาคาร *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={form.formState.isSubmitting}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="เลือกอาคาร" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {buildings.map((building) => (
-                            <SelectItem key={building.id} value={building.id}>
-                              {building.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const currentValue = field.value ? String(field.value) : "";
+                    return (
+                      <FormItem>
+                        <FormLabel>อาคาร *</FormLabel>
+                        <Select
+                          key={`building-select-${currentValue}-${buildings.length}`}
+                          onValueChange={field.onChange}
+                          value={currentValue}
+                          disabled={form.formState.isSubmitting}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกอาคาร" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {buildings.map((building) => (
+                              <SelectItem
+                                key={building.id}
+                                value={String(building.id)}
+                              >
+                                {building.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
@@ -277,28 +457,37 @@ export default function EditRoomPage() {
                 <FormField
                   control={form.control}
                   name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>สถานะ</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={form.formState.isSubmitting}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="vacant">ว่าง</SelectItem>
-                          <SelectItem value="occupied">เข้าพัก</SelectItem>
-                          <SelectItem value="maintenance">ซ่อมบำรุง</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const currentValue = field.value
+                      ? (field.value.toLowerCase() as
+                          | "occupied"
+                          | "vacant"
+                          | "maintenance")
+                      : "vacant";
+                    return (
+                      <FormItem>
+                        <FormLabel>สถานะ</FormLabel>
+                        <Select
+                          key={`status-select-${currentValue}`}
+                          onValueChange={field.onChange}
+                          value={currentValue}
+                          disabled={form.formState.isSubmitting}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="vacant">ว่าง</SelectItem>
+                            <SelectItem value="occupied">เข้าพัก</SelectItem>
+                            <SelectItem value="maintenance">ซ่อมบำรุง</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
 
                 <FormField
@@ -340,6 +529,47 @@ export default function EditRoomPage() {
                 />
               </div>
 
+              {/* Show current tenant if room is occupied */}
+              {room?.status === "occupied" && room?.tenant && (
+                <div className="rounded-lg border border-border bg-muted/20 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      ผู้เช่าปัจจุบัน
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleUnassignTenant}
+                      disabled={
+                        form.formState.isSubmitting ||
+                        updateTenantMutation.isPending
+                      }
+                      className="gap-2"
+                    >
+                      <UserX className="h-4 w-4" />
+                      ยกเลิกผู้เช่า
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">ชื่อ</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {room.tenant.name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">อีเมล</p>
+                      <p className="text-sm text-foreground">
+                        {room.tenant.email}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Show tenant assignment form if room is not occupied */}
               {room?.status !== "occupied" && (
                 <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-4">
                   <div className="flex items-center justify-between">
@@ -348,25 +578,141 @@ export default function EditRoomPage() {
                         ผูกผู้เช่าตอนนี้
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        สร้างผู้เช่าและผูกกับห้องนี้ทันที
+                        เลือกผู้เช่าที่มีอยู่หรือสร้างผู้เช่าใหม่
                       </p>
                     </div>
                     <Button
                       type="button"
                       variant={assignTenantNow ? "default" : "outline"}
-                      onClick={() => setAssignTenantNow((prev) => !prev)}
+                      onClick={() => {
+                        setAssignTenantNow((prev) => !prev);
+                        if (!assignTenantNow) {
+                          setCreateTenantMode(false);
+                          setSelectedTenantId("");
+                        }
+                      }}
                     >
-                      {assignTenantNow ? "เปิดใช้งาน" : "เพิ่มผู้เช่า"}
+                      {assignTenantNow ? "ปิด" : "เพิ่มผู้เช่า"}
                     </Button>
                   </div>
                   {assignTenantNow && (
-                    <TenantInlineForm
-                      value={tenantData}
-                      onChange={setTenantData}
-                      showDeposit
-                      errors={tenantErrors}
-                      disabled={form.formState.isSubmitting}
-                    />
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label>เลือกผู้เช่า</Label>
+                        <Button
+                          type="button"
+                          variant={createTenantMode ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            setCreateTenantMode((prev) => !prev);
+                            if (!createTenantMode) {
+                              setSelectedTenantId("");
+                            }
+                          }}
+                          disabled={form.formState.isSubmitting}
+                        >
+                          {createTenantMode ? "กำลังเลือก" : "สร้างผู้เช่า"}
+                        </Button>
+                      </div>
+                      {!createTenantMode ? (
+                        <div className="space-y-4">
+                          <Select
+                            value={selectedTenantId}
+                            onValueChange={setSelectedTenantId}
+                            disabled={form.formState.isSubmitting}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกผู้เช่า" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getAvailableTenants().map((tenant) => {
+                                const currentRoom = tenant.roomId
+                                  ? allRooms.find((r) => r.id === tenant.roomId)
+                                  : null;
+                                return (
+                                  <SelectItem key={tenant.id} value={tenant.id}>
+                                    {tenant.name} - {tenant.email}
+                                    {currentRoom && (
+                                      <span className="ml-2 text-xs text-muted-foreground">
+                                        (ห้อง {currentRoom.roomNumber})
+                                      </span>
+                                    )}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+
+                          {/* Show selected tenant information */}
+                          {selectedTenantId && (
+                            <div className="rounded-lg border border-border bg-muted/20 p-4">
+                              <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-3">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                ข้อมูลผู้เช่าที่เลือก
+                              </div>
+                              {(() => {
+                                const selectedTenant = tenants.find(
+                                  (t) => t.id === selectedTenantId,
+                                );
+                                if (!selectedTenant) return null;
+                                return (
+                                  <div className="space-y-2">
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">
+                                        ชื่อ
+                                      </p>
+                                      <p className="text-sm font-medium text-foreground">
+                                        {selectedTenant.name}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">
+                                        อีเมล
+                                      </p>
+                                      <p className="text-sm text-foreground">
+                                        {selectedTenant.email}
+                                      </p>
+                                    </div>
+                                    {selectedTenant.phone && (
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">
+                                          เบอร์โทรศัพท์
+                                        </p>
+                                        <p className="text-sm text-foreground">
+                                          {selectedTenant.phone}
+                                        </p>
+                                      </div>
+                                    )}
+                                    {selectedTenant.roomId && (
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">
+                                          ห้องปัจจุบัน
+                                        </p>
+                                        <p className="text-sm text-foreground">
+                                          {
+                                            allRooms.find(
+                                              (r) => r.id === selectedTenant.roomId,
+                                            )?.roomNumber || selectedTenant.roomId
+                                          }
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <TenantInlineForm
+                          value={tenantData}
+                          onChange={setTenantData}
+                          showDeposit
+                          errors={tenantErrors}
+                          disabled={form.formState.isSubmitting}
+                        />
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -392,6 +738,31 @@ export default function EditRoomPage() {
           </Form>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        description={confirmState.description}
+        confirmLabel="ยืนยัน"
+        cancelLabel="ยกเลิก"
+        isLoading={
+          updateRoomMutation.isPending || updateTenantMutation.isPending
+        }
+        onConfirm={async () => {
+          const action = confirmState.onConfirm;
+          if (!action) return;
+          try {
+            await action();
+            setConfirmState((prev) => ({ ...prev, open: false }));
+            setPendingFormData(null);
+          } catch (error) {
+            console.error("Failed to update room:", error);
+          }
+        }}
+        onOpenChange={(open) =>
+          setConfirmState((prev) => ({ ...prev, open }))
+        }
+      />
     </div>
   );
 }

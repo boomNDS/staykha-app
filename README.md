@@ -107,162 +107,184 @@ flowchart TD
 
 ```mermaid
 erDiagram
-    Team ||--o{ User
-    Team ||--o{ Building
-    Team ||--o{ Room
-    Team ||--o{ Tenant
-    Team ||--o{ ReadingGroup
-    Team ||--o{ Invoice
-    Team ||--|| Settings
-    Team ||--o{ AdminInvitation
-    User ||--o{ Building
-    User ||--o{ AdminInvitation
-    Building ||--o{ Room
-    Room ||--o| Tenant
-    Room ||--o{ ReadingGroup
-    ReadingGroup ||--o{ Invoice
-    Tenant ||--o{ Invoice
+    Team ||--o{ User : "has"
+    Team ||--o{ Building : "owns"
+    Team ||--o{ Room : "contains"
+    Team ||--o{ Tenant : "manages"
+    Team ||--o{ MeterReadingGroup : "tracks"
+    Team ||--o{ Invoice : "generates"
+    Team ||--|| Settings : "configures"
+    Team ||--o{ AdminInvitation : "sends"
+    User ||--o{ Building : "owns"
+    User ||--o{ AdminInvitation : "creates"
+    Building ||--o{ Room : "contains"
+    Room ||--o| Tenant : "occupied_by"
+    Room ||--o{ MeterReadingGroup : "has_readings"
+    MeterReadingGroup ||--o{ Invoice : "generates"
+    Tenant ||--o{ Invoice : "receives"
+    MeterReadingGroup ||--o| MeterReading : "water_reading"
+    MeterReadingGroup ||--o| MeterReading : "electric_reading"
+    MeterReading }o--|| Room : "belongs_to"
+    MeterReading }o--o| Tenant : "for"
 
     Team {
-        string id PK
-        string name
-        date createdAt
-        date updatedAt
+        string id PK "Primary Key"
+        string name "Team name"
+        datetime createdAt "Creation timestamp"
+        datetime updatedAt "Last update timestamp"
     }
 
     User {
-        string id PK
-        string email
-        string name
-        string role
-        string teamId FK
+        string id PK "Primary Key"
+        string email UK "Unique email"
+        string name "Full name"
+        enum role "owner | admin"
+        string teamId FK "Foreign Key to Team"
+        datetime createdAt "Account creation"
     }
 
     Building {
-        string id PK
-        string name
-        string address
-        number totalFloors
-        number totalRooms
-        number occupiedRooms
-        string ownerId FK
-        string teamId FK
+        string id PK "Primary Key"
+        string name "Building name"
+        string address "Full address"
+        int totalFloors "Number of floors"
+        int totalRooms "Total room count"
+        int occupiedRooms "Currently occupied"
+        string ownerId FK "Foreign Key to User (owner)"
+        string teamId FK "Foreign Key to Team"
+        datetime createdAt "Creation timestamp"
+        datetime updatedAt "Last update timestamp"
     }
 
     Room {
-        string id PK
-        string roomNumber
-        string buildingId FK
-        string buildingName
-        number floor
-        string status
-        number monthlyRent
-        number size
-        string tenantId FK
-        string teamId FK
+        string id PK "Primary Key"
+        string roomNumber "Room identifier"
+        string buildingId FK "Foreign Key to Building"
+        int floor "Floor number"
+        enum status "occupied | vacant | maintenance"
+        decimal monthlyRent "Monthly rent amount"
+        decimal size "Room size in sqm"
+        string tenantId FK "Foreign Key to Tenant (nullable)"
+        string teamId FK "Foreign Key to Team"
     }
 
     Tenant {
-        string id PK
-        string name
-        string email
-        string phone
-        string roomId FK
-        date moveInDate
-        date contractEndDate
-        number monthlyRent
-        number deposit
-        string idCardNumber
-        string emergencyContact
-        string emergencyPhone
-        string status
-        string teamId FK
+        string id PK "Primary Key"
+        string name "Full name"
+        string email "Contact email"
+        string phone "Phone number"
+        string roomId FK "Foreign Key to Room (nullable)"
+        date moveInDate "Move-in date"
+        date contractEndDate "Contract end date (nullable)"
+        decimal monthlyRent "Monthly rent"
+        decimal deposit "Security deposit"
+        string idCardNumber "ID card number (optional)"
+        string emergencyContact "Emergency contact name"
+        string emergencyPhone "Emergency phone"
+        enum status "active | inactive | expired"
+        string teamId FK "Foreign Key to Team"
+        datetime createdAt "Registration timestamp"
     }
 
-    ReadingGroup {
-        string id PK
-        string roomId FK
-        string roomNumber
-        string tenantName
-        date readingDate
-        string status
-        json water
-        json electric
-        string teamId FK
+    MeterReadingGroup {
+        string id PK "Primary Key"
+        string roomId FK "Foreign Key to Room"
+        date readingDate "Date of reading"
+        enum status "incomplete | pending | billed | paid"
+        string teamId FK "Foreign Key to Team"
+    }
+
+    MeterReading {
+        string id PK "Primary Key"
+        string readingGroupId FK "Foreign Key to MeterReadingGroup (nullable)"
+        string roomId FK "Foreign Key to Room"
+        string tenantId FK "Foreign Key to Tenant (nullable)"
+        enum meterType "water | electric"
+        decimal previousReading "Previous meter value"
+        decimal currentReading "Current meter value"
+        decimal consumption "Calculated consumption"
+        string previousPhotoUrl "Previous reading photo URL"
+        string currentPhotoUrl "Current reading photo URL"
+        date readingDate "Date of reading"
+        enum status "pending | billed | paid"
+        string createdBy FK "Foreign Key to User (nullable)"
     }
 
     Invoice {
-        string id PK
-        string invoiceNumber
-        string tenantId FK
-        string roomId FK
-        string tenantName
-        string roomNumber
-        string billingPeriod
-        date issueDate
-        date dueDate
-        string status
-        number waterUsage
-        number waterRate
-        number waterAmount
-        number electricUsage
-        number electricRate
-        number electricAmount
-        number subtotal
-        number tax
-        number total
-        date paidDate
-        number waterConsumption
-        number electricConsumption
-        number waterRatePerUnit
-        number electricRatePerUnit
-        number waterSubtotal
-        number electricSubtotal
-        string waterBillingMode
-        number waterFixedFee
-        string readingGroupId FK
-        json readings
-        string teamId FK
+        string id PK "Primary Key"
+        string invoiceNumber UK "Unique invoice number"
+        string tenantId FK "Foreign Key to Tenant (nullable)"
+        string roomId FK "Foreign Key to Room"
+        string readingGroupId FK "Foreign Key to MeterReadingGroup (nullable)"
+        string billingPeriod "Billing period (e.g., 2024-01)"
+        date issueDate "Invoice issue date"
+        date dueDate "Payment due date"
+        date paidDate "Payment date (nullable)"
+        enum status "draft | sent | paid | pending | overdue"
+        decimal waterUsage "Water usage amount (legacy)"
+        decimal waterRate "Water rate (legacy)"
+        decimal waterAmount "Water amount (legacy)"
+        decimal electricUsage "Electric usage amount (legacy)"
+        decimal electricRate "Electric rate (legacy)"
+        decimal electricAmount "Electric amount (legacy)"
+        decimal waterConsumption "Water usage amount"
+        decimal waterRatePerUnit "Water rate per unit"
+        decimal waterSubtotal "Water charges subtotal"
+        decimal electricConsumption "Electric usage amount"
+        decimal electricRatePerUnit "Electric rate per unit"
+        decimal electricSubtotal "Electric charges subtotal"
+        decimal roomRent "Monthly room rent"
+        decimal subtotal "Subtotal before tax"
+        decimal tax "Tax amount"
+        decimal total "Final total amount"
+        enum waterBillingMode "metered | fixed"
+        decimal waterFixedFee "Fixed water fee (if applicable)"
+        json readings "Meter reading details (JSON array)"
+        string teamId FK "Foreign Key to Team"
+        datetime createdAt "Invoice creation timestamp"
     }
 
     Settings {
-        string id PK
-        string teamId FK
-        number waterRatePerUnit
-        string waterBillingMode "metered/fixed"
-        number waterFixedFee
-        number electricRatePerUnit
-        number taxRate
-        string currency
-        string companyName
-        string companyAddress
-        string companyPhone
-        string companyEmail
-        string invoicePrefix
-        number paymentTermsDays
-        number defaultRoomRent
-        number defaultRoomSize
-        string bankName
-        string bankAccountNumber
-        string lineId
-        number latePaymentPenaltyPerDay
-        number dueDateDayOfMonth
-        string labelInvoice
-        string labelRoomRent
-        string labelWater
-        string labelElectricity
+        string id PK "Primary Key"
+        string teamId FK "Foreign Key to Team (unique)"
+        decimal waterRatePerUnit "Water rate per unit"
+        enum waterBillingMode "metered | fixed"
+        decimal waterFixedFee "Fixed water fee"
+        decimal electricRatePerUnit "Electric rate per unit"
+        decimal taxRate "Tax rate percentage"
+        string currency "Currency code (e.g., THB)"
+        string companyName "Company name"
+        string companyAddress "Company address"
+        string companyPhone "Company phone"
+        string companyEmail "Company email"
+        string invoicePrefix "Invoice number prefix"
+        int paymentTermsDays "Payment terms in days"
+        decimal defaultRoomRent "Default room rent"
+        decimal defaultRoomSize "Default room size"
+        string bankName "Bank name"
+        string bankAccountNumber "Bank account number"
+        string lineId "LINE ID for notifications"
+        decimal latePaymentPenaltyPerDay "Late payment penalty per day"
+        int dueDateDayOfMonth "Due date day of month"
+        string labelInvoice "Invoice label (Thai)"
+        string labelRoomRent "Room rent label (Thai)"
+        string labelWater "Water label (Thai)"
+        string labelElectricity "Electricity label (Thai)"
+        datetime createdAt "Creation timestamp"
+        datetime updatedAt "Last update timestamp"
     }
 
     AdminInvitation {
-        string id PK
-        string email
-        string teamId FK
-        string invitedBy FK
-        string invitedByName
-        string status
-        string inviteCode
-        date expiresAt
-        json buildings
+        string id PK "Primary Key"
+        string email "Invitee email"
+        string teamId FK "Foreign Key to Team"
+        string invitedBy FK "Foreign Key to User (inviter)"
+        string invitedByName "Inviter's name (denormalized)"
+        string inviteCode UK "Unique invitation code"
+        enum status "pending | accepted | expired"
+        date expiresAt "Expiration date"
+        json buildings "Assigned building IDs (JSON array, nullable)"
+        datetime createdAt "Invitation creation timestamp"
     }
 ```
 

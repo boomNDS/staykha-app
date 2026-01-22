@@ -35,6 +35,7 @@ import { getList } from "@/lib/api/response-helpers";
 import { useRouter } from "@/lib/router";
 import { tenantFormSchema } from "@/lib/schemas";
 import type { Room } from "@/lib/types";
+import { TenantStatus } from "@/lib/types";
 import type { z } from "zod";
 import { usePageTitle } from "@/lib/use-page-title";
 
@@ -49,7 +50,8 @@ export default function NewTenantPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  const rooms = getList(roomsQuery.data).filter(
+  // Rooms API returns array directly
+  const rooms = (roomsQuery.data ?? []).filter(
     (room: Room) => room.status === "vacant",
   );
 
@@ -67,17 +69,12 @@ export default function NewTenantPage() {
       idCardNumber: "",
       emergencyContact: "",
       emergencyPhone: "",
-      status: "active",
+        status: TenantStatus.ACTIVE,
     },
   });
 
   const createTenantMutation = useMutation({
-    mutationFn: (payload: TenantFormValues) =>
-      tenantsApi.create({
-        ...payload,
-        monthlyRent: Number.parseFloat(payload.monthlyRent || "0"),
-        deposit: Number.parseFloat(payload.deposit || "0"),
-      }),
+    mutationFn: (payload: any) => tenantsApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
@@ -86,7 +83,14 @@ export default function NewTenantPage() {
 
   const onSubmit = async (data: TenantFormValues) => {
     try {
-      await createTenantMutation.mutateAsync(data);
+      // Zod schema already transforms empty strings to null, but ensure numbers are converted
+      const payload = {
+        ...data,
+        monthlyRent: Number.parseFloat(data.monthlyRent || "0"),
+        deposit: Number.parseFloat(data.deposit || "0"),
+      };
+      
+      await createTenantMutation.mutateAsync(payload);
       router.push("/overview/tenants");
     } catch (error) {
       console.error("Failed to create tenant:", error);
@@ -345,8 +349,9 @@ export default function NewTenantPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="active">ใช้งาน</SelectItem>
-                          <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
+                          <SelectItem value={TenantStatus.ACTIVE}>ใช้งาน</SelectItem>
+                          <SelectItem value={TenantStatus.INACTIVE}>ไม่ใช้งาน</SelectItem>
+                          <SelectItem value={TenantStatus.EXPIRED}>หมดอายุ</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

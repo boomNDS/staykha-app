@@ -28,9 +28,11 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { roomsApi, tenantsApi } from "@/lib/api-client";
 import { getList } from "@/lib/api/response-helpers";
+import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@/lib/router";
 import { mapZodErrors, tenantDraftSchema } from "@/lib/schemas";
 import type { Room, Tenant, TenantDraft } from "@/lib/types";
+import { TenantStatus } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 
 export default function RoomsPage() {
@@ -38,6 +40,7 @@ export default function RoomsPage() {
 
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const roomsQuery = useQuery({
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
@@ -72,12 +75,33 @@ export default function RoomsPage() {
     description: "",
   });
 
-  const rooms = getList(roomsQuery.data);
-  const tenants = getList(tenantsQuery.data);
+  // Rooms API returns array directly
+  const rooms = roomsQuery.data ?? [];
+  // Tenants API returns array directly
+  const tenants = tenantsQuery.data ?? [];
   const loading = roomsQuery.isLoading || tenantsQuery.isLoading;
 
   const deleteRoomMutation = useMutation({
     mutationFn: (id: string) => roomsApi.remove(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      queryClient.invalidateQueries({ queryKey: ["tenants"] });
+    },
+  });
+
+  const updateRoomMutation = useMutation({
+    mutationFn: (payload: {
+      id: string;
+      updates: {
+        roomNumber: string;
+        buildingId: string;
+        floor: number;
+        status: "OCCUPIED" | "VACANT" | "MAINTENANCE";
+        monthlyRent?: number;
+        size?: number;
+        tenantId?: string | null;
+      };
+    }) => roomsApi.update(payload.id, payload.updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
@@ -99,27 +123,44 @@ export default function RoomsPage() {
       phone: string;
       moveInDate: string;
       roomId: string;
-      monthlyRent: number;
-      deposit: number;
-      status: "active";
-    }) => tenantsApi.create(payload as Omit<Tenant, "id">),
+      monthlyRent: number | string;
+      deposit: number | string;
+      status: TenantStatus.ACTIVE;
+      teamId: string;
+    }) => tenantsApi.create(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
       queryClient.invalidateQueries({ queryKey: ["tenants"] });
     },
   });
   const isDeleting = deleteRoomMutation.isPending;
-  const isAssigning = updateTenantMutation.isPending;
+  const isAssigning = updateRoomMutation.isPending || updateTenantMutation.isPending;
   const isCreatingTenant = createTenantMutation.isPending;
   const isMutating = isDeleting || isAssigning || isCreatingTenant;
 
-  const getTenantName = (roomId: string) => {
-    const tenant = tenants.find((t) => t.roomId === roomId);
+  const getTenantName = (room: Room) => {
+    // Use tenant from room object if available (from API response)
+    if (room.tenant) {
+      return room.tenant.name;
+    }
+    // Fallback to looking up in tenants array
+    const tenant = tenants.find((t) => t.roomId === room.id);
     return tenant?.name || "ไม่ระบุ";
   };
 
-  const getTenantByRoom = (roomId: string) =>
-    tenants.find((tenant) => tenant.roomId === roomId) || null;
+  const getTenantByRoom = (room: Room) => {
+    // Use tenant from room object if available (from API response)
+    if (room.tenant) {
+      return {
+        id: room.tenant.id,
+        name: room.tenant.name,
+        email: room.tenant.email,
+        roomId: room.id,
+      } as Tenant;
+    }
+    // Fallback to looking up in tenants array
+    return tenants.find((tenant) => tenant.roomId === room.id) || null;
+  };
 
   const getRoomStatusLabel = (status: Room["status"]) => {
     switch (status) {
@@ -187,8 +228,22 @@ export default function RoomsPage() {
           const { id: _, ...tenantWithoutId } = tenant;
           await updateTenantMutation.mutateAsync({
             id: tenant.id,
-            updates: { ...tenantWithoutId, roomId: null },
+            updates: {
+              ...tenantWithoutId,
+              roomId: null,
+              monthlyRent:
+                typeof tenantWithoutId.monthlyRent === "string"
+                  ? Number.parseFloat(tenantWithoutId.monthlyRent)
+                  : tenantWithoutId.monthlyRent,
+              deposit:
+                typeof tenantWithoutId.deposit === "string"
+                  ? Number.parseFloat(tenantWithoutId.deposit)
+                  : tenantWithoutId.deposit,
+            },
           });
+          // Explicitly refetch to ensure data is fresh
+          await queryClient.refetchQueries({ queryKey: ["rooms"] });
+          await queryClient.refetchQueries({ queryKey: ["tenants"] });
         } catch (error) {
           console.error("Failed to unassign tenant:", error);
         }
@@ -199,14 +254,23 @@ export default function RoomsPage() {
   const handleSubmitAssignment = async () => {
     if (!selectedTenantId || !selectedRoom) return;
 
-    const tenant = tenants.find((t) => t.id === selectedTenantId);
-    if (!tenant) return;
-
     try {
-      await updateTenantMutation.mutateAsync({
-        id: tenant.id,
-        updates: { ...tenant, roomId: selectedRoom.id },
+      // Update the room with tenantId and set status to OCCUPIED
+      await updateRoomMutation.mutateAsync({
+        id: selectedRoom.id,
+        updates: {
+          roomNumber: selectedRoom.roomNumber,
+          buildingId: selectedRoom.buildingId,
+          floor: selectedRoom.floor,
+          status: "OCCUPIED",
+          monthlyRent: selectedRoom.monthlyRent,
+          size: selectedRoom.size,
+          tenantId: selectedTenantId,
+        },
       });
+      // Explicitly refetch to ensure data is fresh
+      await queryClient.refetchQueries({ queryKey: ["rooms"] });
+      await queryClient.refetchQueries({ queryKey: ["tenants"] });
       setAssignDialogOpen(false);
     } catch (error) {
       console.error("Failed to assign tenant:", error);
@@ -221,14 +285,39 @@ export default function RoomsPage() {
       return;
     }
     setTenantErrors({});
+    if (!user?.teamId) {
+      throw new Error("ไม่พบข้อมูลทีม");
+    }
     try {
-      await createTenantMutation.mutateAsync({
+      // Create tenant first
+      const newTenantResult = await createTenantMutation.mutateAsync({
         ...newTenant,
         roomId: selectedRoom.id,
-        monthlyRent: selectedRoom.monthlyRent || 0,
-        deposit: 0,
-        status: "active",
+        monthlyRent: selectedRoom.monthlyRent || "0",
+        deposit: "0",
+        status: TenantStatus.ACTIVE,
+        teamId: user.teamId,
       });
+      
+      // Then update the room with the new tenant's ID and set status to OCCUPIED
+      if (newTenantResult?.id) {
+        await updateRoomMutation.mutateAsync({
+          id: selectedRoom.id,
+          updates: {
+            roomNumber: selectedRoom.roomNumber,
+            buildingId: selectedRoom.buildingId,
+            floor: selectedRoom.floor,
+            status: "OCCUPIED",
+            monthlyRent: selectedRoom.monthlyRent,
+            size: selectedRoom.size,
+            tenantId: newTenantResult.id,
+          },
+        });
+      }
+      
+      // Explicitly refetch to ensure data is fresh
+      await queryClient.refetchQueries({ queryKey: ["rooms"] });
+      await queryClient.refetchQueries({ queryKey: ["tenants"] });
       setAssignDialogOpen(false);
     } catch (error) {
       console.error("Failed to create tenant:", error);
@@ -278,7 +367,7 @@ export default function RoomsPage() {
           </span>
           {room.status === "occupied" && (
             <div className="text-xs text-muted-foreground">
-              {getTenantName(room.id)}
+              {getTenantName(room)}
             </div>
           )}
         </div>
@@ -491,32 +580,101 @@ export default function RoomsPage() {
               </Button>
             </div>
             {!createTenantMode ? (
-              <Select
-                value={selectedTenantId}
-                onValueChange={setSelectedTenantId}
-                disabled={isMutating}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="เลือกผู้เช่า" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getAvailableTenants().map((tenant) => {
-                    const currentRoom = tenant.roomId
-                      ? rooms.find((r) => r.id === tenant.roomId)
-                      : null;
-                    return (
-                      <SelectItem key={tenant.id} value={tenant.id}>
-                        {tenant.name} - {tenant.email}
-                        {currentRoom && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            (ห้อง {currentRoom.roomNumber})
-                          </span>
-                        )}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              <div className="space-y-4">
+                <Select
+                  value={selectedTenantId}
+                  onValueChange={setSelectedTenantId}
+                  disabled={isMutating}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="เลือกผู้เช่า" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableTenants().map((tenant) => {
+                      const currentRoom = tenant.roomId
+                        ? rooms.find((r) => r.id === tenant.roomId)
+                        : null;
+                      return (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {tenant.name} - {tenant.email}
+                          {currentRoom && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              (ห้อง {currentRoom.roomNumber})
+                            </span>
+                          )}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+
+                {/* Show selected tenant information */}
+                {selectedTenantId && (
+                  <div className="rounded-lg border border-border bg-muted/20 p-4">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-3">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      ข้อมูลผู้เช่าที่เลือก
+                    </div>
+                    {(() => {
+                      const selectedTenant = tenants.find(
+                        (t) => t.id === selectedTenantId,
+                      );
+                      if (!selectedTenant) return null;
+                      return (
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-xs text-muted-foreground">ชื่อ</p>
+                            <p className="text-sm font-medium text-foreground">
+                              {selectedTenant.name}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">อีเมล</p>
+                            <p className="text-sm text-foreground">
+                              {selectedTenant.email}
+                            </p>
+                          </div>
+                          {selectedTenant.phone && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">
+                                เบอร์โทรศัพท์
+                              </p>
+                              <p className="text-sm text-foreground">
+                                {selectedTenant.phone}
+                              </p>
+                            </div>
+                          )}
+                          {selectedTenant.moveInDate && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">
+                                วันที่เข้าพัก
+                              </p>
+                              <p className="text-sm text-foreground">
+                                {new Date(selectedTenant.moveInDate).toLocaleDateString(
+                                  "th-TH",
+                                )}
+                              </p>
+                            </div>
+                          )}
+                          {selectedTenant.roomId && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">
+                                ห้องปัจจุบัน
+                              </p>
+                              <p className="text-sm text-foreground">
+                                {
+                                  rooms.find((r) => r.id === selectedTenant.roomId)
+                                    ?.roomNumber || selectedTenant.roomId
+                                }
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
             ) : (
               <TenantInlineForm
                 value={newTenant}
@@ -610,13 +768,13 @@ export default function RoomsPage() {
                   ผู้เช่า
                 </div>
                 <div className="mt-3 space-y-1">
-                  {getTenantByRoom(detailsRoom.id) ? (
+                  {getTenantByRoom(detailsRoom) ? (
                     <>
                       <p className="text-sm font-medium text-foreground">
-                        {getTenantByRoom(detailsRoom.id)?.name}
+                        {getTenantByRoom(detailsRoom)?.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {getTenantByRoom(detailsRoom.id)?.email}
+                        {getTenantByRoom(detailsRoom)?.email}
                       </p>
                     </>
                   ) : (

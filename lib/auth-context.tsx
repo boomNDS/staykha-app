@@ -25,9 +25,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Check authentication on mount and listen for storage changes
   // Using useRef to store the latest loadUser function to avoid dependency issues
-  const loadUserRef = React.useRef<() => void>();
+  const loadUserRef = React.useRef<(() => Promise<void>) | undefined>(undefined);
 
-  const loadUser = React.useCallback(() => {
+  const loadUser = React.useCallback(async () => {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
 
@@ -35,27 +35,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
+        setIsLoading(false); // Set loading to false immediately with cached data
+        
+        // Fetch fresh user data from /auth/me in the background
+        try {
+          const meResponse = await authApi.getMe(token);
+          if (meResponse.user) {
+            setUser(meResponse.user);
+            localStorage.setItem("user", JSON.stringify(meResponse.user));
+            
+            // Update token if a new one was returned
+            if (meResponse.token && meResponse.token !== token) {
+              localStorage.setItem("token", meResponse.token);
+              
+              if (import.meta.env.DEV) {
+                console.log("[Auth Context] Token refreshed");
+              }
+            }
+            
+            if (import.meta.env.DEV) {
+              console.log("[Auth Context] Refreshed user data from /auth/me:", meResponse.user);
+            }
+          }
+        } catch (error) {
+          // If fetching fails (e.g., token expired), clear auth data
+          console.warn("[Auth Context] Failed to fetch fresh user data:", error);
+          // Don't clear immediately - let the user try to use the app
+          // The API will return 401 and they'll be redirected
+        }
       } catch (error) {
         console.error("Failed to parse user data:", error);
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         setUser(null);
+        setIsLoading(false);
       }
     } else {
       setUser(null);
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, [setUser, setIsLoading]);
 
   // Keep ref updated
   loadUserRef.current = loadUser;
 
   React.useEffect(() => {
-    loadUser();
+    void loadUser();
 
     // Listen for storage changes (when user is updated in other tabs/components)
     const handleStorageChange = () => {
-      loadUserRef.current?.();
+      void loadUserRef.current?.();
     };
 
     // Listen to both storage events (cross-tab) and custom events (same-tab)
@@ -63,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Custom event for same-tab updates
     const handleCustomStorage = () => {
-      loadUserRef.current?.();
+      void loadUserRef.current?.();
     };
     window.addEventListener("userUpdated", handleCustomStorage);
 
@@ -82,8 +111,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("[Auth Context] Login successful:", {
         user: data.user,
         hasToken: !!data.token,
+        hasRefreshToken: !!data.refreshToken,
+        hasTeamId: !!data.user.teamId,
       });
+      
+      // Login response already includes complete user info with teamId
+      // No need to call /me API - use the data directly
       localStorage.setItem("token", data.token);
+      if (data.refreshToken) {
+        localStorage.setItem("refreshToken", data.refreshToken);
+      }
       localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
     } catch (error) {
@@ -94,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
     setUser(null);
     window.location.assign("/login");

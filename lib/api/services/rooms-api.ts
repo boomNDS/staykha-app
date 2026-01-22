@@ -1,37 +1,69 @@
 import { BaseApiService } from "../base-service";
+import type { Room } from "@/lib/types";
 import type {
   BulkCreateRoomsData,
   BulkCreateRoomsResponse,
   CreateRoomData,
   RoomDeleteResponse,
+  RoomDirectResponse,
   RoomResponse,
   RoomUpdateRequest,
-  RoomsListResponse,
+  RoomsDirectListResponse,
 } from "./rooms-types";
 
+// Helper to map API response (uppercase status) to Room type (lowercase status)
+function mapRoomFromApi(apiRoom: any): Room {
+  return {
+    ...apiRoom,
+    status: (apiRoom.status?.toLowerCase() ?? "vacant") as
+      | "occupied"
+      | "vacant"
+      | "maintenance",
+    monthlyRent:
+      typeof apiRoom.monthlyRent === "string"
+        ? Number.parseFloat(apiRoom.monthlyRent)
+        : apiRoom.monthlyRent,
+    size:
+      typeof apiRoom.size === "string"
+        ? Number.parseFloat(apiRoom.size)
+        : apiRoom.size,
+    // Preserve tenant data if present in API response
+    tenant: apiRoom.tenant
+      ? {
+          id: apiRoom.tenant.id,
+          name: apiRoom.tenant.name,
+          email: apiRoom.tenant.email,
+        }
+      : null,
+  };
+}
+
 class RoomsApi extends BaseApiService {
-  async getAll(token?: string): Promise<RoomsListResponse> {
+  async getAll(token?: string): Promise<RoomsDirectListResponse> {
     try {
       const api = this.createApi(token);
-      return api.get<RoomsListResponse>("/rooms");
+      const response = await api.get<any[]>("/rooms");
+      return response.map(mapRoomFromApi);
     } catch (error: unknown) {
       this.handleError(error, "getAll");
     }
   }
 
-  async getById(id: string, token?: string): Promise<RoomResponse> {
+  async getById(id: string, token?: string): Promise<RoomDirectResponse> {
     try {
       const api = this.createApi(token);
-      return api.get<RoomResponse>(`/rooms/${id}`);
+      const response = await api.get<any>(`/rooms/${id}`);
+      return mapRoomFromApi(response);
     } catch (error: unknown) {
       this.handleError(error, "getById", { id });
     }
   }
 
-  async create(data: CreateRoomData, token?: string): Promise<RoomResponse> {
+  async create(data: CreateRoomData, token?: string): Promise<RoomDirectResponse> {
     try {
       const api = this.createApi(token);
-      return api.post<RoomResponse>("/rooms", data);
+      const response = await api.post<any>("/rooms", data);
+      return mapRoomFromApi(response);
     } catch (error: unknown) {
       this.handleError(error, "create", { roomNumber: data.roomNumber });
     }
@@ -41,10 +73,11 @@ class RoomsApi extends BaseApiService {
     id: string,
     data: RoomUpdateRequest,
     token?: string,
-  ): Promise<RoomResponse> {
+  ): Promise<RoomDirectResponse> {
     try {
       const api = this.createApi(token);
-      return api.patch<RoomResponse>(`/rooms/${id}`, data);
+      const response = await api.patch<any>(`/rooms/${id}`, data);
+      return mapRoomFromApi(response);
     } catch (error: unknown) {
       this.handleError(error, "update", { id });
     }
@@ -65,7 +98,11 @@ class RoomsApi extends BaseApiService {
   ): Promise<BulkCreateRoomsResponse> {
     try {
       const api = this.createApi(token);
-      return api.post<BulkCreateRoomsResponse>("/rooms/bulk", data);
+      const response = await api.post<any>("/rooms/bulk", data);
+      return {
+        ...response,
+        rooms: response.rooms?.map(mapRoomFromApi) ?? [],
+      };
     } catch (error: unknown) {
       this.handleError(error, "bulkCreate", {
         buildingId: data.buildingId,

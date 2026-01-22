@@ -10,3 +10,4 @@ export { invoicesApi } from "@/lib/api/services/invoices-api";
 export { settingsApi } from "@/lib/api/services/settings-api";
 export { adminsApi } from "@/lib/api/services/admins-api";
 export { invitationsApi } from "@/lib/api/services/invitations-api";
+export { overviewApi } from "@/lib/api/services/overview-api";

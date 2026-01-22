@@ -1,5 +1,24 @@
 // TypeScript type definitions for the dormitory meter billing system
 
+export enum TenantStatus {
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+  EXPIRED = "EXPIRED",
+}
+
+export enum WaterBillingMode {
+  METERED = "METERED",
+  FIXED = "FIXED",
+}
+
+export enum InvoiceStatus {
+  DRAFT = "DRAFT",
+  SENT = "SENT",
+  PAID = "PAID",
+  PENDING = "PENDING",
+  OVERDUE = "OVERDUE",
+}
+
 export interface Team {
   id: string;
   name: string;
@@ -41,6 +60,11 @@ export interface Room {
   size?: number; // in sqm
   monthlyRent?: number;
   tenantId?: string | null;
+  tenant?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
   teamId: string;
   team?: Team;
   building?: Building;
@@ -52,15 +76,15 @@ export interface Tenant {
   email: string;
   phone: string;
   roomId: string | null;
-  room?: Room;
+  room?: Room | null;
   moveInDate: string;
-  contractEndDate?: string;
-  monthlyRent: number;
-  deposit: number;
-  idCardNumber?: string;
-  emergencyContact?: string;
-  emergencyPhone?: string;
-  status: "active" | "inactive" | "expired";
+  contractEndDate?: string | null;
+  monthlyRent: number | string; // API returns string
+  deposit: number | string; // API returns string
+  idCardNumber?: string | null;
+  emergencyContact?: string | null;
+  emergencyPhone?: string | null;
+  status: TenantStatus;
   teamId: string;
   team?: Team;
   createdAt?: string;
@@ -162,7 +186,7 @@ export interface Invoice {
   billingPeriod: string;
   issueDate: string;
   dueDate: string;
-  status: "draft" | "sent" | "paid" | "pending" | "overdue";
+  status: InvoiceStatus;
   waterUsage: number;
   waterRate: number;
   waterAmount: number;
@@ -180,7 +204,7 @@ export interface Invoice {
   electricRatePerUnit?: number;
   waterSubtotal?: number;
   electricSubtotal?: number;
-  waterBillingMode?: "metered" | "fixed";
+  waterBillingMode?: WaterBillingMode;
   waterFixedFee?: number;
   roomRent?: number; // Monthly rent for the room
   teamId: string;
@@ -195,7 +219,7 @@ export interface AdminSettings {
   teamId: string;
   team?: Team;
   waterRatePerUnit: number;
-  waterBillingMode: "metered" | "fixed";
+  waterBillingMode: WaterBillingMode;
   waterFixedFee: number;
   electricRatePerUnit: number;
   taxRate: number;

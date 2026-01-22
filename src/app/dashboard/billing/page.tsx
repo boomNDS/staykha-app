@@ -38,6 +38,7 @@ import { getData, getList } from "@/lib/api/response-helpers";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter, useSearchParams } from "@/lib/router";
 import type { Invoice } from "@/lib/types";
+import { InvoiceStatus, WaterBillingMode } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatCurrency } from "@/lib/utils";
 
@@ -61,9 +62,7 @@ export default function BillingPage() {
   >(new Set());
   const [isExporting, setIsExporting] = React.useState(false);
   const exportRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
-  const [selectedPeriod, setSelectedPeriod] = React.useState(() =>
-    new Date().toISOString().slice(0, 7),
-  );
+  const [selectedPeriod, setSelectedPeriod] = React.useState("all");
   const [updatingInvoiceId, setUpdatingInvoiceId] = React.useState<
     string | null
   >(null);
@@ -331,31 +330,31 @@ export default function BillingPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: InvoiceStatus) => {
     switch (status) {
-      case "paid":
+      case InvoiceStatus.PAID:
         return "default";
-      case "pending":
-      case "sent":
+      case InvoiceStatus.PENDING:
+      case InvoiceStatus.SENT:
         return "secondary";
-      case "overdue":
+      case InvoiceStatus.OVERDUE:
         return "destructive";
       default:
         return "secondary";
     }
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status: InvoiceStatus) => {
     switch (status) {
-      case "paid":
+      case InvoiceStatus.PAID:
         return "ชำระแล้ว";
-      case "pending":
+      case InvoiceStatus.PENDING:
         return "รอชำระ";
-      case "sent":
+      case InvoiceStatus.SENT:
         return "ส่งแล้ว";
-      case "overdue":
+      case InvoiceStatus.OVERDUE:
         return "ค้างชำระ";
-      case "draft":
+      case InvoiceStatus.DRAFT:
         return "ร่าง";
       default:
         return status;
@@ -366,13 +365,13 @@ export default function BillingPage() {
     (sum, inv) => sum + inv.total,
     0,
   );
-  const paidInvoices = filteredInvoices.filter((inv) => inv.status === "paid");
+  const paidInvoices = filteredInvoices.filter((inv) => inv.status === InvoiceStatus.PAID);
   const paidAmount = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
   const pendingAmount = filteredInvoices
-    .filter((inv) => inv.status === "pending" || inv.status === "sent")
+    .filter((inv) => inv.status === InvoiceStatus.PENDING || inv.status === InvoiceStatus.SENT)
     .reduce((sum, inv) => sum + inv.total, 0);
   const overdueAmount = filteredInvoices
-    .filter((inv) => inv.status === "overdue")
+    .filter((inv) => inv.status === InvoiceStatus.OVERDUE)
     .reduce((sum, inv) => sum + inv.total, 0);
 
   const columns = [
@@ -422,7 +421,7 @@ export default function BillingPage() {
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Droplets className="h-3 w-3 text-slate-500" />
-            {invoice.waterBillingMode === "fixed"
+            {invoice.waterBillingMode === WaterBillingMode.FIXED
               ? "เหมาจ่าย"
               : `${invoice.waterUsage} m³`}
           </span>
@@ -477,10 +476,10 @@ export default function BillingPage() {
                 updatingInvoiceId === invoice.id &&
                 updateInvoiceMutation.isPending
                   ? "กำลังอัปเดต..."
-                  : invoice.status === "paid"
+                  : invoice.status === InvoiceStatus.PAID
                     ? "ทำเป็นรอชำระ"
                     : "ทำเป็นชำระแล้ว",
-              icon: invoice.status === "paid" ? Clock : CheckCircle2,
+              icon: invoice.status === InvoiceStatus.PAID ? Clock : CheckCircle2,
               disabled:
                 updatingInvoiceId === invoice.id &&
                 updateInvoiceMutation.isPending,
@@ -490,10 +489,10 @@ export default function BillingPage() {
                   await updateInvoiceMutation.mutateAsync({
                     id: invoice.id,
                     updates:
-                      invoice.status === "paid"
-                        ? { status: "pending", paidDate: null }
+                      invoice.status === InvoiceStatus.PAID
+                        ? { status: InvoiceStatus.PENDING, paidDate: null }
                         : {
-                            status: "paid",
+                            status: InvoiceStatus.PAID,
                             paidDate: new Date().toISOString(),
                           },
                   });
@@ -664,7 +663,7 @@ export default function BillingPage() {
             <p className="text-xs text-muted-foreground">
               {
                 invoices.filter(
-                  (inv) => inv.status === "pending" || inv.status === "sent",
+                  (inv) => inv.status === InvoiceStatus.PENDING || inv.status === InvoiceStatus.SENT,
                 ).length
               }{" "}
               รอชำระ
@@ -683,7 +682,7 @@ export default function BillingPage() {
               {formatCurrency(overdueAmount)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {invoices.filter((inv) => inv.status === "overdue").length}{" "}
+              {invoices.filter((inv) => inv.status === InvoiceStatus.OVERDUE).length}{" "}
               ค้างชำระ
             </p>
           </CardContent>

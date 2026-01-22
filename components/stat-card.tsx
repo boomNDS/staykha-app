@@ -42,7 +42,11 @@ export function StatCard({
                 <span
                   className={cn(
                     "font-medium",
-                    trend.value > 0 ? "text-slate-600" : "text-slate-500",
+                    trend.value > 0
+                      ? "text-green-600 dark:text-green-500"
+                      : trend.value < 0
+                        ? "text-red-600 dark:text-red-500"
+                        : "text-muted-foreground",
                   )}
                 >
                   {trend.value > 0 ? "+" : ""}

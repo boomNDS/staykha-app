@@ -26,6 +26,8 @@ export function useTeam() {
       return teamsApi.getById(teamId);
     },
     enabled: !!teamId && isOwner,
+    retry: false, // Don't retry if API fails
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   const updateTeamMutation = useMutation({

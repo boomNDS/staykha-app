@@ -13,10 +13,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { teamsApi, usersApi } from "@/lib/api-client";
-import { getData } from "@/lib/api/response-helpers";
-import { useAuth } from "@/lib/auth-context";
-import { getErrorMessage, logError } from "@/lib/error-utils";
+import { authApi, teamsApi } from "@/lib/api-client";
+import { useAuth, useSetUser } from "@/lib/auth-context";
+import { normalizeErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { usePageTitle } from "@/lib/use-page-title";
 
@@ -25,17 +24,30 @@ export default function CreateTeamPage() {
 
   const router = useRouter();
   const { toast } = useToast();
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading: isAuthLoading } = useAuth();
+  const setUser = useSetUser();
   const [isLoading, setIsLoading] = React.useState(false);
   const [teamName, setTeamName] = React.useState("");
   const [error, setError] = React.useState("");
 
   React.useEffect(() => {
-    // Redirect if not owner or already has team
-    if (user && (user.role !== "owner" || user.teamId)) {
+    // Redirect to login if not authenticated
+    if (!isAuthLoading && !user) {
+      router.push("/login");
+      return;
+    }
+    
+    // Redirect if not owner
+    if (user && user.role !== "owner") {
+      router.push("/overview");
+      return;
+    }
+    
+    // Redirect if already has team
+    if (user && user.teamId) {
       router.push("/overview");
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,32 +66,42 @@ export default function CreateTeamPage() {
     setIsLoading(true);
 
     try {
-      // Create team
-      const team = getData(await teamsApi.create({ name: teamName.trim() }));
-      if (!team) {
+      // Create team - API returns team object directly
+      // Backend should automatically assign team to the user
+      const team = await teamsApi.create({ name: teamName.trim() });
+      if (!team || !team.id) {
         throw new Error("ไม่พบข้อมูลทีมที่สร้าง");
       }
 
-      const updated = getData(
-        await usersApi.update(user.id, { teamId: team.id }),
-      );
-      const updatedUser = {
-        ...user,
-        ...(updated ?? {}),
-        teamId: team.id,
-        team,
-      };
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-
-      // Trigger auth context update
-      window.dispatchEvent(new Event("userUpdated"));
+      // Fetch fresh user data from /auth/me to get updated team info
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const meResponse = await authApi.getMe(token);
+          if (meResponse.user) {
+            setUser(meResponse.user);
+            localStorage.setItem("user", JSON.stringify(meResponse.user));
+          } else {
+            // Fallback: update user state with team info
+            const updatedUser = { ...user, teamId: team.id, team };
+            setUser(updatedUser);
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+          }
+        } catch (error) {
+          // Fallback: update user state with team info
+          console.warn("[Create Team] Failed to fetch user, using team info:", error);
+          const updatedUser = { ...user, teamId: team.id, team };
+          setUser(updatedUser);
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+      }
 
       toast({
         title: "สร้างทีมสำเร็จ",
         description: `ยินดีต้อนรับสู่ ${team.name}! ขั้นต่อไปคือสร้างอาคารและเพิ่มห้อง`,
       });
 
-      // Redirect to buildings to start the owner flow
+      // Redirect immediately - don't wait for state propagation
       router.push("/overview/buildings/new");
     } catch (error: any) {
       logError(error, {
@@ -87,10 +109,14 @@ export default function CreateTeamPage() {
         action: "create",
         metadata: { userId: user?.id },
       });
-      setError(getErrorMessage(error, "ไม่สามารถสร้างทีมได้ กรุณาลองใหม่อีกครั้ง"));
+      const errorMessage = normalizeErrorMessage(
+        error,
+        "ไม่สามารถสร้างทีมได้ กรุณาลองใหม่อีกครั้ง",
+      );
+      setError(errorMessage);
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: getErrorMessage(error, "ไม่สามารถสร้างทีมได้"),
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -98,6 +124,12 @@ export default function CreateTeamPage() {
     }
   };
 
+  // Show loading while checking auth
+  if (isAuthLoading) {
+    return <LoadingState fullScreen message="กำลังโหลด..." />;
+  }
+
+  // Redirect handled in useEffect, but show loading as fallback
   if (!user || user.role !== "owner") {
     return <LoadingState fullScreen message="กำลังโหลด..." />;
   }

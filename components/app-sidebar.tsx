@@ -84,16 +84,20 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
   const roleLabel = user?.role === "owner" ? "เจ้าของ" : "ผู้ดูแล";
 
   // Fetch team data if user has teamId but no team object
+  // Note: Team info should be available from login response, so this is a fallback
   const teamQuery = useQuery({
     queryKey: ["team", user?.teamId],
     queryFn: () => {
-      if (!user?.teamId) return null;
+      if (!user?.teamId) return undefined;
       return teamsApi.getById(user.teamId);
     },
     enabled: !!user?.teamId && !user?.team,
+    retry: false, // Don't retry if API fails (team might not be accessible via this endpoint)
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  const team = user?.team || getData(teamQuery.data);
+  // Use team from user object first (from login response), fallback to query result
+  const team = user?.team || getData(teamQuery.data ?? undefined);
   const filteredNavigation = navigation.filter((item) =>
     item.roles.includes(user?.role || "admin"),
   );
@@ -134,11 +138,11 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
         <div className="border-b border-sidebar-border p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground font-semibold">
-              {user.name.charAt(0).toUpperCase()}
+              {(user.name || user.email || "U").charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {user.name}
+                {user.name || user.email || "User"}
               </p>
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge

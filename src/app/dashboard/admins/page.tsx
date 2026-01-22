@@ -41,6 +41,8 @@ export default function AdminsPage() {
     open: boolean;
     title: string;
     description: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
     onConfirm?: () => void;
   }>({
     open: false,
@@ -216,7 +218,7 @@ export default function AdminsPage() {
         title="จัดการผู้ดูแลระบบ"
         description="จัดการผู้ดูแลระบบและคำเชิญ"
         actions={
-          <Button asChild className="gap-2">
+          <Button asChild className="gap-2" disabled={true}>
             <Link to="/overview/admins/invite">
               <Mail className="h-4 w-4" />
               เชิญผู้ดูแล
@@ -264,7 +266,7 @@ export default function AdminsPage() {
                 title="ยังไม่มีผู้ดูแล"
                 description="เชิญผู้ดูแลคนแรกเพื่อช่วยจัดการระบบ"
                 action={
-                  <Button asChild>
+                  <Button asChild disabled={true}>
                     <Link to="/overview/admins/invite">เชิญผู้ดูแล</Link>
                   </Button>
                 }
@@ -319,7 +321,8 @@ export default function AdminsPage() {
         open={confirmState.open}
         title={confirmState.title}
         description={confirmState.description}
-        confirmLabel="ยืนยัน"
+        confirmLabel={confirmState.confirmLabel}
+        cancelLabel={confirmState.cancelLabel}
         isLoading={isMutating}
         onConfirm={async () => {
           const action = confirmState.onConfirm;

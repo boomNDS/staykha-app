@@ -41,6 +41,7 @@ import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { createReadingFormSchema, mapZodErrors } from "@/lib/schemas";
 import type { ReadingFormValues } from "@/lib/types";
+import { WaterBillingMode } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 import { calculateConsumption, validateImageFile } from "@/lib/validation";
 
@@ -117,7 +118,8 @@ export function ReadingForm({
     enabled: Boolean(readingGroupId),
   });
   const [isLoading, setIsLoading] = React.useState(false);
-  const rooms = getList(roomsQuery.data);
+  // Rooms API returns array directly
+  const rooms = roomsQuery.data ?? [];
   const normalizedInitialDate = normalizeDateParam(initialDate || todayValue());
   const [inputMode, setInputMode] = React.useState<InputMode>("ocr");
   const [meterScope, setMeterScope] =
@@ -154,7 +156,7 @@ export function ReadingForm({
   };
 
   const settings = getData(settingsQuery.data);
-  const isWaterFixed = settings?.waterBillingMode === "fixed";
+  const isWaterFixed = settings?.waterBillingMode === WaterBillingMode.FIXED;
   const selectedDate = parseDateString(formData.readingDate) ?? new Date();
 
   React.useEffect(() => {
@@ -179,16 +181,14 @@ export function ReadingForm({
       water?: {
         previousReading: number;
         currentReading: number;
-        consumption: number;
-        previousPhotoUrl: string;
-        currentPhotoUrl: string;
+        previousPhotoUrl: string | null;
+        currentPhotoUrl: string | null;
       };
       electric?: {
         previousReading: number;
         currentReading: number;
-        consumption: number;
-        previousPhotoUrl: string;
-        currentPhotoUrl: string;
+        previousPhotoUrl: string | null;
+        currentPhotoUrl: string | null;
       };
     }) => readingsApi.create(payload),
     onSuccess: () => {
@@ -328,17 +328,18 @@ export function ReadingForm({
           )
         : null;
 
+      // API expects: water/electric objects with previousReading, currentReading, photoUrls
+      // meterType is inferred from the key name, consumption is calculated automatically
       const nextWater = includesWater
         ? {
             previousReading: Number.parseFloat(formData.waterPreviousReading),
             currentReading: Number.parseFloat(formData.waterCurrentReading),
-            consumption: waterConsumption ?? 0,
             previousPhotoUrl: formData.waterPreviousPhoto
               ? URL.createObjectURL(formData.waterPreviousPhoto)
-              : "/placeholder.svg",
+              : null,
             currentPhotoUrl: formData.waterCurrentPhoto
               ? URL.createObjectURL(formData.waterCurrentPhoto)
-              : "/placeholder.svg",
+              : null,
           }
         : undefined;
       const nextElectric = includesElectric
@@ -347,19 +348,18 @@ export function ReadingForm({
               formData.electricPreviousReading,
             ),
             currentReading: Number.parseFloat(formData.electricCurrentReading),
-            consumption: electricConsumption ?? 0,
             previousPhotoUrl: formData.electricPreviousPhoto
               ? URL.createObjectURL(formData.electricPreviousPhoto)
-              : "/placeholder.svg",
+              : null,
             currentPhotoUrl: formData.electricCurrentPhoto
               ? URL.createObjectURL(formData.electricCurrentPhoto)
-              : "/placeholder.svg",
+              : null,
           }
         : undefined;
 
       if (readingGroupId) {
         const requiresWater = settings
-          ? settings.waterBillingMode !== "fixed"
+          ? settings.waterBillingMode !== WaterBillingMode.FIXED
           : true;
         const hasWater = Boolean(nextWater ?? existingGroup?.water);
         const hasElectric = Boolean(nextElectric ?? existingGroup?.electric);
@@ -368,9 +368,11 @@ export function ReadingForm({
             ? "pending"
             : "incomplete";
 
+        // Update API expects partial MeterReadingGroup
+        // The water/electric objects are partial MeterReading objects
         await readingsApi.update(readingGroupId, {
-          water: nextWater,
-          electric: nextElectric,
+          water: nextWater as Partial<import("@/lib/types").MeterReading>,
+          electric: nextElectric as Partial<import("@/lib/types").MeterReading>,
           status,
         });
         invalidateReadings();

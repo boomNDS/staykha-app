@@ -14,7 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { invitationsApi } from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, useSetUser } from "@/lib/auth-context";
+import { normalizeErrorMessage } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { usePageTitle } from "@/lib/use-page-title";
 
@@ -23,17 +24,24 @@ export default function JoinTeamPage() {
 
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading, logout } = useAuth();
+  const setUser = useSetUser();
   const [isLoading, setIsLoading] = React.useState(false);
   const [inviteCode, setInviteCode] = React.useState("");
   const [error, setError] = React.useState("");
 
   React.useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!isAuthLoading && !user) {
+      router.push("/login");
+      return;
+    }
+    
     // Redirect if not admin or already has team
     if (user && (user.role !== "admin" || user.teamId)) {
       router.push("/overview");
     }
-  }, [user, router]);
+  }, [user, isAuthLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,25 +66,28 @@ export default function JoinTeamPage() {
         user.id,
       );
 
-      // Update user in context and localStorage
-      const updatedUser = { ...user, teamId: team.id, team };
+      // Update user state immediately with team info
+      const updatedUser = { ...user, teamId: team.id };
+      setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
-
-      // Trigger auth context update
-      window.dispatchEvent(new Event("userUpdated"));
 
       toast({
         title: "เข้าร่วมทีมสำเร็จ",
         description: `Welcome to ${team.name}!`,
       });
 
+      // Redirect immediately - don't wait for state propagation
       router.push("/overview");
     } catch (error: any) {
       console.error("[Join Team] Error:", error);
-      setError(error.message || "โค้ดคำเชิญไม่ถูกต้องหรือหมดอายุ");
+      const errorMessage = normalizeErrorMessage(
+        error,
+        "โค้ดคำเชิญไม่ถูกต้องหรือหมดอายุ",
+      );
+      setError(errorMessage);
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: error.message || "โค้ดคำเชิญไม่ถูกต้อง",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -84,6 +95,12 @@ export default function JoinTeamPage() {
     }
   };
 
+  // Show loading while checking auth
+  if (isAuthLoading) {
+    return <LoadingState fullScreen message="กำลังโหลด..." />;
+  }
+
+  // Redirect handled in useEffect, but show loading as fallback
   if (!user || user.role !== "admin") {
     return <LoadingState fullScreen message="กำลังโหลด..." />;
   }
@@ -143,6 +160,11 @@ export default function JoinTeamPage() {
               )}
             </Button>
           </form>
+          <div className="mt-6 flex items-center justify-center">
+            <Button variant="ghost" size="sm" onClick={logout}>
+              ออกจากระบบ
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

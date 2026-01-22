@@ -25,6 +25,49 @@ const attachJsonHeaders = (options: RequestOptions) => {
 };
 
 /**
+ * Refresh access token using refresh token
+ */
+async function refreshAccessToken(): Promise<string | null> {
+  try {
+    const refreshToken = typeof window !== "undefined"
+      ? window.localStorage.getItem("refreshToken")
+      : null;
+    
+    if (!refreshToken) {
+      return null;
+    }
+
+    const response = await fetch(`${getApiUrl()}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    
+    if (data.accessToken && data.refreshToken) {
+      // Update stored tokens
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("token", data.accessToken);
+        window.localStorage.setItem("refreshToken", data.refreshToken);
+      }
+      return data.accessToken;
+    }
+    
+    return null;
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error("[API Client] Failed to refresh token:", error);
+    }
+    return null;
+  }
+}
+
+/**
  * Create a unified API instance that handles both authenticated and public requests
  * @param token - Optional token. If undefined, tries to get from localStorage. If null, no token is added.
  * @returns API instance with get, post, put, patch, delete methods
@@ -32,14 +75,22 @@ const attachJsonHeaders = (options: RequestOptions) => {
 export function createApi(token?: string | null) {
   // If token not provided, try to get from localStorage (for convenience)
   // If explicitly null, don't add token (for public endpoints)
-  const authToken =
-    token === undefined
-      ? typeof window !== "undefined"
+  let currentToken: string | null;
+  const getAuthToken = () => {
+    if (token === undefined) {
+      currentToken = typeof window !== "undefined"
         ? window.localStorage.getItem("token")
-        : null
-      : token;
+        : null;
+      return currentToken;
+    }
+    currentToken = token;
+    return currentToken;
+  };
+  
+  // Initialize current token
+  getAuthToken();
 
-  // Create ofetch instance with token handling
+  // Create ofetch instance with token handling and automatic refresh
   const fetchInstance = ofetch.create({
     baseURL: apiBasePath,
     credentials: "omit",
@@ -47,7 +98,8 @@ export function createApi(token?: string | null) {
       accept: "application/json",
     },
     onRequest({ options }) {
-      // Add token to headers if available
+      // Add token to headers if available (use currentToken which may be refreshed)
+      const authToken = currentToken || getAuthToken();
       if (authToken) {
         const headers = options.headers
           ? (options.headers as unknown as Record<string, string>)
@@ -65,6 +117,28 @@ export function createApi(token?: string | null) {
           `[API Error] ${response.status} ${response.statusText}`,
           response._data,
         );
+      }
+
+      // If 401 Unauthorized, try to refresh token
+      if (response.status === 401 && token !== null) {
+        // Refresh token asynchronously (don't block the error)
+        refreshAccessToken().then((newToken) => {
+          if (!newToken && typeof window !== "undefined") {
+            // Refresh failed, clear tokens and redirect to login
+            window.localStorage.removeItem("token");
+            window.localStorage.removeItem("refreshToken");
+            window.localStorage.removeItem("user");
+            window.location.assign("/login");
+          }
+        }).catch(() => {
+          // Refresh failed, clear tokens and redirect to login
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem("token");
+            window.localStorage.removeItem("refreshToken");
+            window.localStorage.removeItem("user");
+            window.location.assign("/login");
+          }
+        });
       }
     },
   });
@@ -96,18 +170,50 @@ export function createApi(token?: string | null) {
     };
   };
 
+  // Helper to retry request with new token after refresh
+  const retryWithRefresh = async <T>(
+    fn: () => Promise<T>,
+    retries = 1,
+  ): Promise<T> => {
+    try {
+      return await fn();
+    } catch (error: any) {
+      // If 401 and we have retries left, try to refresh and retry
+      if (error?.status === 401 && retries > 0 && token !== null) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          // Update the current token for subsequent requests
+          currentToken = newToken;
+          // Retry the request
+          return retryWithRefresh(fn, retries - 1);
+        } else {
+          // Refresh failed, clear tokens and redirect to login
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem("token");
+            window.localStorage.removeItem("refreshToken");
+            window.localStorage.removeItem("user");
+            window.location.assign("/login");
+          }
+        }
+      }
+      throw error;
+    }
+  };
+
   return {
     get: async <T>(endpoint: string, options?: ApiOptions): Promise<T> => {
       try {
         const { params, responseType, ...restOptions } = options ?? {};
-        return await fetchInstance<T>(
-          endpoint,
-          {
-            ...restOptions,
-            ...(params ? { query: params } : {}),
-            ...(responseType ? { responseType } : {}),
-          } as any,
-        );
+        return await retryWithRefresh(async () => {
+          return await fetchInstance<T>(
+            endpoint,
+            {
+              ...restOptions,
+              ...(params ? { query: params } : {}),
+              ...(responseType ? { responseType } : {}),
+            } as any,
+          );
+        });
       } catch (error) {
         throw handleApiError(error);
       }
@@ -118,10 +224,12 @@ export function createApi(token?: string | null) {
       options?: ApiOptions,
     ): Promise<T> => {
       try {
-        return await fetchInstance<T>(
-          endpoint,
-          withMethod("POST", options, body) as any,
-        );
+        return await retryWithRefresh(async () => {
+          return await fetchInstance<T>(
+            endpoint,
+            withMethod("POST", options, body) as any,
+          );
+        });
       } catch (error) {
         throw handleApiError(error);
       }
@@ -132,10 +240,12 @@ export function createApi(token?: string | null) {
       options?: ApiOptions,
     ): Promise<T> => {
       try {
-        return await fetchInstance<T>(
-          endpoint,
-          withMethod("PUT", options, body) as any,
-        );
+        return await retryWithRefresh(async () => {
+          return await fetchInstance<T>(
+            endpoint,
+            withMethod("PUT", options, body) as any,
+          );
+        });
       } catch (error) {
         throw handleApiError(error);
       }
@@ -146,20 +256,24 @@ export function createApi(token?: string | null) {
       options?: ApiOptions,
     ): Promise<T> => {
       try {
-        return await fetchInstance<T>(
-          endpoint,
-          withMethod("PATCH", options, body) as any,
-        );
+        return await retryWithRefresh(async () => {
+          return await fetchInstance<T>(
+            endpoint,
+            withMethod("PATCH", options, body) as any,
+          );
+        });
       } catch (error) {
         throw handleApiError(error);
       }
     },
     delete: async <T>(endpoint: string, options?: ApiOptions): Promise<T> => {
       try {
-        return await fetchInstance<T>(
-          endpoint,
-          withMethod("DELETE", options) as any,
-        );
+        return await retryWithRefresh(async () => {
+          return await fetchInstance<T>(
+            endpoint,
+            withMethod("DELETE", options) as any,
+          );
+        });
       } catch (error) {
         throw handleApiError(error);
       }

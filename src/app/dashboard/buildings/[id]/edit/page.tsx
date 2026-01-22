@@ -49,7 +49,8 @@ export default function EditBuildingPage() {
     enabled: Boolean(buildingId),
   });
 
-  const building = getData(buildingQuery.data);
+  // Buildings API returns building object directly
+  const building = buildingQuery.data ?? null;
 
   const form = useForm<BuildingFormValues>({
     resolver: zodResolver(buildingFormSchema),

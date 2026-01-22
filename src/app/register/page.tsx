@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { normalizeErrorMessage } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { registerSchema } from "@/lib/schemas";
 import type { z } from "zod";
@@ -85,10 +86,10 @@ export default function RegisterPage() {
         router.push("/register/join-team");
       }
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "ไม่สามารถสร้างบัญชีได้ กรุณาลองใหม่อีกครั้ง";
+      const message = normalizeErrorMessage(
+        error,
+        "ไม่สามารถสร้างบัญชีได้ กรุณาลองใหม่อีกครั้ง",
+      );
       toast({
         title: "สมัครไม่สำเร็จ",
         description: message,

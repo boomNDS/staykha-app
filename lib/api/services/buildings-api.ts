@@ -2,25 +2,26 @@ import { BaseApiService } from "../base-service";
 import type {
   BuildingCreateRequest,
   BuildingDeleteResponse,
+  BuildingDirectResponse,
   BuildingResponse,
   BuildingUpdateRequest,
-  BuildingsListResponse,
+  BuildingsDirectListResponse,
 } from "./buildings-types";
 
 class BuildingsApi extends BaseApiService {
-  async getAll(token?: string): Promise<BuildingsListResponse> {
+  async getAll(token?: string): Promise<BuildingsDirectListResponse> {
     try {
       const api = this.createApi(token);
-      return api.get<BuildingsListResponse>("/buildings");
+      return api.get<BuildingsDirectListResponse>("/buildings");
     } catch (error: unknown) {
       this.handleError(error, "getAll");
     }
   }
 
-  async getById(id: string, token?: string): Promise<BuildingResponse> {
+  async getById(id: string, token?: string): Promise<BuildingDirectResponse> {
     try {
       const api = this.createApi(token);
-      return api.get<BuildingResponse>(`/buildings/${id}`);
+      return api.get<BuildingDirectResponse>(`/buildings/${id}`);
     } catch (error: unknown) {
       this.handleError(error, "getById", { id });
     }

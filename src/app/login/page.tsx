@@ -24,6 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
+import { normalizeErrorMessage } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { loginSchema } from "@/lib/schemas";
 import type { z } from "zod";
@@ -52,7 +53,18 @@ export default function LoginPage() {
 
   React.useEffect(() => {
     if (user) {
-      router.push("/overview");
+      // Check if user needs to create/join team
+      if (!user.teamId) {
+        if (user.role === "owner") {
+          router.push("/register/create-team");
+        } else if (user.role === "admin") {
+          router.push("/register/join-team");
+        } else {
+          router.push("/overview");
+        }
+      } else {
+        router.push("/overview");
+      }
     }
   }, [user, router]);
 
@@ -65,12 +77,12 @@ export default function LoginPage() {
         description: "ยินดีต้อนรับกลับมา",
       });
 
-      router.push("/overview");
+      // Redirect will be handled by useEffect when user state updates
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+      const message = normalizeErrorMessage(
+        error,
+        "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+      );
       toast({
         title: "Login ไม่สำเร็จ",
         description: message,
@@ -151,7 +163,7 @@ export default function LoginPage() {
                         <FormControl>
                           <Input
                             type="email"
-                            placeholder="admin@example.com"
+                            placeholder="admin@staykha.com"
                             disabled={form.formState.isSubmitting}
                             {...field}
                           />
@@ -223,25 +235,25 @@ export default function LoginPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => quickLogin("owner@example.com", "owner123")}
+                    onClick={() => quickLogin("owner@staykha.com", "password123")}
                     className="w-full justify-start text-left"
                     type="button"
                   >
                     <span className="flex-1">เจ้าของ - สิทธิ์เต็ม</span>
                     <span className="text-xs text-muted-foreground">
-                      owner@example.com
+                      owner@staykha.com
                     </span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => quickLogin("admin@example.com", "admin123")}
+                    onClick={() => quickLogin("admin@staykha.com", "password123")}
                     className="w-full justify-start text-left"
                     type="button"
                   >
                     <span className="flex-1">ผู้ดูแล - สิทธิ์ผู้จัดการ</span>
                     <span className="text-xs text-muted-foreground">
-                      admin@example.com
+                      admin@staykha.com
                     </span>
                   </Button>
                 </div>

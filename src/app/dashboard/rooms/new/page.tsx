@@ -64,7 +64,8 @@ export default function NewRoomPage() {
     },
     enabled: !!user?.teamId,
   });
-  const buildings = getList(buildingsQuery.data);
+  // Buildings API returns array directly
+  const buildings = buildingsQuery.data ?? [];
   const settings = getData(settingsQuery.data);
 
   const form = useForm<RoomFormValues>({
@@ -111,7 +112,11 @@ export default function NewRoomPage() {
       status: "occupied" | "vacant" | "maintenance";
       monthlyRent?: number;
       size?: number;
-    }) => roomsApi.create(payload),
+    }) =>
+      roomsApi.create({
+        ...payload,
+        status: payload.status.toUpperCase() as "OCCUPIED" | "VACANT" | "MAINTENANCE",
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
