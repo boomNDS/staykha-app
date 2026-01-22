@@ -1,4 +1,5 @@
 import { BaseApiService } from "../base-service";
+import type { AdminInvitation } from "@/lib/types";
 import type {
   CreateInvitationData,
   InvitationAcceptResponse,
@@ -11,12 +12,14 @@ class InvitationsApi extends BaseApiService {
   async getAll(
     teamId?: string,
     token?: string,
-  ): Promise<InvitationsListResponse> {
+  ): Promise<AdminInvitation[]> {
     try {
       const api = this.createApi(token);
-      return api.get<InvitationsListResponse>("/invitations", {
+      const response = await api.get<InvitationsListResponse>("/invitations", {
         params: teamId ? { teamId } : undefined,
       });
+      // Extract invitations array from wrapped response
+      return response.invitations ?? [];
     } catch (error: unknown) {
       this.handleError(error, "getAll", { teamId });
     }

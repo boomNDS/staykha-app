@@ -1,7 +1,10 @@
-import type { ApiListResponse, ApiResponse, OkResponse } from "@/lib/api/response";
+import type { ApiResponse, OkResponse } from "@/lib/api/response";
 import type { AdminInvitation, Team } from "@/lib/types";
 
-export type InvitationsListResponse = ApiListResponse<AdminInvitation>;
+export interface InvitationsListResponse {
+  invitations: AdminInvitation[];
+}
+
 export type InvitationResponse = ApiResponse<AdminInvitation>;
 
 export interface InvitationAcceptResponse {

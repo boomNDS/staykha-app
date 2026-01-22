@@ -1,5 +1,8 @@
-import type { ApiListResponse, OkResponse } from "@/lib/api/response";
+import type { OkResponse } from "@/lib/api/response";
 import type { User } from "@/lib/types";
 
-export type AdminsListResponse = ApiListResponse<User>;
+export interface AdminsListResponse {
+  admins: User[];
+}
+
 export type AdminDeleteResponse = OkResponse;
