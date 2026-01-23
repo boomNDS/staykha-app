@@ -2,8 +2,16 @@
 
 import { useSettings } from "@/lib/hooks/use-settings";
 import type { Invoice } from "@/lib/types";
-import { WaterBillingMode } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+import {
+  calculateInvoiceAmounts,
+  formatMeterReading,
+  getElectricReading,
+  getInvoiceLabels,
+  getInvoiceMetadata,
+  getInvoiceRoomLabel,
+  getWaterReading,
+} from "@/lib/utils/invoice-helpers";
 
 interface PrintInvoiceCardProps {
   invoice: Invoice;
@@ -16,83 +24,14 @@ export function PrintInvoiceCard({
 }: PrintInvoiceCardProps) {
   const { settings } = useSettings();
 
-  const roomLabel =
-    invoice.room?.roomNumber || invoice.roomNumber || invoice.roomId || "—";
-  
-  // Get readings from multiple sources: readings array or readingGroup.meterReadings
-  const getWaterReading = () => {
-    // First try readings array
-    const fromReadings = invoice.readings?.find(
-      (reading) => {
-        const type = String(reading.meterType || "").toLowerCase();
-        return type === "water";
-      },
-    );
-    if (fromReadings) return fromReadings;
-    
-    // Then try readingGroup.meterReadings
-    const fromGroup = invoice.readingGroup?.meterReadings?.find(
-      (reading) => {
-        const type = String(reading.meterType || "").toLowerCase();
-        return type === "water";
-      },
-    );
-    if (fromGroup) {
-      return {
-        previousReading: typeof fromGroup.previousReading === "string" ? Number.parseFloat(fromGroup.previousReading) : fromGroup.previousReading,
-        currentReading: typeof fromGroup.currentReading === "string" ? Number.parseFloat(fromGroup.currentReading) : fromGroup.currentReading,
-        consumption: typeof fromGroup.consumption === "string" ? Number.parseFloat(fromGroup.consumption) : fromGroup.consumption,
-      };
-    }
-    return null;
-  };
-  
-  const getElectricReading = () => {
-    // First try readings array
-    const fromReadings = invoice.readings?.find(
-      (reading) => {
-        const type = String(reading.meterType || "").toLowerCase();
-        return type === "electric" || type === "electricity";
-      },
-    );
-    if (fromReadings) return fromReadings;
-    
-    // Then try readingGroup.meterReadings
-    const fromGroup = invoice.readingGroup?.meterReadings?.find(
-      (reading) => {
-        const type = String(reading.meterType || "").toLowerCase();
-        return type === "electric" || type === "electricity";
-      },
-    );
-    if (fromGroup) {
-      return {
-        previousReading: typeof fromGroup.previousReading === "string" ? Number.parseFloat(fromGroup.previousReading) : fromGroup.previousReading,
-        currentReading: typeof fromGroup.currentReading === "string" ? Number.parseFloat(fromGroup.currentReading) : fromGroup.currentReading,
-        consumption: typeof fromGroup.consumption === "string" ? Number.parseFloat(fromGroup.consumption) : fromGroup.consumption,
-      };
-    }
-    return null;
-  };
-  
-  const waterReading = getWaterReading();
-  const electricReading = getElectricReading();
-  const roomRent = invoice.roomRent ?? invoice.room?.monthlyRent ?? null;
-  const waterSubtotal = invoice.waterSubtotal ?? invoice.waterAmount ?? 0;
-  const electricSubtotal =
-    invoice.electricSubtotal ?? invoice.electricAmount ?? 0;
-  const subtotal =
-    invoice.subtotal ?? waterSubtotal + electricSubtotal + (roomRent ?? 0);
-  const tax = invoice.tax ?? 0;
-  const total = invoice.total ?? subtotal + tax;
-  const isWaterFixed = invoice.waterBillingMode === WaterBillingMode.FIXED;
-  const taxRate = settings?.taxRate ?? 0;
-
-  // Thai labels with fallbacks
-  const labelInvoice = settings?.labelInvoice || "ใบแจ้งหนี้";
-  const labelRoomRent = settings?.labelRoomRent || "ค่าเช่าห้อง";
-  const labelWater = settings?.labelWater || "ค่าน้ำประปา";
-  const labelElectricity = settings?.labelElectricity || "ค่าไฟฟ้า";
-  const labelTotal = "จำนวนเงินรวม";
+  // Use shared utility functions
+  const roomLabel = getInvoiceRoomLabel(invoice);
+  const waterReading = getWaterReading(invoice);
+  const electricReading = getElectricReading(invoice);
+  const { roomRent, waterSubtotal, electricSubtotal, subtotal, tax, total } =
+    calculateInvoiceAmounts(invoice);
+  const { isWaterFixed, taxRate } = getInvoiceMetadata(invoice, settings);
+  const labels = getInvoiceLabels(settings);
 
   // Payment details
   const bankName = settings?.bankName || "";
@@ -113,7 +52,7 @@ export function PrintInvoiceCard({
       <div className="w-full max-w-full space-y-4 rounded-lg border border-border bg-white px-7 py-5 text-base text-slate-900 shadow-sm print:max-w-[210mm] print:px-10 print:py-8 print:text-lg print:mx-auto">
         {/* Header */}
         <div className="text-center">
-          <p className="text-2xl font-bold print:text-3xl">{labelInvoice}</p>
+          <p className="text-2xl font-bold print:text-3xl">{labels.invoice}</p>
           <p className="mt-1 text-base font-semibold print:text-2xl">
             ห้องเลขที่ {roomLabel}
           </p>
@@ -157,7 +96,7 @@ export function PrintInvoiceCard({
               {roomRent && roomRent > 0 && (
                 <tr>
                   <td className="px-3 py-2 font-medium text-base print:px-4 print:py-3 print:text-lg">
-                    {labelRoomRent}
+                    {labels.roomRent}
                   </td>
                   <td className="px-3 py-2 text-center text-slate-400 text-base print:px-4 print:py-3 print:text-lg">
                     —
@@ -174,21 +113,17 @@ export function PrintInvoiceCard({
               {/* Water */}
               <tr>
                 <td className="px-3 py-2 font-medium text-base print:px-4 print:py-3 print:text-lg">
-                  {labelWater} {isWaterFixed ? "(ค่าบริการ)" : ""}
+                  {labels.water} {isWaterFixed ? "(ค่าบริการ)" : ""}
                 </td>
                 <td className="px-3 py-2 text-center text-slate-600 text-base print:px-4 print:py-3 print:text-lg">
                   {isWaterFixed
                     ? "—"
-                    : waterReading?.previousReading != null
-                      ? waterReading.previousReading.toLocaleString()
-                      : "—"}
+                    : formatMeterReading(waterReading?.previousReading ?? null)}
                 </td>
                 <td className="px-3 py-2 text-center text-slate-600 text-base print:px-4 print:py-3 print:text-lg">
                   {isWaterFixed
                     ? "—"
-                    : waterReading?.currentReading != null
-                      ? waterReading.currentReading.toLocaleString()
-                      : "—"}
+                    : formatMeterReading(waterReading?.currentReading ?? null)}
                 </td>
                 <td className="px-3 py-2 text-right font-mono font-semibold text-base print:px-4 print:py-3 print:text-lg whitespace-nowrap">
                   {formatCurrency(waterSubtotal, settings?.currency || "THB")}
@@ -198,17 +133,13 @@ export function PrintInvoiceCard({
               {/* Electricity */}
               <tr>
                 <td className="px-3 py-2 font-medium text-base print:px-4 print:py-3 print:text-lg">
-                  {labelElectricity}
+                  {labels.electricity}
                 </td>
                 <td className="px-3 py-2 text-center text-slate-600 text-base print:px-4 print:py-3 print:text-lg">
-                  {electricReading?.previousReading != null
-                    ? electricReading.previousReading.toLocaleString()
-                    : "—"}
+                  {formatMeterReading(electricReading?.previousReading ?? null)}
                 </td>
                 <td className="px-3 py-2 text-center text-slate-600 text-base print:px-4 print:py-3 print:text-lg">
-                  {electricReading?.currentReading != null
-                    ? electricReading.currentReading.toLocaleString()
-                    : "—"}
+                  {formatMeterReading(electricReading?.currentReading ?? null)}
                 </td>
                 <td className="px-3 py-2 text-right font-mono font-semibold text-base print:px-4 print:py-3 print:text-lg whitespace-nowrap">
                   {formatCurrency(
@@ -249,7 +180,7 @@ export function PrintInvoiceCard({
               {/* Total */}
               <tr className="bg-slate-50">
                 <td className="px-3 py-2 font-bold text-base print:px-4 print:py-3 print:text-lg">
-                  {labelTotal}
+                  {labels.total}
                 </td>
                 <td className="px-3 py-2 text-center text-slate-400 text-base print:px-4 print:py-3 print:text-lg">
                   —

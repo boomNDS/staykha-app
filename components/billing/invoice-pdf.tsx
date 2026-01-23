@@ -1,7 +1,15 @@
 import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
 import type { Invoice } from "@/lib/types";
 import type { AdminSettings } from "@/lib/types";
-import { WaterBillingMode } from "@/lib/types";
+import {
+  calculateInvoiceAmounts,
+  formatMeterReading,
+  getElectricReading,
+  getInvoiceLabels,
+  getInvoiceMetadata,
+  getInvoiceRoomLabel,
+  getWaterReading,
+} from "@/lib/utils/invoice-helpers";
 
 // Register Thai font - using THSarabunNew font from local files
 // Font files located in: public/fonts/
@@ -32,135 +40,181 @@ try {
 // Styles for single invoice per page
 const singlePageStyles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 30,
     backgroundColor: "#ffffff",
     fontFamily: "THSarabunNew",
   },
   header: {
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 12,
   },
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 8,
+    marginBottom: 6,
     fontFamily: "THSarabunNew",
   },
   roomNumber: {
     fontSize: 20,
     fontWeight: "normal",
-    marginBottom: 4,
+    marginBottom: 3,
     fontFamily: "THSarabunNew",
   },
   date: {
     fontSize: 16,
-    color: "#000000",
-    marginBottom: 20,
+    color: "#64748b",
+    marginBottom: 12,
     fontFamily: "THSarabunNew",
   },
   table: {
-    border: "1px solid #e2e8f0",
-    marginBottom: 24,
+    border: "2px solid #cbd5e1",
+    borderRadius: 6,
+    marginBottom: 12,
+    overflow: "hidden",
   },
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#f1f5f9",
     borderBottom: "1px solid #cbd5e1",
-    padding: 10,
+    padding: 8,
   },
   tableHeaderCellFirst: {
-    flex: 1,
+    flex: 2.5,
     fontSize: 14,
     fontWeight: "bold",
     fontFamily: "THSarabunNew",
     textAlign: "left",
+    color: "#334155",
   },
   tableHeaderCellCenter: {
-    flex: 1,
+    flex: 1.8,
     fontSize: 14,
     fontWeight: "bold",
     fontFamily: "THSarabunNew",
     textAlign: "center",
+    color: "#334155",
   },
   tableHeaderCellLast: {
-    flex: 1,
+    flex: 3.9,
     fontSize: 14,
     fontWeight: "bold",
     fontFamily: "THSarabunNew",
     textAlign: "right",
+    color: "#334155",
   },
   tableRow: {
     flexDirection: "row",
     borderBottom: "1px solid #e2e8f0",
-    padding: 10,
+    padding: 8,
     backgroundColor: "#ffffff",
   },
+  tableRowTotal: {
+    flexDirection: "row",
+    borderBottom: "1px solid #e2e8f0",
+    padding: 8,
+    backgroundColor: "#f8fafc",
+  },
   tableCellLeft: {
-    flex: 1,
+    flex: 2.5,
     fontSize: 14,
     fontFamily: "THSarabunNew",
     textAlign: "left",
+    color: "#0f172a",
   },
   tableCellCenter: {
-    flex: 1,
+    flex: 1.8,
     fontSize: 14,
     fontFamily: "THSarabunNew",
     textAlign: "center",
+    color: "#475569",
   },
   tableCellRight: {
-    flex: 1,
+    flex: 3.9,
     fontSize: 14,
     fontFamily: "THSarabunNew",
     textAlign: "right",
+    color: "#0f172a",
+    fontWeight: "bold",
   },
   footer: {
-    marginTop: 24,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTop: "2px solid #cbd5e1",
+  },
+  footerPayment: {
+    marginBottom: 8,
   },
   footerText: {
     fontSize: 14,
-    marginBottom: 8,
+    marginBottom: 3,
     fontFamily: "THSarabunNew",
+    color: "#0f172a",
+    fontWeight: "bold",
   },
   footerTextRed: {
     fontSize: 14,
-    marginBottom: 8,
+    marginBottom: 6,
     color: "#dc2626",
     fontFamily: "THSarabunNew",
+    fontWeight: "bold",
+  },
+  footerBankInfo: {
+    marginTop: 6,
+  },
+  footerBankText: {
+    fontSize: 14,
+    marginBottom: 2,
+    fontFamily: "THSarabunNew",
+    color: "#334155",
+    fontWeight: "normal",
   },
   footerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 6,
+    paddingTop: 6,
     borderTop: "1px solid #e2e8f0",
   },
   footerLabel: {
     fontSize: 14,
     fontFamily: "THSarabunNew",
+    color: "#64748b",
   },
   footerValue: {
     fontSize: 14,
     fontFamily: "THSarabunNew",
+    color: "#334155",
+    fontWeight: "bold",
+  },
+  footerValueMono: {
+    fontSize: 14,
+    fontFamily: "THSarabunNew",
+    color: "#334155",
+    fontWeight: "bold",
   },
 });
 
 // Styles for 4 invoices per page (2x2 grid)
 const gridPageStyles = StyleSheet.create({
   page: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: "column",
     backgroundColor: "#ffffff",
     padding: 16,
     fontFamily: "THSarabunNew",
   },
+  invoiceRow: {
+    flexDirection: "row",
+    width: "100%",
+    marginBottom: 16,
+  },
   invoiceCard: {
     width: "48%",
-    height: "48%",
-    padding: 12,
-    marginBottom: 8,
-    marginRight: 8,
+    padding: 10,
+    marginRight: "2%",
+    marginLeft: "1%",
     border: "1px solid #e2e8f0",
     position: "relative",
+    minHeight: 280,
   },
   header: {
     textAlign: "center",
@@ -185,8 +239,10 @@ const gridPageStyles = StyleSheet.create({
     fontFamily: "THSarabunNew",
   },
   table: {
-    border: "1px solid #e2e8f0",
+    border: "2px solid #cbd5e1",
+    borderRadius: 6,
     marginBottom: 8,
+    overflow: "hidden",
   },
   tableHeader: {
     flexDirection: "row",
@@ -195,25 +251,28 @@ const gridPageStyles = StyleSheet.create({
     padding: 4,
   },
   tableHeaderCellFirst: {
-    flex: 1,
+    flex: 2.5,
     fontSize: 8,
     fontWeight: "bold",
     fontFamily: "THSarabunNew",
     textAlign: "left",
+    color: "#334155",
   },
   tableHeaderCellCenter: {
-    flex: 1,
+    flex: 1.8,
     fontSize: 8,
     fontWeight: "bold",
     fontFamily: "THSarabunNew",
     textAlign: "center",
+    color: "#334155",
   },
   tableHeaderCellLast: {
-    flex: 1,
+    flex: 3.9,
     fontSize: 8,
     fontWeight: "bold",
     fontFamily: "THSarabunNew",
     textAlign: "right",
+    color: "#334155",
   },
   tableRow: {
     flexDirection: "row",
@@ -221,37 +280,65 @@ const gridPageStyles = StyleSheet.create({
     padding: 4,
     backgroundColor: "#ffffff",
   },
+  tableRowTotal: {
+    flexDirection: "row",
+    borderBottom: "1px solid #e2e8f0",
+    padding: 4,
+    backgroundColor: "#f8fafc",
+  },
   tableCellLeft: {
-    flex: 1,
+    flex: 2.5,
     fontSize: 8,
     fontFamily: "THSarabunNew",
     textAlign: "left",
+    color: "#0f172a",
   },
   tableCellCenter: {
-    flex: 1,
+    flex: 1.8,
     fontSize: 8,
     fontFamily: "THSarabunNew",
     textAlign: "center",
+    color: "#475569",
   },
   tableCellRight: {
-    flex: 1,
+    flex: 3.9,
     fontSize: 8,
     fontFamily: "THSarabunNew",
     textAlign: "right",
+    color: "#0f172a",
+    fontWeight: "bold",
   },
   footer: {
     marginTop: 8,
+    paddingTop: 8,
+    borderTop: "2px solid #cbd5e1",
+  },
+  footerPayment: {
+    marginBottom: 6,
   },
   footerText: {
     fontSize: 7,
-    marginBottom: 3,
+    marginBottom: 2,
     fontFamily: "THSarabunNew",
+    color: "#0f172a",
+    fontWeight: "bold",
   },
   footerTextRed: {
     fontSize: 7,
-    marginBottom: 3,
+    marginBottom: 4,
     color: "#dc2626",
     fontFamily: "THSarabunNew",
+    fontWeight: "bold",
+  },
+  footerBankInfo: {
+    marginTop: 4,
+  },
+  footerBankText: {
+    fontSize: 7,
+    marginBottom: 1,
+    fontFamily: "THSarabunNew",
+    color: "#334155",
+    fontWeight: "normal",
   },
   footerRow: {
     flexDirection: "row",
@@ -263,10 +350,19 @@ const gridPageStyles = StyleSheet.create({
   footerLabel: {
     fontSize: 7,
     fontFamily: "THSarabunNew",
+    color: "#64748b",
   },
   footerValue: {
     fontSize: 7,
     fontFamily: "THSarabunNew",
+    color: "#334155",
+    fontWeight: "bold",
+  },
+  footerValueMono: {
+    fontSize: 7,
+    fontFamily: "THSarabunNew",
+    color: "#334155",
+    fontWeight: "bold",
   },
 });
 
@@ -292,13 +388,13 @@ export function InvoicePDFDocument({ invoices, settings, gridLayout = false }: I
     );
   }
 
-  const formatCurrency = (amount: number | string | null | undefined): string => {
+  const formatCurrency = (amount: number | string | null | undefined, currency: string = "THB"): string => {
     if (amount === null || amount === undefined) return "฿0.00";
     const num = typeof amount === "string" ? parseFloat(amount) : amount;
     if (isNaN(num)) return "฿0.00";
     return new Intl.NumberFormat("th-TH", {
       style: "currency",
-      currency: "THB",
+      currency: currency,
       minimumFractionDigits: 2,
     }).format(num);
   };
@@ -324,55 +420,21 @@ export function InvoicePDFDocument({ invoices, settings, gridLayout = false }: I
   };
 
   // Render a single invoice
-  const renderInvoice = (invoice: Invoice, styles: typeof singlePageStyles) => {
-    // Get room number from multiple possible sources
-    const roomLabel = 
-      invoice.room?.roomNumber || 
-      invoice.roomNumber || 
-      (invoice.room as any)?.roomNumber ||
-      invoice.roomId || 
-      "—";
-    const waterReading = invoice.readings?.find(
-      (reading) => {
-        const type = String(reading?.meterType || "").toLowerCase();
-        return type === "water";
-      },
-    );
-    const electricReading = invoice.readings?.find(
-      (reading) => {
-        const type = String(reading?.meterType || "").toLowerCase();
-        return type === "electric" || type === "electricity";
-      },
-    );
-    const roomRent = invoice.roomRent ?? invoice.room?.monthlyRent ?? null;
-    const waterSubtotal = invoice.waterSubtotal ?? invoice.waterAmount ?? 0;
-    const electricSubtotal = invoice.electricSubtotal ?? invoice.electricAmount ?? 0;
-    const subtotal = invoice.subtotal ?? waterSubtotal + electricSubtotal + (roomRent ?? 0);
-    const tax = invoice.tax ?? 0;
-    const total = invoice.total ?? subtotal + tax;
-
-    const labelInvoice = settings?.labelInvoice || "ใบแจ้งหนี้";
-    const labelRoomRent = settings?.labelRoomRent || "ค่าเช่าห้อง";
-    const labelWater = settings?.labelWater || "ค่าน้ำ";
-    const labelElectricity = settings?.labelElectricity || "ค่าไฟ";
-
-    // Get meter readings
-    const waterPrevious = waterReading?.previousReading ?? null;
-    const waterCurrent = waterReading?.currentReading ?? null;
-    const electricPrevious = electricReading?.previousReading ?? null;
-    const electricCurrent = electricReading?.currentReading ?? null;
-
-    // Format meter readings
-    const formatMeterReading = (value: number | null | undefined): string => {
-      if (value === null || value === undefined) return "—";
-      return value.toString();
-    };
+  const renderInvoice = (invoice: Invoice, styles: typeof singlePageStyles | typeof gridPageStyles) => {
+    // Use shared utility functions
+    const roomLabel = getInvoiceRoomLabel(invoice);
+    const waterReading = getWaterReading(invoice);
+    const electricReading = getElectricReading(invoice);
+    const { roomRent, waterSubtotal, electricSubtotal, subtotal, tax, total } =
+      calculateInvoiceAmounts(invoice);
+    const { isWaterFixed, taxRate } = getInvoiceMetadata(invoice, settings);
+    const labels = getInvoiceLabels(settings);
 
     return (
-      <View key={invoice.id} style={gridLayout ? gridPageStyles.invoiceCard : undefined}>
+      <View key={invoice.id}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>{labelInvoice}</Text>
+          <Text style={styles.title}>{labels.invoice}</Text>
           <Text style={styles.roomNumber}>ห้องเลขที่ {roomLabel}</Text>
           <Text style={styles.date}>
             {formatDateThaiLong(invoice.issueDate || invoice.createdAt || new Date())}
@@ -390,71 +452,109 @@ export function InvoicePDFDocument({ invoices, settings, gridLayout = false }: I
           </View>
 
           {/* Room Rent Row */}
-          {roomRent !== null && (
+          {roomRent && roomRent > 0 && (
             <View style={styles.tableRow}>
-              <Text style={styles.tableCellLeft}>{labelRoomRent}</Text>
+              <Text style={styles.tableCellLeft}>{labels.roomRent}</Text>
               <Text style={styles.tableCellCenter}>—</Text>
               <Text style={styles.tableCellCenter}>—</Text>
-              <Text style={styles.tableCellRight}>{formatCurrency(roomRent)}</Text>
+              <Text style={styles.tableCellRight}>{formatCurrency(roomRent, settings?.currency || "THB")}</Text>
             </View>
           )}
 
           {/* Water Row */}
-          {waterSubtotal > 0 && (
-            <View style={styles.tableRow}>
-              <Text style={styles.tableCellLeft}>{labelWater}</Text>
-              <Text style={styles.tableCellCenter}>{formatMeterReading(waterPrevious)}</Text>
-              <Text style={styles.tableCellCenter}>{formatMeterReading(waterCurrent)}</Text>
-              <Text style={styles.tableCellRight}>{formatCurrency(waterSubtotal)}</Text>
-            </View>
-          )}
+          <View style={styles.tableRow}>
+            <Text style={styles.tableCellLeft}>
+              {labels.water} {isWaterFixed ? "(ค่าบริการ)" : ""}
+            </Text>
+            <Text style={styles.tableCellCenter}>
+              {isWaterFixed
+                ? "—"
+                : formatMeterReading(waterReading?.previousReading ?? null)}
+            </Text>
+            <Text style={styles.tableCellCenter}>
+              {isWaterFixed
+                ? "—"
+                : formatMeterReading(waterReading?.currentReading ?? null)}
+            </Text>
+            <Text style={styles.tableCellRight}>{formatCurrency(waterSubtotal, settings?.currency || "THB")}</Text>
+          </View>
 
           {/* Electricity Row */}
-          {(typeof electricSubtotal === "number" ? electricSubtotal : Number.parseFloat(String(electricSubtotal)) || 0) > 0 && (
-            <View style={styles.tableRow}>
-              <Text style={styles.tableCellLeft}>{labelElectricity}</Text>
-              <Text style={styles.tableCellCenter}>{formatMeterReading(electricPrevious)}</Text>
-              <Text style={styles.tableCellCenter}>{formatMeterReading(electricCurrent)}</Text>
-              <Text style={styles.tableCellRight}>{formatCurrency(electricSubtotal)}</Text>
-            </View>
-          )}
+          <View style={styles.tableRow}>
+            <Text style={styles.tableCellLeft}>{labels.electricity}</Text>
+            <Text style={styles.tableCellCenter}>
+              {formatMeterReading(electricReading?.previousReading ?? null)}
+            </Text>
+            <Text style={styles.tableCellCenter}>
+              {formatMeterReading(electricReading?.currentReading ?? null)}
+            </Text>
+            <Text style={styles.tableCellRight}>{formatCurrency(electricSubtotal, settings?.currency || "THB")}</Text>
+          </View>
 
           {/* Subtotal Row */}
           <View style={styles.tableRow}>
             <Text style={styles.tableCellLeft}>รวมย่อย</Text>
             <Text style={styles.tableCellCenter}></Text>
             <Text style={styles.tableCellCenter}></Text>
-            <Text style={styles.tableCellRight}>{formatCurrency(subtotal)}</Text>
+            <Text style={styles.tableCellRight}>{formatCurrency(subtotal, settings?.currency || "THB")}</Text>
           </View>
 
           {/* Tax Row */}
-          {tax > 0 && (
+          {tax > 0 && taxRate > 0 && (
             <View style={styles.tableRow}>
-              <Text style={styles.tableCellLeft}>ภาษีมูลค่าเพิ่ม ({settings?.taxRate || 7}%)</Text>
+              <Text style={styles.tableCellLeft}>ภาษีมูลค่าเพิ่ม ({taxRate}%)</Text>
               <Text style={styles.tableCellCenter}></Text>
               <Text style={styles.tableCellCenter}></Text>
-              <Text style={styles.tableCellRight}>{formatCurrency(tax)}</Text>
+              <Text style={styles.tableCellRight}>{formatCurrency(tax, settings?.currency || "THB")}</Text>
             </View>
           )}
 
           {/* Total Row */}
-          <View style={styles.tableRow}>
-            <Text style={styles.tableCellLeft}>จำนวนเงินรวม</Text>
+          <View style={styles.tableRowTotal}>
+            <Text style={styles.tableCellLeft}>{labels.total}</Text>
             <Text style={styles.tableCellCenter}>—</Text>
             <Text style={styles.tableCellCenter}>—</Text>
-            <Text style={styles.tableCellRight}>{formatCurrency(total)}</Text>
+            <Text style={styles.tableCellRight}>{formatCurrency(total, settings?.currency || "THB")}</Text>
           </View>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            วันสุดท้ายที่ต้องชำระ : ภายในวันที่ {settings?.dueDateDayOfMonth || 5} ของทุกเดือน
-          </Text>
-          <Text style={styles.footerTextRed}>
-            หากเกินกำหนด ชำระค่าปรับวันละ {formatCurrency(settings?.latePaymentPenaltyPerDay || 100)}
-          </Text>
+          {/* Payment Instructions */}
+          <View style={styles.footerPayment}>
+            <Text style={styles.footerText}>
+              วันสุดท้ายที่ต้องชำระ : ภายในวันที่ {settings?.dueDateDayOfMonth || 5} ของทุกเดือน
+            </Text>
+            {settings?.latePaymentPenaltyPerDay && settings.latePaymentPenaltyPerDay > 0 && (
+              <Text style={styles.footerTextRed}>
+                หากเกินกำหนด ชำระค่าปรับวันละ {formatCurrency(settings.latePaymentPenaltyPerDay, settings?.currency || "THB")}
+              </Text>
+            )}
+          </View>
 
+          {/* Banking Information */}
+          {(settings?.bankName || settings?.bankAccountNumber || settings?.lineId) && (
+            <View style={styles.footerBankInfo}>
+              {(settings?.bankName || settings?.bankAccountNumber) && (
+                <Text style={styles.footerBankText}>
+                  {settings?.bankName && settings?.bankAccountNumber
+                    ? `ชำระเงินได้ที่ ${settings.bankName} เลขบัญชี ${settings.bankAccountNumber}`
+                    : settings?.bankName
+                      ? `ชำระเงินได้ที่ ${settings.bankName}`
+                      : settings?.bankAccountNumber
+                        ? `เลขบัญชี ${settings.bankAccountNumber}`
+                        : ""}
+                </Text>
+              )}
+              {settings?.lineId && (
+                <Text style={styles.footerBankText}>
+                  ไอดีไลน์ {settings.lineId}
+                </Text>
+              )}
+            </View>
+          )}
+
+          {/* Invoice Details */}
           <View style={styles.footerRow}>
             <Text style={styles.footerLabel}>วันที่ออกบิล</Text>
             <Text style={styles.footerValue}>
@@ -469,12 +569,14 @@ export function InvoicePDFDocument({ invoices, settings, gridLayout = false }: I
             </Text>
           </View>
 
-          <View style={styles.footerRow}>
-            <Text style={styles.footerLabel}>เลขที่ใบแจ้งหนี้</Text>
-            <Text style={styles.footerValue}>
-              {invoice.invoiceNumber || "—"}
-            </Text>
-          </View>
+          {invoice.invoiceNumber && (
+            <View style={styles.footerRow}>
+              <Text style={styles.footerLabel}>เลขที่ใบแจ้งหนี้</Text>
+              <Text style={styles.footerValueMono}>
+                {invoice.invoiceNumber}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     );
@@ -491,7 +593,34 @@ export function InvoicePDFDocument({ invoices, settings, gridLayout = false }: I
       <Document>
         {chunkedInvoices.map((chunk, pageIndex) => (
           <Page key={pageIndex} size="A4" style={gridPageStyles.page}>
-            {chunk.map((invoice) => renderInvoice(invoice, gridPageStyles))}
+            {/* First row: 2 invoices */}
+            <View style={gridPageStyles.invoiceRow}>
+              {chunk.slice(0, 2).map((invoice, idx) => {
+                const cardStyle = idx === 1 
+                  ? { ...gridPageStyles.invoiceCard, marginRight: "1%", marginLeft: "2%" }
+                  : { ...gridPageStyles.invoiceCard, marginLeft: "1%" };
+                return (
+                  <View key={invoice.id} style={cardStyle}>
+                    {renderInvoice(invoice, gridPageStyles)}
+                  </View>
+                );
+              })}
+            </View>
+            {/* Second row: 2 invoices */}
+            {chunk.length > 2 && (
+              <View style={gridPageStyles.invoiceRow}>
+                {chunk.slice(2, 4).map((invoice, idx) => {
+                  const cardStyle = idx === 1 
+                    ? { ...gridPageStyles.invoiceCard, marginRight: "1%", marginLeft: "2%" }
+                    : { ...gridPageStyles.invoiceCard, marginLeft: "1%" };
+                  return (
+                    <View key={invoice.id} style={cardStyle}>
+                      {renderInvoice(invoice, gridPageStyles)}
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </Page>
         ))}
       </Document>

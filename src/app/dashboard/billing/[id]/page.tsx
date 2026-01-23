@@ -1,8 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toPng } from "html-to-image";
-import { jsPDF } from "jspdf";
 import { Download, Droplets, Loader2, Zap } from "lucide-react";
 import * as React from "react";
 import { PrintInvoiceCard } from "@/components/billing/print-invoice-card";
@@ -19,31 +17,40 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useSettings } from "@/lib/hooks/use-settings";
 import { invoicesApi } from "@/lib/api-client";
 import { getData } from "@/lib/api/response-helpers";
+import { normalizeErrorMessage, logError } from "@/lib/error-utils";
 import { useParams, useRouter } from "@/lib/router";
 import type { Invoice } from "@/lib/types";
-import { WaterBillingMode } from "@/lib/types";
+import { InvoiceStatus, WaterBillingMode } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatCurrency } from "@/lib/utils";
+import {
+  calculateInvoiceAmounts,
+  formatMeterReading,
+  getElectricReading,
+  getInvoiceMetadata,
+  getWaterReading,
+} from "@/lib/utils/invoice-helpers";
+import { exportInvoicesAsPdf } from "@/lib/utils/invoice-export";
 
 export default function InvoiceDetailPage() {
   const params = useParams();
   const invoiceId = params.id as string;
-  usePageTitle(`ใบแจ้งหนี้ ${invoiceId}`);
-
-  const router = useRouter();
-  const { toast } = useToast();
-
-  const [isDownloading, setIsDownloading] = React.useState(false);
-  const printCardRef = React.useRef<HTMLDivElement>(null);
-
   const invoiceQuery = useQuery({
     queryKey: ["invoice", invoiceId],
     queryFn: () => invoicesApi.getById(invoiceId),
     enabled: Boolean(invoiceId),
   });
   const invoice = getData(invoiceQuery.data);
+  usePageTitle(`ใบแจ้งหนี้ ${invoice?.invoiceNumber || invoiceId}`);
+
+  const router = useRouter();
+  const { toast } = useToast();
+  const { settings } = useSettings();
+
+  const [isDownloading, setIsDownloading] = React.useState(false);
   const queryClient = useQueryClient();
   const updateInvoiceMutation = useMutation({
     mutationFn: (payload: { id: string; updates: Partial<Invoice> }) =>
@@ -66,48 +73,42 @@ export default function InvoiceDetailPage() {
 
     setIsDownloading(true);
     try {
-      // Wait a bit to ensure the component is fully rendered
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const node = printCardRef.current;
-      if (!node) {
-        throw new Error("ไม่พบองค์ประกอบใบแจ้งหนี้");
-      }
-
-      const dataUrl = await toPng(node, {
-        cacheBust: true,
-        pixelRatio: 2,
-        quality: 1,
-        backgroundColor: "#ffffff",
-      });
-
-      const pdf = new jsPDF({ unit: "pt", format: "a4" });
-      const imgProps = pdf.getImageProperties(dataUrl);
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const ratio = Math.min(
-        pageWidth / imgProps.width,
-        pageHeight / imgProps.height,
-      );
-      const imgWidth = imgProps.width * ratio;
-      const imgHeight = imgProps.height * ratio;
-      const x = (pageWidth - imgWidth) / 2;
-      const y = 24;
-      pdf.addImage(dataUrl, "PNG", x, y, imgWidth, imgHeight);
-      pdf.save(`invoice-${invoice.invoiceNumber || invoiceId}.pdf`);
-
-      toast({
-        title: "ดาวน์โหลด PDF แล้ว",
-        description: "ดาวน์โหลดใบแจ้งหนี้ PDF สำเร็จ",
+      await exportInvoicesAsPdf([invoice], settings ?? null, {
+        gridLayout: false,
+        onSuccess: () => {
+          toast({
+            title: "ดาวน์โหลด PDF แล้ว",
+            description: "ดาวน์โหลดใบแจ้งหนี้ PDF สำเร็จ",
+          });
+        },
+        onError: (error) => {
+          logError(error, {
+            scope: "invoices",
+            action: "download-pdf",
+            metadata: { invoiceId },
+          });
+          toast({
+            title: "ดาวน์โหลด PDF ไม่สำเร็จ",
+            description: normalizeErrorMessage(
+              error,
+              "ไม่สามารถสร้างไฟล์ PDF ได้ กรุณาลองใหม่อีกครั้ง",
+            ),
+            variant: "destructive",
+          });
+        },
       });
     } catch (error) {
-      console.error("Error downloading PDF:", error);
+      logError(error, {
+        scope: "invoices",
+        action: "download-pdf",
+        metadata: { invoiceId },
+      });
       toast({
         title: "ดาวน์โหลด PDF ไม่สำเร็จ",
-        description:
-          error instanceof Error
-            ? error.message
-            : "ไม่สามารถสร้างไฟล์ PDF ได้ กรุณาลองใหม่อีกครั้ง",
+        description: normalizeErrorMessage(
+          error,
+          "ไม่สามารถสร้างไฟล์ PDF ได้ กรุณาลองใหม่อีกครั้ง",
+        ),
         variant: "destructive",
       });
     } finally {
@@ -134,77 +135,20 @@ export default function InvoiceDetailPage() {
     );
   }
 
+  // Use shared utility functions
+  const waterReading = getWaterReading(invoice);
+  const electricReading = getElectricReading(invoice);
+  const { roomRent, waterSubtotal, electricSubtotal } = calculateInvoiceAmounts(invoice);
+  const { isWaterFixed } = getInvoiceMetadata(invoice, settings);
+  
   // Use new fields (waterConsumption, electricConsumption) with fallback to legacy fields
   const waterConsumption = invoice.waterConsumption ?? invoice.waterUsage ?? 0;
   const electricConsumption =
     invoice.electricConsumption ?? invoice.electricUsage ?? 0;
   const waterRate = invoice.waterRatePerUnit ?? invoice.waterRate ?? 0;
   const electricRate = invoice.electricRatePerUnit ?? invoice.electricRate ?? 0;
-  const waterSubtotal = invoice.waterSubtotal ?? invoice.waterAmount ?? 0;
-  const electricSubtotal =
-    invoice.electricSubtotal ?? invoice.electricAmount ?? 0;
-  const roomRent = invoice.roomRent ?? invoice.room?.monthlyRent ?? null;
   const issuedAt =
     invoice.createdAt ?? invoice.issueDate ?? new Date().toISOString();
-  
-  // Try to get readings from multiple sources: readings array, readingGroup.meterReadings
-  const getWaterReading = () => {
-    // First try readings array
-    const fromReadings = invoice.readings?.find(
-      (reading) => {
-        const type = String(reading.meterType || "").toLowerCase();
-        return type === "water";
-      },
-    );
-    if (fromReadings) return fromReadings;
-    
-    // Then try readingGroup.meterReadings
-    const fromGroup = invoice.readingGroup?.meterReadings?.find(
-      (reading) => {
-        const type = String(reading.meterType || "").toLowerCase();
-        return type === "water";
-      },
-    );
-    if (fromGroup) {
-      return {
-        previousReading: typeof fromGroup.previousReading === "string" ? Number.parseFloat(fromGroup.previousReading) : fromGroup.previousReading,
-        currentReading: typeof fromGroup.currentReading === "string" ? Number.parseFloat(fromGroup.currentReading) : fromGroup.currentReading,
-        consumption: typeof fromGroup.consumption === "string" ? Number.parseFloat(fromGroup.consumption) : fromGroup.consumption,
-      };
-    }
-    return null;
-  };
-  
-  const getElectricReading = () => {
-    // First try readings array
-    const fromReadings = invoice.readings?.find(
-      (reading) => {
-        const type = String(reading.meterType || "").toLowerCase();
-        return type === "electric" || type === "electricity";
-      },
-    );
-    if (fromReadings) return fromReadings;
-    
-    // Then try readingGroup.meterReadings
-    const fromGroup = invoice.readingGroup?.meterReadings?.find(
-      (reading) => {
-        const type = String(reading.meterType || "").toLowerCase();
-        return type === "electric" || type === "electricity";
-      },
-    );
-    if (fromGroup) {
-      return {
-        previousReading: typeof fromGroup.previousReading === "string" ? Number.parseFloat(fromGroup.previousReading) : fromGroup.previousReading,
-        currentReading: typeof fromGroup.currentReading === "string" ? Number.parseFloat(fromGroup.currentReading) : fromGroup.currentReading,
-        consumption: typeof fromGroup.consumption === "string" ? Number.parseFloat(fromGroup.consumption) : fromGroup.consumption,
-      };
-    }
-    return null;
-  };
-  
-  const waterReading = getWaterReading();
-  const electricReading = getElectricReading();
-  const isWaterFixed = invoice.waterBillingMode === WaterBillingMode.FIXED;
 
   return (
     <div className="space-y-6 pb-8">
@@ -220,9 +164,9 @@ export default function InvoiceDetailPage() {
                 updateInvoiceMutation.mutate({
                   id: invoice.id,
                   updates:
-                    invoice.status === "paid"
-                      ? { status: "pending", paidDate: null }
-                      : { status: "paid", paidDate: new Date().toISOString() },
+                    invoice.status === InvoiceStatus.PAID
+                      ? { status: InvoiceStatus.PENDING, paidDate: null }
+                      : { status: InvoiceStatus.PAID, paidDate: new Date().toISOString() },
                 })
               }
               disabled={updateInvoiceMutation.isPending}
@@ -232,7 +176,7 @@ export default function InvoiceDetailPage() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                   กำลังอัปเดต...
                 </span>
-              ) : invoice.status === "paid" ? (
+              ) : invoice.status === InvoiceStatus.PAID ? (
                 "ทำเป็นรอชำระ"
               ) : (
                 "ทำเป็นชำระแล้ว"
@@ -267,15 +211,15 @@ export default function InvoiceDetailPage() {
               </p>
             </div>
             <Badge
-              variant={invoice.status === "paid" ? "default" : "secondary"}
+              variant={invoice.status === InvoiceStatus.PAID ? "default" : "secondary"}
             >
-              {invoice.status === "paid"
+              {invoice.status === InvoiceStatus.PAID
                 ? "ชำระแล้ว"
-                : invoice.status === "pending"
+                : invoice.status === InvoiceStatus.PENDING
                   ? "รอชำระ"
-                  : invoice.status === "overdue"
+                  : invoice.status === InvoiceStatus.OVERDUE
                     ? "ค้างชำระ"
-                    : invoice.status === "sent"
+                    : invoice.status === InvoiceStatus.SENT
                       ? "ส่งแล้ว"
                       : "ร่าง"}
             </Badge>
@@ -366,16 +310,12 @@ export default function InvoiceDetailPage() {
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       {isWaterFixed
                         ? "—"
-                        : waterReading?.previousReading != null
-                          ? waterReading.previousReading.toLocaleString()
-                          : "—"}
+                        : formatMeterReading(waterReading?.previousReading ?? null)}
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
                       {isWaterFixed
                         ? "—"
-                        : waterReading?.currentReading != null
-                          ? waterReading.currentReading.toLocaleString()
-                          : "—"}
+                        : formatMeterReading(waterReading?.currentReading ?? null)}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-foreground">
                       {formatCurrency(waterSubtotal)}
@@ -389,14 +329,10 @@ export default function InvoiceDetailPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
-                      {electricReading?.previousReading != null
-                        ? electricReading.previousReading.toLocaleString()
-                        : "—"}
+                      {formatMeterReading(electricReading?.previousReading ?? null)}
                     </td>
                     <td className="px-4 py-3 text-center text-muted-foreground">
-                      {electricReading?.currentReading != null
-                        ? electricReading.currentReading.toLocaleString()
-                        : "—"}
+                      {formatMeterReading(electricReading?.currentReading ?? null)}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-foreground">
                       {formatCurrency(electricSubtotal)}
@@ -519,17 +455,14 @@ export default function InvoiceDetailPage() {
         <PrintInvoiceCard invoice={invoice} />
       </div>
 
-      {/* Thai Format Invoice (Screen View) - Used for PDF generation */}
+      {/* Thai Format Invoice (Screen View) */}
       <Card className="screen-only print:hidden">
         <CardHeader>
           <CardTitle>ใบแจ้งหนี้ (รูปแบบไทย)</CardTitle>
           <CardDescription>รูปแบบสำหรับพิมพ์ตามสไตล์ใบแจ้งหนี้ไทย</CardDescription>
         </CardHeader>
         <CardContent>
-          <div
-            ref={printCardRef}
-            className="bg-white w-full max-w-full overflow-visible"
-          >
+          <div className="bg-white w-full max-w-full overflow-visible">
             <PrintInvoiceCard invoice={invoice} />
           </div>
         </CardContent>
