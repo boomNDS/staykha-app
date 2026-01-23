@@ -2,6 +2,7 @@
 
 import { useSettings } from "@/lib/hooks/use-settings";
 import type { Invoice } from "@/lib/types";
+import { WaterBillingMode } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
 interface PrintInvoiceCardProps {
@@ -17,12 +18,64 @@ export function PrintInvoiceCard({
 
   const roomLabel =
     invoice.room?.roomNumber || invoice.roomNumber || invoice.roomId || "—";
-  const waterReading = invoice.readings?.find(
-    (reading) => reading.meterType === "water",
-  );
-  const electricReading = invoice.readings?.find(
-    (reading) => reading.meterType === "electric",
-  );
+  
+  // Get readings from multiple sources: readings array or readingGroup.meterReadings
+  const getWaterReading = () => {
+    // First try readings array
+    const fromReadings = invoice.readings?.find(
+      (reading) => {
+        const type = String(reading.meterType || "").toLowerCase();
+        return type === "water";
+      },
+    );
+    if (fromReadings) return fromReadings;
+    
+    // Then try readingGroup.meterReadings
+    const fromGroup = invoice.readingGroup?.meterReadings?.find(
+      (reading) => {
+        const type = String(reading.meterType || "").toLowerCase();
+        return type === "water";
+      },
+    );
+    if (fromGroup) {
+      return {
+        previousReading: typeof fromGroup.previousReading === "string" ? Number.parseFloat(fromGroup.previousReading) : fromGroup.previousReading,
+        currentReading: typeof fromGroup.currentReading === "string" ? Number.parseFloat(fromGroup.currentReading) : fromGroup.currentReading,
+        consumption: typeof fromGroup.consumption === "string" ? Number.parseFloat(fromGroup.consumption) : fromGroup.consumption,
+      };
+    }
+    return null;
+  };
+  
+  const getElectricReading = () => {
+    // First try readings array
+    const fromReadings = invoice.readings?.find(
+      (reading) => {
+        const type = String(reading.meterType || "").toLowerCase();
+        return type === "electric" || type === "electricity";
+      },
+    );
+    if (fromReadings) return fromReadings;
+    
+    // Then try readingGroup.meterReadings
+    const fromGroup = invoice.readingGroup?.meterReadings?.find(
+      (reading) => {
+        const type = String(reading.meterType || "").toLowerCase();
+        return type === "electric" || type === "electricity";
+      },
+    );
+    if (fromGroup) {
+      return {
+        previousReading: typeof fromGroup.previousReading === "string" ? Number.parseFloat(fromGroup.previousReading) : fromGroup.previousReading,
+        currentReading: typeof fromGroup.currentReading === "string" ? Number.parseFloat(fromGroup.currentReading) : fromGroup.currentReading,
+        consumption: typeof fromGroup.consumption === "string" ? Number.parseFloat(fromGroup.consumption) : fromGroup.consumption,
+      };
+    }
+    return null;
+  };
+  
+  const waterReading = getWaterReading();
+  const electricReading = getElectricReading();
   const roomRent = invoice.roomRent ?? invoice.room?.monthlyRent ?? null;
   const waterSubtotal = invoice.waterSubtotal ?? invoice.waterAmount ?? 0;
   const electricSubtotal =
@@ -31,7 +84,7 @@ export function PrintInvoiceCard({
     invoice.subtotal ?? waterSubtotal + electricSubtotal + (roomRent ?? 0);
   const tax = invoice.tax ?? 0;
   const total = invoice.total ?? subtotal + tax;
-  const isWaterFixed = invoice.waterBillingMode === "fixed";
+  const isWaterFixed = invoice.waterBillingMode === WaterBillingMode.FIXED;
   const taxRate = settings?.taxRate ?? 0;
 
   // Thai labels with fallbacks

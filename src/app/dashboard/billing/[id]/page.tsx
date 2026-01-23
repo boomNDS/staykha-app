@@ -23,6 +23,7 @@ import { invoicesApi } from "@/lib/api-client";
 import { getData } from "@/lib/api/response-helpers";
 import { useParams, useRouter } from "@/lib/router";
 import type { Invoice } from "@/lib/types";
+import { WaterBillingMode } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatCurrency } from "@/lib/utils";
 
@@ -133,6 +134,7 @@ export default function InvoiceDetailPage() {
     );
   }
 
+  // Use new fields (waterConsumption, electricConsumption) with fallback to legacy fields
   const waterConsumption = invoice.waterConsumption ?? invoice.waterUsage ?? 0;
   const electricConsumption =
     invoice.electricConsumption ?? invoice.electricUsage ?? 0;
@@ -144,13 +146,65 @@ export default function InvoiceDetailPage() {
   const roomRent = invoice.roomRent ?? invoice.room?.monthlyRent ?? null;
   const issuedAt =
     invoice.createdAt ?? invoice.issueDate ?? new Date().toISOString();
-  const waterReading = invoice.readings?.find(
-    (reading) => reading.meterType === "water",
-  );
-  const electricReading = invoice.readings?.find(
-    (reading) => reading.meterType === "electric",
-  );
-  const isWaterFixed = invoice.waterBillingMode === "fixed";
+  
+  // Try to get readings from multiple sources: readings array, readingGroup.meterReadings
+  const getWaterReading = () => {
+    // First try readings array
+    const fromReadings = invoice.readings?.find(
+      (reading) => {
+        const type = String(reading.meterType || "").toLowerCase();
+        return type === "water";
+      },
+    );
+    if (fromReadings) return fromReadings;
+    
+    // Then try readingGroup.meterReadings
+    const fromGroup = invoice.readingGroup?.meterReadings?.find(
+      (reading) => {
+        const type = String(reading.meterType || "").toLowerCase();
+        return type === "water";
+      },
+    );
+    if (fromGroup) {
+      return {
+        previousReading: typeof fromGroup.previousReading === "string" ? Number.parseFloat(fromGroup.previousReading) : fromGroup.previousReading,
+        currentReading: typeof fromGroup.currentReading === "string" ? Number.parseFloat(fromGroup.currentReading) : fromGroup.currentReading,
+        consumption: typeof fromGroup.consumption === "string" ? Number.parseFloat(fromGroup.consumption) : fromGroup.consumption,
+      };
+    }
+    return null;
+  };
+  
+  const getElectricReading = () => {
+    // First try readings array
+    const fromReadings = invoice.readings?.find(
+      (reading) => {
+        const type = String(reading.meterType || "").toLowerCase();
+        return type === "electric" || type === "electricity";
+      },
+    );
+    if (fromReadings) return fromReadings;
+    
+    // Then try readingGroup.meterReadings
+    const fromGroup = invoice.readingGroup?.meterReadings?.find(
+      (reading) => {
+        const type = String(reading.meterType || "").toLowerCase();
+        return type === "electric" || type === "electricity";
+      },
+    );
+    if (fromGroup) {
+      return {
+        previousReading: typeof fromGroup.previousReading === "string" ? Number.parseFloat(fromGroup.previousReading) : fromGroup.previousReading,
+        currentReading: typeof fromGroup.currentReading === "string" ? Number.parseFloat(fromGroup.currentReading) : fromGroup.currentReading,
+        consumption: typeof fromGroup.consumption === "string" ? Number.parseFloat(fromGroup.consumption) : fromGroup.consumption,
+      };
+    }
+    return null;
+  };
+  
+  const waterReading = getWaterReading();
+  const electricReading = getElectricReading();
+  const isWaterFixed = invoice.waterBillingMode === WaterBillingMode.FIXED;
 
   return (
     <div className="space-y-6 pb-8">
@@ -261,7 +315,7 @@ export default function InvoiceDetailPage() {
                   "—"}
               </p>
               <p className="text-sm text-muted-foreground">
-                {invoice.room?.buildingName || invoice.buildingName || "—"}, ชั้น{" "}
+                {invoice.room?.building?.name || invoice.room?.buildingName || invoice.buildingName || "—"}, ชั้น{" "}
                 {invoice.room?.floor ?? invoice.floor ?? "—"}
               </p>
             </div>

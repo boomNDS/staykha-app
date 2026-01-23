@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { pdf } from "@react-pdf/renderer";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 import {
@@ -15,6 +16,8 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { PrintInvoiceCard } from "@/components/billing/print-invoice-card";
+import { InvoicePDFDocument } from "@/components/billing/invoice-pdf";
+import { useSettings } from "@/lib/hooks/use-settings";
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { LoadingState } from "@/components/loading-state";
@@ -50,6 +53,7 @@ export default function BillingPage() {
   const readingId = searchParams.get("readingId");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { settings } = useSettings();
   const invoicesQuery = useQuery({
     queryKey: ["invoices"],
     queryFn: () => invoicesApi.getAll(),
@@ -207,7 +211,7 @@ export default function BillingPage() {
     return chunks;
   }, [selectedInvoices]);
 
-  const handlePrintSelected = () => {
+  const handlePrintSelected = async () => {
     if (selectedInvoices.length === 0) {
       toast({
         title: "เลือกใบแจ้งหนี้",
@@ -216,11 +220,56 @@ export default function BillingPage() {
       });
       return;
     }
-    toast({
-      title: "กำลังเตรียมหน้าเอกสารสำหรับพิมพ์",
-      description: "ระบบจะเปิดหน้าพิมพ์ในอีกสักครู่",
-    });
-    window.print();
+    
+    // Use React PDF v4+ which supports React 19
+    try {
+      setIsExporting(true);
+      toast({
+        title: "กำลังเตรียมเอกสารสำหรับพิมพ์",
+        description: "ระบบกำลังสร้างไฟล์ PDF...",
+      });
+      
+      if (!selectedInvoices || selectedInvoices.length === 0) {
+        throw new Error("No invoices selected");
+      }
+      
+      const doc = <InvoicePDFDocument invoices={selectedInvoices} settings={settings ?? null} gridLayout={true} />;
+      const asPdf = pdf(doc as any);
+      const blob = await asPdf.toBlob();
+      const url = URL.createObjectURL(blob);
+      
+      // Open PDF in new tab for printing
+      const printWindow = window.open(url, "_blank");
+      if (printWindow) {
+        printWindow.onload = () => {
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
+        };
+      }
+      
+      toast({
+        title: "เปิดไฟล์ PDF แล้ว",
+        description: "สามารถพิมพ์จากหน้าต่างที่เปิดขึ้นมา",
+      });
+      
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 5000);
+    } catch (error) {
+      logError(error, {
+        scope: "invoices",
+        action: "print",
+        metadata: { count: selectedInvoices.length },
+      });
+      toast({
+        title: "พิมพ์ไม่สำเร็จ",
+        description: getErrorMessage(error, "ไม่สามารถเตรียมเอกสารสำหรับพิมพ์ได้"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleExportPng = async () => {
@@ -274,26 +323,27 @@ export default function BillingPage() {
     }
     setIsExporting(true);
     try {
-      const pdf = new jsPDF({ unit: "pt", format: "a4" });
-      for (let i = 0; i < selectedInvoices.length; i += 1) {
-        const invoice = selectedInvoices[i];
-        const node = exportRefs.current[invoice.id];
-        if (!node) continue;
-        const dataUrl = await toPng(node, {
-          cacheBust: true,
-          pixelRatio: 2,
-          backgroundColor: "#ffffff",
-        });
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = pageWidth;
-        const imgHeight = pageHeight;
-        if (i > 0) {
-          pdf.addPage();
-        }
-        pdf.addImage(dataUrl, "PNG", 0, 0, imgWidth, imgHeight);
+      // Use React PDF v4+ which supports React 19
+      if (!selectedInvoices || selectedInvoices.length === 0) {
+        throw new Error("No invoices selected");
       }
-      pdf.save("staykha-invoices.pdf");
+      
+      const doc = <InvoicePDFDocument invoices={selectedInvoices} settings={settings ?? null} gridLayout={false} />;
+      const asPdf = pdf(doc as any);
+      const blob = await asPdf.toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "staykha-invoices.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "ส่งออก PDF สำเร็จ",
+        description: `สร้างไฟล์ PDF สำหรับ ${selectedInvoices.length} ใบแจ้งหนี้`,
+      });
     } catch (error) {
       logError(error, {
         scope: "invoices",
@@ -417,20 +467,29 @@ export default function BillingPage() {
       key: "usage",
       header: "หน่วยใช้",
       className: "hidden lg:table-cell",
-      render: (invoice: Invoice) => (
-        <div className="flex flex-col gap-1">
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Droplets className="h-3 w-3 text-slate-500" />
-            {invoice.waterBillingMode === WaterBillingMode.FIXED
-              ? "เหมาจ่าย"
-              : `${invoice.waterUsage} m³`}
-          </span>
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Zap className="h-3 w-3 text-slate-500" />
-            {invoice.electricUsage} kWh
-          </span>
-        </div>
-      ),
+      render: (invoice: Invoice) => {
+        // Use waterConsumption if available, fallback to waterUsage (legacy)
+        const waterConsumption = invoice.waterConsumption ?? invoice.waterUsage;
+        // Use electricConsumption if available, fallback to electricUsage (legacy)
+        const electricConsumption = invoice.electricConsumption ?? invoice.electricUsage;
+        
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Droplets className="h-3 w-3 text-slate-500" />
+              {invoice.waterBillingMode === WaterBillingMode.FIXED
+                ? "เหมาจ่าย"
+                : waterConsumption != null
+                  ? `${waterConsumption} m³`
+                  : "—"}
+            </span>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Zap className="h-3 w-3 text-slate-500" />
+              {electricConsumption != null ? `${electricConsumption} kWh` : "—"}
+            </span>
+          </div>
+        );
+      },
     },
     {
       key: "total",
@@ -528,7 +587,7 @@ export default function BillingPage() {
   const isGeneratingInvoice = generateInvoiceMutation.isPending;
 
   return (
-    <div className="space-y-6 pb-8 sm:space-y-8">
+    <div className="space-y-6 pb-8 sm:space-y-8 screen-only">
       {/* Loading overlay when generating invoice */}
       {isGeneratingInvoice && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">

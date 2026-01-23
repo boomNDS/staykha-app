@@ -11,6 +11,7 @@ import type {
 function mapInvoiceFromApi(apiInvoice: any): Invoice {
   return {
     ...apiInvoice,
+    // Note: room, readings, readingGroup, tenant are preserved via ...apiInvoice spread
     // Convert string numbers to actual numbers
     waterConsumption:
       apiInvoice.waterConsumption === null || apiInvoice.waterConsumption === undefined
@@ -116,6 +117,10 @@ function mapInvoiceFromApi(apiInvoice: any): Invoice {
         : typeof apiInvoice.waterFixedFee === "string"
           ? Number.parseFloat(apiInvoice.waterFixedFee)
           : apiInvoice.waterFixedFee,
+    // Preserve nested data if present in API response
+    // Note: room, roomNumber, readings, readingGroup are preserved via ...apiInvoice spread above
+    // but we ensure they're properly typed
+    roomNumber: apiInvoice.roomNumber || apiInvoice.room?.roomNumber || undefined,
   };
 }
 

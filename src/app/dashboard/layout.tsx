@@ -88,9 +88,9 @@ export default function DashboardLayout({
   }, [isMobileMenuOpen]);
 
   return (
-    <div className="flex min-h-dvh overflow-hidden bg-background">
+    <div className="flex min-h-dvh overflow-hidden bg-background screen-only">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block screen-only">
         <AppSidebar onLogout={logout} />
       </div>
 
@@ -99,14 +99,14 @@ export default function DashboardLayout({
         <button
           type="button"
           aria-label="ปิดเมนู"
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden screen-only"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Mobile Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 lg:hidden screen-only ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
@@ -120,9 +120,9 @@ export default function DashboardLayout({
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden screen-only">
         {/* Mobile Header */}
-        <header className="flex h-16 items-center border-b border-border bg-background px-4 lg:hidden">
+        <header className="flex h-16 items-center border-b border-border bg-background px-4 lg:hidden screen-only">
           <Button
             variant="ghost"
             size="icon"
@@ -146,12 +146,12 @@ export default function DashboardLayout({
         </header>
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto screen-only">
           <div className="container mx-auto p-4 sm:p-6 lg:p-8">{children}</div>
         </main>
       </div>
-      <Toaster />
-      <SonnerToaster />
+      <Toaster className="screen-only" />
+      <SonnerToaster className="screen-only" />
     </div>
   );
 }

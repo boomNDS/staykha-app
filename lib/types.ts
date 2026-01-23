@@ -187,17 +187,7 @@ export interface Invoice {
   issueDate: string;
   dueDate: string;
   status: InvoiceStatus;
-  waterUsage: number;
-  waterRate: number;
-  waterAmount: number;
-  electricUsage: number;
-  electricRate: number;
-  electricAmount: number;
-  subtotal: number;
-  tax: number;
-  total: number;
-  paidDate?: string | null;
-  createdAt?: string;
+  // New fields (primary) - from API response (converted to numbers by mapper)
   waterConsumption?: number;
   electricConsumption?: number;
   waterRatePerUnit?: number;
@@ -207,10 +197,44 @@ export interface Invoice {
   waterBillingMode?: WaterBillingMode;
   waterFixedFee?: number;
   roomRent?: number; // Monthly rent for the room
+  subtotal: number;
+  tax: number;
+  total: number;
+  // Legacy fields (deprecated, may be null) - kept for backward compatibility
+  waterUsage?: number | null;
+  waterRate?: number | null;
+  waterAmount?: number | null;
+  electricUsage?: number | null;
+  electricRate?: number | null;
+  electricAmount?: number | null;
+  paidDate?: string | null;
+  createdAt?: string;
   teamId: string;
   readingGroupId?: string; // Link to reading group - ensures one invoice per reading group
   team?: Team;
   readings?: InvoiceReading[];
+  readingGroup?: {
+    id: string;
+    roomId: string;
+    readingDate: string;
+    status: "incomplete" | "pending" | "billed" | "paid";
+    teamId: string;
+    meterReadings?: Array<{
+      id: string;
+      readingGroupId: string;
+      roomId: string;
+      tenantId?: string;
+      meterType: "WATER" | "ELECTRIC";
+      previousReading: number | string;
+      currentReading: number | string;
+      consumption: number | string;
+      previousPhotoUrl?: string | null;
+      currentPhotoUrl?: string | null;
+      readingDate: string;
+      status: "pending" | "billed" | "paid";
+      createdBy?: string;
+    }>;
+  };
   tenant?: Tenant;
   room?: Room;
 }
