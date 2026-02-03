@@ -17,17 +17,19 @@ import { useAuth } from "@/lib/auth-context";
 import { useParams } from "@/lib/router";
 import type { MeterReadingGroup } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
+import NewReadingPage from "../new/page";
 
 export default function ReadingDetailPage() {
   const params = useParams();
   const { user } = useAuth();
   const readingId = params.id as string;
+  const isNewRoute = readingId === "new";
   usePageTitle(`การอ่านมิเตอร์ ${readingId}`);
 
   const readingQuery = useQuery({
     queryKey: ["readings", readingId],
     queryFn: () => readingsApi.getById(readingId),
-    enabled: Boolean(readingId),
+    enabled: Boolean(readingId) && !isNewRoute,
   });
   const roomId = getData(readingQuery.data)?.roomId;
   const roomQuery = useQuery({
@@ -53,6 +55,10 @@ export default function ReadingDetailPage() {
   const [inlineMeter, setInlineMeter] = React.useState<
     "water" | "electric" | null
   >(null);
+
+  if (isNewRoute) {
+    return <NewReadingPage />;
+  }
 
   if (readingQuery.isLoading) {
     return <LoadingState fullScreen message="กำลังโหลดการอ่านมิเตอร์..." />;
@@ -98,7 +104,7 @@ export default function ReadingDetailPage() {
   return (
     <div className="space-y-6 pb-8">
       <PageHeader
-        title="การอ่านรายเดือน"
+        title="อ่านมิเตอร์"
         description={`ห้อง ${reading.roomNumber} • ${new Date(reading.readingDate).toLocaleDateString("th-TH")}`}
         showBack
         actions={
@@ -176,19 +182,19 @@ export default function ReadingDetailPage() {
                   <div>
                     <p className="text-muted-foreground">ก่อนหน้า</p>
                     <p className="font-semibold text-foreground">
-                      {reading.water.previousReading} m³
+                      {reading.water.previousReading} ยูนิต
                     </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">ล่าสุด</p>
                     <p className="font-semibold text-foreground">
-                      {reading.water.currentReading} m³
+                      {reading.water.currentReading} ยูนิต
                     </p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">การใช้</p>
                     <p className="font-semibold text-foreground">
-                      {reading.water.consumption} m³
+                      {reading.water.consumption} ยูนิต
                     </p>
                   </div>
                 </div>

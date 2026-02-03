@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { FileQuestion, Plus } from "lucide-react";
 import type React from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -11,6 +12,8 @@ interface EmptyStateProps {
   actionLabel?: string;
   actionHref?: string;
   onAction?: () => void;
+  className?: string;
+  variant?: "inset" | "page";
 }
 
 export function EmptyState({
@@ -21,9 +24,22 @@ export function EmptyState({
   actionLabel,
   actionHref,
   onAction,
+  className,
+  variant = "inset",
 }: EmptyStateProps) {
+  const variantClassName =
+    variant === "page"
+      ? "rounded-2xl border border-dashed border-border bg-card p-8 text-center shadow-sm md:p-12"
+      : "rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center md:p-12";
+
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 p-8 text-center md:p-12">
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center",
+        variantClassName,
+        className,
+      )}
+    >
       <div className="mb-4 rounded-full bg-muted p-3">
         {icon || <FileQuestion className="h-8 w-8 text-muted-foreground" />}
       </div>

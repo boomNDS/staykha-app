@@ -271,6 +271,7 @@ export default function AdminsPage() {
                     <Link to="/overview/admins/invite">เชิญผู้ดูแล</Link>
                   </Button>
                 }
+                variant="inset"
               />
             )}
           </div>
@@ -281,40 +282,16 @@ export default function AdminsPage() {
             <div className="flex items-center gap-2">
               <Mail className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-lg font-semibold">คำเชิญที่รออยู่</h2>
-              <Badge variant="outline">{invitations.length}</Badge>
+              <Badge variant="outline">Coming soon</Badge>
             </div>
           </div>
           <div className="p-4">
-            {isLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-9 w-40" />
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={`invite-row-${index}`} className="rounded-lg border p-3">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-8 w-8 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-3 w-40" />
-                        <Skeleton className="h-3 w-24" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : invitations.length > 0 ? (
-              <DataTable
-                columns={invitationColumns}
-                data={invitations}
-                hideSearch={false}
-                searchPlaceholder="ค้นหาคำเชิญ..."
-                forcePagination
-              />
-            ) : (
-              <EmptyState
-                icon={<Mail className="h-8 w-8 text-muted-foreground" />}
-                title="ไม่มีคำเชิญค้างอยู่"
-                description="คำเชิญทั้งหมดถูกตอบรับหรือหมดอายุแล้ว"
-              />
-            )}
+            <EmptyState
+              icon={<Mail className="h-8 w-8 text-muted-foreground" />}
+              title="ฟีเจอร์คำเชิญกำลังจะมา"
+              description="ขณะนี้ระบบยังไม่รองรับ API สำหรับคำเชิญผู้ดูแล"
+              variant="inset"
+            />
           </div>
         </div>
       </div>

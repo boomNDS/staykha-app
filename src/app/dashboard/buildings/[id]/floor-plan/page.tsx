@@ -160,7 +160,7 @@ export default function BuildingFloorPlanPage() {
         </TabsContent>
 
         <TabsContent value="list" className="space-y-4">
-          <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <DataTable
               columns={columns}
               data={rooms}

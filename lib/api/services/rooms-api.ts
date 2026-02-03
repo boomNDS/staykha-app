@@ -15,6 +15,7 @@ import type {
 function mapRoomFromApi(apiRoom: any): Room {
   return {
     ...apiRoom,
+    buildingName: apiRoom.building?.name ?? apiRoom.buildingName ?? "",
     status: (apiRoom.status?.toLowerCase() ?? "vacant") as
       | "occupied"
       | "vacant"

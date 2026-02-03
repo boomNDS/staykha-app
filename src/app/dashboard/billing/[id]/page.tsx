@@ -391,7 +391,7 @@ export default function InvoiceDetailPage() {
                 <div className="flex items-center justify-between">
                   <span>ใช้น้ำ</span>
                   <span className="font-mono text-foreground">
-                    {isWaterFixed ? "เหมาจ่าย" : `${waterConsumption} m³`}
+                  {isWaterFixed ? "เหมาจ่าย" : `${waterConsumption} ยูนิต`}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -399,7 +399,7 @@ export default function InvoiceDetailPage() {
                   <span className="font-mono text-foreground">
                     {isWaterFixed
                       ? formatCurrency(invoice.waterFixedFee ?? 0)
-                      : `${formatCurrency(waterRate)}/m³`}
+                      : `${formatCurrency(waterRate)}/ยูนิต`}
                   </span>
                 </div>
               </div>

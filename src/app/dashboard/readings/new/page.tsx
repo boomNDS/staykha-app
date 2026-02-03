@@ -43,7 +43,7 @@ export default function NewReadingPage() {
     <div className="space-y-6 pb-8">
       <PageHeader
         title="เพิ่มการอ่านมิเตอร์ใหม่"
-        description="อัปโหลดรูปมิเตอร์เพื่ออ่านค่าอัตโนมัติ หรือกรอกตัวเลขด้วยตนเอง"
+        description="อัปโหลดรูปมิเตอร์เพื่ออ่านค่าอัตโนมัติ หรือกรอกตัวเลขด้วยตนเองเพื่อสร้างใบแจ้งหนี้รายเดือน"
         showBack
       />
 

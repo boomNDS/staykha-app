@@ -79,6 +79,7 @@ export default function BulkRoomPage() {
         description="ยังไม่มีอาคารในระบบ กรุณาสร้างอาคารก่อนเพื่อเพิ่มห้อง"
         actionLabel="สร้างอาคาร"
         actionHref="/overview/buildings/new"
+        variant="page"
       />
     );
   }

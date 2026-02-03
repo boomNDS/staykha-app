@@ -1,12 +1,20 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
-import { Info, Loader2, Save } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Download,
+  FileSpreadsheet,
+  Info,
+  Loader2,
+  Save,
+  Upload,
+} from "lucide-react";
 import * as React from "react";
 import { AdminRestrictionBanner } from "@/components/admin-restriction-banner";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Card,
   CardContent,
@@ -23,21 +31,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dropzone,
+  DropzoneFileList,
+  DropzoneFileListItem,
+  DropzoneMessage,
+  DropzoneTrigger,
+  DropZoneArea,
+  useDropzone,
+} from "@/components/dropzone";
 import { useToast } from "@/hooks/use-toast";
+import { importsApi, settingsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import { useSettings } from "@/lib/hooks/use-settings";
-import { settingsApi } from "@/lib/api-client";
 import { useTeam } from "@/lib/hooks/use-team";
+import { useSearchParams } from "@/lib/router";
+import { useRouter } from "@/lib/router";
 import type { AdminSettings } from "@/lib/types";
 import { WaterBillingMode } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatCurrency } from "@/lib/utils";
+import type { ImportErrorDetail } from "@/lib/api/services/imports-types";
 
 // Helper component for labels with info tooltips
 function LabelWithInfo({
@@ -81,11 +102,96 @@ export default function SettingsPage() {
 
   const { toast } = useToast();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { settings, isLoading, updateSettings } = useSettings();
   const { team, isUpdating: isSavingTeam, updateTeam } = useTeam();
   const [isSaving, setIsSaving] = React.useState(false);
   const [teamName, setTeamName] = React.useState("");
+  const [importMode, setImportMode] = React.useState<"excel" | "csv">("excel");
+  const [excelFile, setExcelFile] = React.useState<File | null>(null);
+  const [buildingsFile, setBuildingsFile] = React.useState<File | null>(null);
+  const [roomsFile, setRoomsFile] = React.useState<File | null>(null);
+  const [tenantsFile, setTenantsFile] = React.useState<File | null>(null);
+  const [createOnly, setCreateOnly] = React.useState(false);
+  const [confirmImportOpen, setConfirmImportOpen] = React.useState(false);
+  const [demoLang, setDemoLang] = React.useState<"th" | "en">("th");
+  const [demoFormat, setDemoFormat] = React.useState<"xlsx" | "csv">("xlsx");
+  const [demoSheet, setDemoSheet] = React.useState<
+    "buildings" | "rooms" | "tenants"
+  >("buildings");
+  const [importErrors, setImportErrors] = React.useState<ImportErrorDetail[]>(
+    [],
+  );
+  const [importResult, setImportResult] = React.useState<{
+    buildingsCreated: number;
+    roomsCreated: number;
+    tenantsCreated: number;
+  } | null>(null);
+
+  const downloadDemoMutation = useMutation({
+    mutationFn: (options: {
+      lang: "th" | "en";
+      format: "xlsx" | "csv";
+      sheet: "buildings" | "rooms" | "tenants";
+    }) => importsApi.downloadDemo(options),
+    onSuccess: (blob, variables) => {
+      const suffix =
+        variables.format === "csv" ? `-${variables.sheet}` : "";
+      const name = `staykha-import-demo-${variables.lang}${suffix}.${variables.format}`;
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = name;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "ดาวน์โหลดไม่สำเร็จ",
+        description: error?.message || "ไม่สามารถดาวน์โหลดไฟล์ตัวอย่างได้",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const importMutation = useMutation({
+    mutationFn: ({
+      formData,
+      mode,
+    }: {
+      formData: FormData;
+      mode: "upsert" | "create";
+    }) => importsApi.importOwner(formData, { mode }),
+    onSuccess: (response) => {
+      setImportErrors([]);
+      setImportResult(response.data);
+      const summary = [
+        `เพิ่มอาคาร ${response.data.buildingsCreated}`,
+        `ห้อง ${response.data.roomsCreated}`,
+        `ผู้เช่า ${response.data.tenantsCreated}`,
+      ].join(" ");
+      toast({
+        title: "นำเข้าสำเร็จ",
+        description: summary,
+      });
+      router.push("/overview");
+    },
+    onError: (error: any) => {
+      setImportResult(null);
+      const original = error?.originalError;
+      const errorData = original?.data?.data?.errors ?? original?.data?.errors;
+      if (Array.isArray(errorData)) {
+        setImportErrors(errorData);
+      }
+      toast({
+        title: "นำเข้าไม่สำเร็จ",
+        description: error?.message || "ไม่สามารถนำเข้าข้อมูลได้",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Initialize form state with settings
   const [formSettings, setFormSettings] = React.useState<AdminSettings>({
@@ -131,6 +237,67 @@ export default function SettingsPage() {
       setTeamName(team.name);
     }
   }, [team]);
+
+  React.useEffect(() => {
+    const section = searchParams.get("section");
+    if (section !== "import") return;
+    const element = document.getElementById("import");
+    if (!element) return;
+    requestAnimationFrame(() => {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [searchParams]);
+
+  React.useEffect(() => {
+    if (importMode === "excel") {
+      setBuildingsFile(null);
+      setRoomsFile(null);
+      setTenantsFile(null);
+    } else {
+      setExcelFile(null);
+    }
+    setImportErrors([]);
+    setImportResult(null);
+  }, [importMode]);
+
+  React.useEffect(() => {
+    if (demoFormat === "xlsx") {
+      setDemoSheet("buildings");
+    }
+  }, [demoFormat]);
+
+  const excelDropzone = useDropzone({
+    accept: {
+      "application/vnd.ms-excel": [".xls"],
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+        ".xlsx",
+      ],
+    },
+    maxFiles: 1,
+    multiple: false,
+    onFilesChange: (files) => setExcelFile(files[0] ?? null),
+  });
+
+  const buildingsDropzone = useDropzone({
+    accept: { "text/csv": [".csv"] },
+    maxFiles: 1,
+    multiple: false,
+    onFilesChange: (files) => setBuildingsFile(files[0] ?? null),
+  });
+
+  const roomsDropzone = useDropzone({
+    accept: { "text/csv": [".csv"] },
+    maxFiles: 1,
+    multiple: false,
+    onFilesChange: (files) => setRoomsFile(files[0] ?? null),
+  });
+
+  const tenantsDropzone = useDropzone({
+    accept: { "text/csv": [".csv"] },
+    maxFiles: 1,
+    multiple: false,
+    onFilesChange: (files) => setTenantsFile(files[0] ?? null),
+  });
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -218,6 +385,62 @@ export default function SettingsPage() {
     }
   };
 
+  const validateImport = () => {
+    if (importMode === "excel") {
+      if (!excelFile) {
+        toast({
+          title: "กรุณาเลือกไฟล์",
+          description: "ต้องอัปโหลดไฟล์ Excel (.xlsx/.xls) ก่อนนำเข้า",
+          variant: "destructive",
+        });
+        return false;
+      }
+      return true;
+    }
+
+    if (!buildingsFile || !roomsFile) {
+      toast({
+        title: "กรุณาเลือกไฟล์",
+        description: "ต้องอัปโหลดไฟล์ Buildings และ Rooms เป็นอย่างน้อย",
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const submitImport = () => {
+    const formData = new FormData();
+    if (importMode === "excel" && excelFile) {
+      formData.append("file", excelFile);
+    } else {
+      if (buildingsFile) {
+        formData.append("buildingsFile", buildingsFile);
+      }
+      if (roomsFile) {
+        formData.append("roomsFile", roomsFile);
+      }
+      if (tenantsFile) {
+        formData.append("tenantsFile", tenantsFile);
+      }
+    }
+
+    importMutation.mutate({
+      formData,
+      mode: createOnly ? "create" : "upsert",
+    });
+  };
+
+  const handleImportSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setImportErrors([]);
+    setImportResult(null);
+
+    if (!validateImport()) return;
+
+    setConfirmImportOpen(true);
+  };
+
   if (isLoading) {
     return <LoadingState message="กำลังโหลด Settings..." />;
   }
@@ -248,7 +471,7 @@ export default function SettingsPage() {
           title="Settings"
           description="จัดการอัตราค่าบริการและข้อมูลบริษัท"
         />
-        <Card>
+        <Card id="import">
           <CardHeader>
             <CardTitle>ไม่พบ Settings</CardTitle>
             <CardDescription>
@@ -327,6 +550,299 @@ export default function SettingsPage() {
           </Card>
         )}
 
+        <Card>
+          <CardHeader>
+            <CardTitle>นำเข้าข้อมูลเริ่มต้น</CardTitle>
+            <CardDescription>
+              ดาวน์โหลดไฟล์ตัวอย่างและอัปโหลดข้อมูลอาคาร ห้อง และผู้เช่าเพื่อเริ่มต้นได้เร็วขึ้น
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {user?.role !== "owner" ? (
+              <AdminRestrictionBanner
+                title="เฉพาะเจ้าของเท่านั้น"
+                message="ฟีเจอร์นำเข้าข้อมูลใช้ได้เฉพาะเจ้าของทีม"
+              />
+            ) : (
+              <>
+                  <div className="rounded-lg border border-dashed border-border bg-muted/20 p-4">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">
+                          ไฟล์ตัวอย่างการนำเข้า
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          เลือกภาษาและรูปแบบไฟล์ก่อนดาวน์โหลด
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                          downloadDemoMutation.mutate({
+                            lang: demoLang,
+                            format: demoFormat,
+                            sheet: demoFormat === "csv" ? demoSheet : "buildings",
+                          })
+                        }
+                        disabled={downloadDemoMutation.isPending}
+                      >
+                        {downloadDemoMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            กำลังดาวน์โหลด...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="mr-2 h-4 w-4" />
+                            ดาวน์โหลดไฟล์ตัวอย่าง
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <div className="mt-4 grid gap-3 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="demoLang">ภาษา</Label>
+                        <Select
+                          value={demoLang}
+                          onValueChange={(value) =>
+                            setDemoLang(value as "th" | "en")
+                          }
+                        >
+                          <SelectTrigger id="demoLang">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="th">ไทย (ค่าเริ่มต้น)</SelectItem>
+                            <SelectItem value="en">English</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="demoFormat">รูปแบบ</Label>
+                        <Select
+                          value={demoFormat}
+                          onValueChange={(value) =>
+                            setDemoFormat(value as "xlsx" | "csv")
+                          }
+                        >
+                          <SelectTrigger id="demoFormat">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="xlsx">Excel (.xlsx)</SelectItem>
+                            <SelectItem value="csv">CSV</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="demoSheet">ชีต</Label>
+                        <Select
+                          value={demoSheet}
+                          onValueChange={(value) =>
+                            setDemoSheet(
+                              value as "buildings" | "rooms" | "tenants",
+                            )
+                          }
+                          disabled={demoFormat !== "csv"}
+                        >
+                          <SelectTrigger id="demoSheet">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="buildings">Buildings</SelectItem>
+                            <SelectItem value="rooms">Rooms</SelectItem>
+                            <SelectItem value="tenants">Tenants</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {demoFormat !== "csv" && (
+                          <p className="text-xs text-muted-foreground">
+                            ใช้ได้เฉพาะเมื่อเลือก CSV
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                <form onSubmit={handleImportSubmit} className="space-y-4">
+                  <Tabs
+                    value={importMode}
+                    onValueChange={(value) =>
+                      setImportMode(value as "excel" | "csv")
+                    }
+                  >
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="excel" className="gap-2">
+                        <FileSpreadsheet className="h-4 w-4" />
+                        Excel
+                      </TabsTrigger>
+                      <TabsTrigger value="csv" className="gap-2">
+                        CSV
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="excel" className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="excelFile">ไฟล์ Excel</Label>
+                        <Dropzone {...excelDropzone}>
+                          <DropZoneArea>
+                            <DropzoneTrigger>อัปโหลดไฟล์ Excel</DropzoneTrigger>
+                          </DropZoneArea>
+                          <DropzoneMessage />
+                          {excelDropzone.files.length > 0 && (
+                            <DropzoneFileList>
+                              {excelDropzone.files.map((file, index) => (
+                                <DropzoneFileListItem
+                                  key={`${file.name}-${index}`}
+                                  file={file}
+                                  index={index}
+                                />
+                              ))}
+                            </DropzoneFileList>
+                          )}
+                        </Dropzone>
+                        <p className="text-xs text-muted-foreground">
+                          รองรับไฟล์ .xlsx และ .xls เพียงไฟล์เดียว
+                        </p>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="csv" className="space-y-3">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="buildingsFile">Buildings CSV</Label>
+                          <Dropzone {...buildingsDropzone}>
+                            <DropZoneArea>
+                              <DropzoneTrigger>
+                                อัปโหลด Buildings CSV
+                              </DropzoneTrigger>
+                            </DropZoneArea>
+                            <DropzoneMessage />
+                            {buildingsDropzone.files.length > 0 && (
+                              <DropzoneFileList>
+                                {buildingsDropzone.files.map((file, index) => (
+                                  <DropzoneFileListItem
+                                    key={`${file.name}-${index}`}
+                                    file={file}
+                                    index={index}
+                                  />
+                                ))}
+                              </DropzoneFileList>
+                            )}
+                          </Dropzone>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="roomsFile">Rooms CSV</Label>
+                          <Dropzone {...roomsDropzone}>
+                            <DropZoneArea>
+                              <DropzoneTrigger>อัปโหลด Rooms CSV</DropzoneTrigger>
+                            </DropZoneArea>
+                            <DropzoneMessage />
+                            {roomsDropzone.files.length > 0 && (
+                              <DropzoneFileList>
+                                {roomsDropzone.files.map((file, index) => (
+                                  <DropzoneFileListItem
+                                    key={`${file.name}-${index}`}
+                                    file={file}
+                                    index={index}
+                                  />
+                                ))}
+                              </DropzoneFileList>
+                            )}
+                          </Dropzone>
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="tenantsFile">Tenants CSV (ถ้ามี)</Label>
+                          <Dropzone {...tenantsDropzone}>
+                            <DropZoneArea>
+                              <DropzoneTrigger>
+                                อัปโหลด Tenants CSV (ถ้ามี)
+                              </DropzoneTrigger>
+                            </DropZoneArea>
+                            <DropzoneMessage />
+                            {tenantsDropzone.files.length > 0 && (
+                              <DropzoneFileList>
+                                {tenantsDropzone.files.map((file, index) => (
+                                  <DropzoneFileListItem
+                                    key={`${file.name}-${index}`}
+                                    file={file}
+                                    index={index}
+                                  />
+                                ))}
+                              </DropzoneFileList>
+                            )}
+                          </Dropzone>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        ต้องอัปโหลด Buildings และ Rooms อย่างน้อย 2 ไฟล์
+                      </p>
+                    </TabsContent>
+                  </Tabs>
+
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-border text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        checked={createOnly}
+                        onChange={(event) => setCreateOnly(event.target.checked)}
+                      />
+                      ห้ามทับข้อมูลเดิม (Create-only)
+                    </label>
+                    <Button
+                      type="submit"
+                      disabled={importMutation.isPending}
+                      className="w-full sm:w-auto"
+                    >
+                    {importMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        กำลังนำเข้า...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        นำเข้าข้อมูล
+                      </>
+                    )}
+                    </Button>
+                  </div>
+                </form>
+
+                {importResult && (
+                  <div className="rounded-lg border border-border bg-muted/20 p-4 text-sm">
+                    <p className="font-medium text-foreground">สรุปการนำเข้า</p>
+                    <p className="text-muted-foreground">
+                      อาคาร {importResult.buildingsCreated} ห้อง {importResult.roomsCreated} ผู้เช่า{" "}
+                      {importResult.tenantsCreated}
+                    </p>
+                  </div>
+                )}
+
+                {importErrors.length > 0 && (
+                  <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+                    <p className="mb-3 text-sm font-semibold text-destructive">
+                      พบข้อผิดพลาด {importErrors.length} รายการ
+                    </p>
+                    <div className="space-y-2">
+                      {importErrors.map((item, index) => (
+                        <div
+                          key={`${item.sheet}-${item.row}-${item.field ?? "row"}-${index}`}
+                          className="rounded-md border border-destructive/20 bg-background px-3 py-2 text-xs text-muted-foreground"
+                        >
+                          <span className="font-medium text-foreground">
+                            {item.sheet} แถว {item.row}
+                          </span>
+                          {item.field ? ` • ${item.field}` : ""} — {item.message}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Billing Rates */}
         <Card>
           <CardHeader>
@@ -338,7 +854,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="waterBillingMode"
-                  tooltip="เลือกวิธีคิดค่าน้ำ: แบบมิเตอร์คิดตามจำนวนที่ใช้ (m³), แบบเหมาจ่ายคิดรายเดือนเท่ากันทุกเดือน"
+                  tooltip="เลือกวิธีคิดค่าน้ำ: แบบมิเตอร์คิดตามจำนวนที่ใช้ (ยูนิต), แบบเหมาจ่ายคิดรายเดือนเท่ากันทุกเดือน"
                 >
                   โหมดการคิดค่าน้ำ
                 </LabelWithInfo>
@@ -355,7 +871,7 @@ export default function SettingsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={WaterBillingMode.METERED}>ตามมิเตอร์ (ต่อ m³)</SelectItem>
+                    <SelectItem value={WaterBillingMode.METERED}>ตามมิเตอร์ (ต่อยูนิต)</SelectItem>
                     <SelectItem value={WaterBillingMode.FIXED}>เหมาจ่ายรายเดือน</SelectItem>
                   </SelectContent>
                 </Select>
@@ -395,9 +911,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="waterRate"
-                  tooltip="อัตราค่าน้ำต่อ m³ ใช้เมื่อเลือกโหมด 'ตามมิเตอร์' เท่านั้น"
+                  tooltip="อัตราค่าน้ำต่อยูนิต ใช้เมื่อเลือกโหมด 'ตามมิเตอร์' เท่านั้น"
                 >
-                  อัตราค่าน้ำ (ต่อ m³)
+                  อัตราค่าน้ำ (ต่อยูนิต)
                 </LabelWithInfo>
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">
@@ -424,7 +940,7 @@ export default function SettingsPage() {
                     formSettings.waterRatePerUnit,
                     formSettings.currency,
                   )}{" "}
-                  ต่อ m³
+                  ต่อยูนิต
                 </p>
               </div>
               <div className="space-y-2">
@@ -921,6 +1437,23 @@ export default function SettingsPage() {
           </Button>
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmImportOpen}
+        title="ยืนยันการนำเข้าข้อมูล"
+        description={
+          createOnly
+            ? "ระบบจะสร้างเฉพาะรายการใหม่ หากพบข้อมูลเดิมจะไม่อัปเดต"
+            : "ระบบจะอัปเดตข้อมูลเดิมและเพิ่มรายการใหม่ตามไฟล์ที่อัปโหลด"
+        }
+        confirmLabel="ยืนยันนำเข้า"
+        cancelLabel="ยกเลิก"
+        isLoading={importMutation.isPending}
+        onConfirm={async () => {
+          submitImport();
+          setConfirmImportOpen(false);
+        }}
+        onOpenChange={(open) => setConfirmImportOpen(open)}
+      />
     </div>
   );
 }

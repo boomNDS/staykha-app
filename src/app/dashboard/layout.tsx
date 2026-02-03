@@ -88,7 +88,7 @@ export default function DashboardLayout({
   }, [isMobileMenuOpen]);
 
   return (
-    <div className="flex min-h-dvh overflow-hidden bg-background screen-only">
+    <div className="flex h-dvh overflow-hidden bg-background screen-only">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block screen-only">
         <AppSidebar onLogout={logout} />
@@ -120,7 +120,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden screen-only">
+      <div className="flex flex-1 flex-col overflow-hidden min-h-0 screen-only">
         {/* Mobile Header */}
         <header className="flex h-16 items-center border-b border-border bg-background px-4 lg:hidden screen-only">
           <Button
@@ -146,7 +146,7 @@ export default function DashboardLayout({
         </header>
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto screen-only">
+        <main className="flex-1 min-h-0 overflow-y-auto screen-only">
           <div className="container mx-auto p-4 sm:p-6 lg:p-8">{children}</div>
         </main>
       </div>

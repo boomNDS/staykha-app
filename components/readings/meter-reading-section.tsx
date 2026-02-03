@@ -23,6 +23,7 @@ interface MeterReadingSectionProps {
   onCurrentPhotoChange: (file: File | null) => void;
   disabled: boolean;
   isProcessingOCR: boolean;
+  required?: boolean;
 }
 
 export function MeterReadingSection({
@@ -45,7 +46,14 @@ export function MeterReadingSection({
   onCurrentPhotoChange,
   disabled,
   isProcessingOCR,
+  required = true,
 }: MeterReadingSectionProps) {
+  const previousNumber = Number.parseFloat(previousReading);
+  const currentNumber = Number.parseFloat(currentReading);
+  const hasNumbers =
+    !Number.isNaN(previousNumber) && !Number.isNaN(currentNumber);
+  const isInvalidOrder = hasNumbers && currentNumber < previousNumber;
+
   return (
     <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
       <div className="flex items-center gap-2">
@@ -76,6 +84,7 @@ export function MeterReadingSection({
         <div className="space-y-2">
           <Label htmlFor={`${previousReadingKey}-input`}>
             เลขก่อนหน้า ({unit})
+            {required && <span className="ml-1 text-destructive">*</span>}
           </Label>
           <Input
             id={`${previousReadingKey}-input`}
@@ -94,7 +103,10 @@ export function MeterReadingSection({
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`${currentReadingKey}-input`}>เลขล่าสุด ({unit})</Label>
+          <Label htmlFor={`${currentReadingKey}-input`}>
+            เลขล่าสุด ({unit})
+            {required && <span className="ml-1 text-destructive">*</span>}
+          </Label>
           <Input
             id={`${currentReadingKey}-input`}
             type="number"
@@ -108,6 +120,11 @@ export function MeterReadingSection({
           {errors[currentReadingKey] && (
             <p className="text-sm text-destructive">
               {errors[currentReadingKey]}
+            </p>
+          )}
+          {!errors[currentReadingKey] && isInvalidOrder && (
+            <p className="text-sm text-destructive">
+              เลขล่าสุดต้องมากกว่าเลขก่อนหน้า
             </p>
           )}
         </div>

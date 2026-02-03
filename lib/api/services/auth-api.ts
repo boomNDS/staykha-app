@@ -292,12 +292,15 @@ class AuthApi {
   ): Promise<RegisterResponse> {
     try {
       const api = createAuthApi(null); // No token for auth endpoints
+      const rolePayload = (role ?? "admin").toUpperCase() as
+        | "OWNER"
+        | "ADMIN";
       const response = await api.post<ApiResponse<RegisterResponse> | RegisterResponse>("/register", {
         email,
         password,
         passwordConfirm,
         name,
-        role: role || "admin",
+        role: rolePayload,
       } satisfies RegisterRequest);
       
       // Handle both wrapped and unwrapped responses

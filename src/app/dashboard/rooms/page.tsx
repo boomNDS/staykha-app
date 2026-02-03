@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { TenantInlineForm } from "@/components/rooms/tenant-inline-form";
 import { TableRowActions } from "@/components/table-row-actions";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
@@ -473,7 +474,7 @@ export default function RoomsPage() {
                 </div>
               ))}
             </div>
-            <div className="rounded-2xl border border-border bg-white shadow-sm p-6">
+            <div className="rounded-2xl border border-border bg-card shadow-sm p-6">
               <Skeleton className="h-10 w-56" />
               <div className="mt-4 space-y-3">
                 {Array.from({ length: 5 }).map((_, index) => (
@@ -491,10 +492,11 @@ export default function RoomsPage() {
             </div>
           </>
         ) : rooms.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
-            <div className="flex flex-col items-center justify-center gap-3 py-10 text-center text-sm text-muted-foreground">
-              <p>ยังไม่มีห้องพัก เริ่มเพิ่มห้องเพื่อจัดการผู้เช่าและการอ่านมิเตอร์</p>
-              <div className="flex flex-wrap items-center gap-2">
+          <EmptyState
+            title="ยังไม่มีห้องพัก"
+            description="เริ่มเพิ่มห้องเพื่อจัดการผู้เช่าและการอ่านมิเตอร์"
+            action={
+              <div className="flex flex-wrap items-center justify-center gap-2">
                 <Button
                   variant="outline"
                   onClick={() => router.push("/overview/rooms/bulk")}
@@ -505,8 +507,9 @@ export default function RoomsPage() {
                   เพิ่มห้อง
                 </Button>
               </div>
-            </div>
-          </div>
+            }
+            variant="page"
+          />
         ) : (
           <>
             <div className="grid gap-4 md:grid-cols-4">
@@ -544,7 +547,7 @@ export default function RoomsPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-white shadow-sm p-6">
+            <div className="rounded-2xl border border-border bg-card shadow-sm p-6">
               <DataTable
                 data={rooms}
                 columns={columns}

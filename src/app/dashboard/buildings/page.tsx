@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import {
   Edit,
   Home,
@@ -191,15 +192,22 @@ export default function BuildingsPage() {
         title="อาคาร"
         description="จัดการข้อมูลอาคารของคุณ"
         actions={
-          <Button onClick={() => router.push("/overview/buildings/new")}>
-            <Plus className="mr-2 h-4 w-4" />
-            เพิ่มอาคาร
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <Link to="/overview/settings" search={{ section: "import" }}>
+                นำเข้าข้อมูล
+              </Link>
+            </Button>
+            <Button onClick={() => router.push("/overview/buildings/new")}>
+              <Plus className="mr-2 h-4 w-4" />
+              เพิ่มอาคาร
+            </Button>
+          </>
         }
       />
 
       {isLoading ? (
-        <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <Skeleton className="h-10 w-56" />
           <div className="mt-4 space-y-3">
             {Array.from({ length: 4 }).map((_, index) => (
@@ -222,9 +230,10 @@ export default function BuildingsPage() {
           description="เริ่มต้นด้วยการเพิ่มอาคารแรกของคุณ"
           actionLabel="เพิ่มอาคาร"
           onAction={() => router.push("/overview/buildings/new")}
+          variant="page"
         />
       ) : (
-        <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <DataTable
             columns={columns}
             data={buildings}

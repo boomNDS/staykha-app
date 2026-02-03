@@ -47,7 +47,7 @@ export interface RegisterRequest {
   password: string;
   passwordConfirm: string;
   name?: string;
-  role?: "owner" | "admin";
+  role?: "OWNER" | "ADMIN";
 }
 
 export interface RegisterResponse {

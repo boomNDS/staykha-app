@@ -491,7 +491,7 @@ export default function BillingPage() {
               {invoice.waterBillingMode === WaterBillingMode.FIXED
                 ? "เหมาจ่าย"
                 : waterConsumption != null
-                  ? `${waterConsumption} m³`
+                  ? `${waterConsumption} ยูนิต`
                   : "—"}
             </span>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -797,6 +797,7 @@ export default function BillingPage() {
               description="ใบแจ้งหนี้จะแสดงเมื่อมีการประมวลผลการอ่านมิเตอร์"
               actionLabel="ดูการอ่านมิเตอร์"
               actionHref="/overview/readings"
+              variant="inset"
             />
           ) : filteredInvoices.length === 0 ? (
             <EmptyState
@@ -805,6 +806,7 @@ export default function BillingPage() {
               description={`ไม่พบใบแจ้งหนี้สำหรับ ${periodLabel}`}
               actionLabel="ดูการอ่านมิเตอร์"
               actionHref="/overview/readings"
+              variant="inset"
             />
           ) : (
             <DataTable

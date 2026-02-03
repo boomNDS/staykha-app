@@ -40,7 +40,7 @@ import { useAuth } from "@/lib/auth-context";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { createReadingFormSchema, mapZodErrors } from "@/lib/schemas";
-import type { ReadingFormValues } from "@/lib/types";
+import type { ReadingFormValues, Room } from "@/lib/types";
 import { WaterBillingMode } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 import { calculateConsumption, validateImageFile } from "@/lib/validation";
@@ -158,6 +158,10 @@ export function ReadingForm({
   const settings = getData(settingsQuery.data);
   const isWaterFixed = settings?.waterBillingMode === WaterBillingMode.FIXED;
   const selectedDate = parseDateString(formData.readingDate) ?? new Date();
+  const selectedRoom = React.useMemo(
+    () => (rooms as Room[]).find((room) => room.id === formData.roomId),
+    [rooms, formData.roomId],
+  );
 
   React.useEffect(() => {
     if (isWaterFixed && meterScope !== "electric") {
@@ -448,8 +452,8 @@ export function ReadingForm({
   if (settingsQuery.isSuccess && !settings) {
     return (
       <SettingsRequired
-        title="ต้องตั้งค่า Settings ก่อนใช้งาน"
-        description="คุณต้องสร้าง Settings ของทีมก่อนจึงจะเพิ่มการอ่านมิเตอร์ได้"
+        title="ต้องตั้งค่าเริ่มต้นก่อนบันทึกมิเตอร์"
+        description="กำหนดค่าเริ่มต้นของค่าน้ำ ค่าไฟ และใบแจ้งหนี้ก่อนเพิ่มการอ่านมิเตอร์"
       />
     );
   }
@@ -462,12 +466,35 @@ export function ReadingForm({
         description="ยังไม่มีห้องในระบบ กรุณาสร้างห้องเพื่อบันทึกการอ่านมิเตอร์"
         actionLabel="เพิ่มห้อง"
         actionHref="/overview/rooms/new"
+        variant="page"
       />
     );
   }
 
   return (
     <form onSubmit={handleSubmit}>
+      {!readingGroupId && (
+        <Card className="mb-6 border-border bg-card">
+          <CardHeader>
+            <CardTitle>ขั้นตอนการบันทึกมิเตอร์</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
+            <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3">
+              <p className="font-medium text-foreground">1. เลือกห้องและวันที่</p>
+              <p className="text-xs">เลือกห้องที่ต้องการบันทึกและรอบเดือน</p>
+            </div>
+            <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3">
+              <p className="font-medium text-foreground">2. กรอกหรืออัปโหลด</p>
+              <p className="text-xs">อัปโหลดรูปเพื่ออ่านค่าอัตโนมัติ หรือกรอกเอง</p>
+            </div>
+            <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3">
+              <p className="font-medium text-foreground">3. ตรวจสอบแล้วบันทึก</p>
+              <p className="text-xs">ระบบจะคำนวณปริมาณใช้ให้ทันที</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>รายละเอียดการอ่าน</CardTitle>
@@ -489,6 +516,9 @@ export function ReadingForm({
                 </TabsTrigger>
               </TabsList>
             </Tabs>
+            <p className="mt-2 text-xs text-muted-foreground">
+              แนะนำให้อัปโหลดรูปเพื่ออ่านค่าอัตโนมัติ ถ้าอ่านไม่ชัดให้กรอกเอง
+            </p>
           </div>
           <div className="pt-4">
             <Label className="text-sm text-muted-foreground">ประเภทมิเตอร์</Label>
@@ -526,7 +556,10 @@ export function ReadingForm({
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="room">ห้อง</Label>
+            <Label htmlFor="room">
+              ห้อง
+              <span className="ml-1 text-destructive">*</span>
+            </Label>
             <Select
               value={formData.roomId}
               onValueChange={(value) =>
@@ -550,10 +583,29 @@ export function ReadingForm({
             {errors.roomId && (
               <p className="text-sm text-destructive">{errors.roomId}</p>
             )}
+            {formData.roomId && (
+              <div className="rounded-lg border border-dashed border-border bg-muted/20 p-3 text-xs text-muted-foreground">
+                <p>
+                  อาคาร:{" "}
+                  <span className="font-medium text-foreground">
+                    {selectedRoom?.buildingName || selectedRoom?.building?.name || "—"}
+                  </span>
+                </p>
+                <p>
+                  ผู้เช่า:{" "}
+                  <span className="font-medium text-foreground">
+                    {selectedRoom?.tenant?.name || "ยังไม่มีผู้เช่า"}
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="readingDate">วันที่อ่านมิเตอร์</Label>
+            <Label htmlFor="readingDate">
+              วันที่อ่านมิเตอร์
+              <span className="ml-1 text-destructive">*</span>
+            </Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -596,7 +648,7 @@ export function ReadingForm({
               <MeterReadingSection
                 title="มิเตอร์น้ำ"
                 icon={<Droplets className="h-5 w-5 text-slate-500" />}
-                unit="m³"
+                unit="ยูนิต"
                 mode={inputMode}
                 previousReading={formData.waterPreviousReading}
                 currentReading={formData.waterCurrentReading}
@@ -629,6 +681,7 @@ export function ReadingForm({
                 }
                 disabled={isLoading}
                 isProcessingOCR={isProcessingOCR}
+                required
               />
             ) : null}
 
@@ -675,6 +728,7 @@ export function ReadingForm({
                 }
                 disabled={isLoading}
                 isProcessingOCR={isProcessingOCR}
+                required
               />
             ) : null}
           </div>
@@ -713,6 +767,39 @@ export function ReadingForm({
           </div>
         </CardContent>
       </Card>
+
+      {(waterConsumption !== null || electricConsumption !== null) && (
+        <div className="sticky bottom-0 z-10 mt-6 rounded-xl border border-border bg-background/95 p-4 shadow-sm backdrop-blur">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                สรุปการใช้ล่าสุด
+              </p>
+              <p className="text-xs text-muted-foreground">
+                ตรวจสอบค่าก่อนบันทึก
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-foreground">
+              {waterConsumption !== null && (
+                <span>
+                  น้ำ:{" "}
+                  <span className="font-semibold text-primary">
+                    {waterConsumption.toLocaleString()} ยูนิต
+                  </span>
+                </span>
+              )}
+              {electricConsumption !== null && (
+                <span>
+                  ไฟ:{" "}
+                  <span className="font-semibold text-primary">
+                    {electricConsumption.toLocaleString()} kWh
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }

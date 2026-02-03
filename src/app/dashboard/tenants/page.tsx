@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { DataTable } from "@/components/data-table";
+import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { TableRowActions } from "@/components/table-row-actions";
 import { Button } from "@/components/ui/button";
@@ -238,7 +239,7 @@ export default function TenantsPage() {
         }
       />
 
-      <div className="rounded-2xl border border-border bg-white shadow-sm p-6">
+      <div className="rounded-2xl border border-border bg-card shadow-sm p-6">
         {loading ? (
           <div className="space-y-3">
             <Skeleton className="h-10 w-64" />
@@ -255,12 +256,16 @@ export default function TenantsPage() {
             ))}
           </div>
         ) : tenants.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-10 text-center text-sm text-muted-foreground">
-            <p>ยังไม่มีผู้เช่า เริ่มเพิ่มรายชื่อเพื่อจัดการสัญญาได้ทันที</p>
-            <Button onClick={() => router.push("/overview/tenants/new")}>
-              เพิ่มผู้เช่า
-            </Button>
-          </div>
+          <EmptyState
+            title="ยังไม่มีผู้เช่า"
+            description="เริ่มเพิ่มรายชื่อเพื่อจัดการสัญญาได้ทันที"
+            action={
+              <Button onClick={() => router.push("/overview/tenants/new")}>
+                เพิ่มผู้เช่า
+              </Button>
+            }
+            variant="inset"
+          />
         ) : (
           <DataTable
             data={tenants}

@@ -4,8 +4,6 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { DollarSign, Gauge, Home, Users } from "lucide-react";
-import { DataTable } from "@/components/data-table";
-import { LoadingState } from "@/components/loading-state";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
@@ -103,8 +101,9 @@ export default function DashboardPage() {
       ? { label: "สร้างอาคารใหม่", href: "/overview/buildings/new" }
       : (summary?.rooms.total ?? 0) === 0
         ? { label: "เพิ่มห้องพัก", href: "/overview/rooms/new" }
-        : { label: "บันทึกการอ่านมิเตอร์", href: "/overview/readings/new" };
-
+        : !settingsConfigured
+          ? { label: "ตั้งค่าเริ่มต้น", href: "/overview/settings" }
+          : { label: "บันทึกการอ่านมิเตอร์", href: "/overview/readings/new" };
 
   return (
     <div className="space-y-6 pb-8 sm:space-y-8">
@@ -126,16 +125,51 @@ export default function DashboardPage() {
         readingsCount={summary?.readingGroups.total ?? 0}
       />
 
+      {(summary?.buildings ?? 0) === 0 ||
+      (summary?.rooms.total ?? 0) === 0 ||
+      (summary?.tenants.total ?? 0) === 0 ? (
+        <Card className="border-border/70 bg-card/90 shadow-sm">
+          <CardHeader>
+            <CardTitle>เริ่มต้นเร็วขึ้นด้วยการนำเข้าข้อมูล</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              ดาวน์โหลดไฟล์ตัวอย่างและนำเข้ารายการอาคาร ห้อง และผู้เช่าได้ทันที
+            </p>
+            <Button asChild variant="outline">
+              <Link to="/overview/settings" search={{ section: "import" }}>
+                นำเข้าข้อมูล
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading
           ? Array.from({ length: 4 }).map((_, index) => (
-              <Card key={`stat-skeleton-${index}`} className="p-6">
-                <div className="space-y-3">
-                  <Skeleton className="h-4 w-28" />
-                  <Skeleton className="h-8 w-24" />
-                  <Skeleton className="h-3 w-40" />
-                </div>
+              <Card
+                key={`stat-skeleton-${index}`}
+                className="relative overflow-hidden border-border/70 bg-card/90 shadow-sm"
+              >
+                <div className="pointer-events-none absolute right-0 top-0 h-20 w-20 -translate-y-6 translate-x-8 rounded-full bg-primary/10 blur-2xl" />
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-28" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-7 w-24" />
+                        <Skeleton className="h-3 w-40" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-3 w-10" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-11 w-11 rounded-2xl" />
+                  </div>
+                </CardContent>
               </Card>
             ))
           : stats.map((stat) => <StatCard key={stat.id} {...stat} />)}
@@ -144,7 +178,7 @@ export default function DashboardPage() {
       {/* Recent Activity */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Tenants */}
-        <Card>
+        <Card className="border-border/70 bg-card/90 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>ผู้เช่าล่าสุด</span>
@@ -158,11 +192,17 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, index) => (
                   <div key={`tenant-skeleton-${index}`} className="rounded-lg border p-3">
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-8 w-8 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-3 w-32" />
-                        <Skeleton className="h-3 w-24" />
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-3 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-right">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-4 w-16" />
                       </div>
                     </div>
                   </div>
@@ -235,7 +275,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Recent Readings */}
-        <Card>
+        <Card className="border-border/70 bg-card/90 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>การอ่านมิเตอร์ล่าสุด</span>
@@ -295,7 +335,7 @@ export default function DashboardPage() {
                     <div className="text-right">
                       <p className="text-sm font-semibold text-foreground">
                         {reading.water
-                          ? `${typeof reading.water.consumption === "string" ? Number.parseFloat(reading.water.consumption) : reading.water.consumption} m³`
+                          ? `${typeof reading.water.consumption === "string" ? Number.parseFloat(reading.water.consumption) : reading.water.consumption} ยูนิต`
                           : "—"}{" "}
                         /{" "}
                         {reading.electric

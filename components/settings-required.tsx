@@ -17,8 +17,8 @@ interface SettingsRequiredProps {
 }
 
 export function SettingsRequired({
-  title = "ต้องตั้งค่า Settings ก่อนใช้งาน",
-  description = "คุณต้องสร้าง Settings ของทีมก่อนจึงจะใช้ฟีเจอร์นี้ได้",
+  title = "ต้องตั้งค่าเริ่มต้นก่อนใช้งาน",
+  description = "คุณต้องกำหนดค่าเริ่มต้นของทีมก่อนจึงจะใช้ฟีเจอร์นี้ได้",
 }: SettingsRequiredProps) {
   const router = useRouter();
 
@@ -34,14 +34,14 @@ export function SettingsRequired({
         </CardHeader>
         <CardContent>
           <p className="mb-4 text-sm text-muted-foreground">
-            คลิกปุ่มด้านล่างเพื่อไปที่ Settings และสร้างค่าเริ่มต้นสำหรับทีมของคุณ
+            คลิกปุ่มด้านล่างเพื่อไปที่การตั้งค่าและกำหนดค่าเริ่มต้นสำหรับทีมของคุณ
           </p>
           <Button
             onClick={() => router.push("/overview/settings")}
             className="w-full"
           >
             <Settings className="mr-2 h-4 w-4" />
-            ไปที่ Settings
+            ไปที่การตั้งค่า
           </Button>
         </CardContent>
       </Card>

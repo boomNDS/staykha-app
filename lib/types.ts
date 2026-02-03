@@ -50,6 +50,11 @@ export interface Building {
   updatedAt: string;
 }
 
+export interface BuildingSummary {
+  id: string;
+  name: string;
+}
+
 export interface Room {
   id: string;
   roomNumber: string;
@@ -67,7 +72,7 @@ export interface Room {
   } | null;
   teamId: string;
   team?: Team;
-  building?: Building;
+  building?: BuildingSummary;
 }
 
 export interface Tenant {

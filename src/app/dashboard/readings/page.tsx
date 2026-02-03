@@ -70,10 +70,16 @@ export default function ReadingsPage() {
   // Early returns for settings and rooms
   if (settingsQuery.isSuccess && !settings) {
     return (
-      <SettingsRequired
-        title="ต้องตั้งค่า Settings ก่อนใช้งาน"
-        description="คุณต้องสร้าง Settings ของทีมก่อนจึงจะดูการอ่านมิเตอร์ได้"
-      />
+      <div className="space-y-6 pb-8">
+        <PageHeader
+          title="อ่านมิเตอร์"
+          description="บันทึกค่าน้ำ/ค่าไฟเพื่อสร้างใบแจ้งหนี้รายเดือน ลดขั้นตอนผิดพลาด"
+        />
+        <SettingsRequired
+          title="ต้องตั้งค่าเริ่มต้นก่อนบันทึกมิเตอร์"
+          description="กำหนดค่าเริ่มต้นของค่าน้ำ ค่าไฟ และใบแจ้งหนี้ก่อนเริ่มบันทึกมิเตอร์"
+        />
+      </div>
     );
   }
 
@@ -88,13 +94,20 @@ export default function ReadingsPage() {
         : "เพิ่มห้อง";
 
     return (
-      <EmptyState
-        icon={<Gauge className="h-8 w-8 text-muted-foreground" />}
-        title="ต้องสร้างห้องก่อนอ่านมิเตอร์"
-        description="ยังไม่มีห้องในระบบ กรุณาสร้างอาคารและเพิ่มห้องก่อนจึงจะบันทึกการอ่านมิเตอร์ได้"
-        actionLabel={actionLabel}
-        actionHref={actionHref}
-      />
+      <div className="space-y-6 pb-8">
+        <PageHeader
+          title="อ่านมิเตอร์"
+          description="บันทึกค่าน้ำ/ค่าไฟเพื่อสร้างใบแจ้งหนี้รายเดือน ลดขั้นตอนผิดพลาด"
+        />
+        <EmptyState
+          icon={<Gauge className="h-8 w-8 text-muted-foreground" />}
+          title="ต้องสร้างห้องก่อนอ่านมิเตอร์"
+          description="ยังไม่มีห้องในระบบ กรุณาสร้างอาคารและเพิ่มห้องก่อนจึงจะบันทึกการอ่านมิเตอร์ได้"
+          actionLabel={actionLabel}
+          actionHref={actionHref}
+          variant="page"
+        />
+      </div>
     );
   }
 
@@ -116,7 +129,7 @@ export default function ReadingsPage() {
 
       <PageHeader
         title="อ่านมิเตอร์"
-        description="บันทึกค่าน้ำและค่าไฟพร้อมกัน หรืออัปเดตทีละมิเตอร์ภายหลังได้"
+        description="บันทึกค่าน้ำ/ค่าไฟเพื่อสร้างใบแจ้งหนี้รายเดือน ลดขั้นตอนผิดพลาด"
         actions={
           <>
             <Select
@@ -226,7 +239,7 @@ export default function ReadingsPage() {
       <Card>
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <CardTitle>รายละเอียดกลุ่ม</CardTitle>
+        <CardTitle>รายละเอียดกลุ่ม</CardTitle>
             <CardDescription>ตรวจสอบห้องและรอบบิลก่อนสร้างใบแจ้งหนี้</CardDescription>
           </div>
           <div className="min-w-[200px]">
@@ -285,7 +298,7 @@ export default function ReadingsPage() {
                 </p>
                 <p className="text-2xl font-semibold text-slate-600">
                   {selectedGroup.water
-                    ? `${selectedGroup.water.consumption.toLocaleString()} m³`
+                    ? `${selectedGroup.water.consumption.toLocaleString()} ยูนิต`
                     : isWaterFixed
                       ? "เหมาจ่าย"
                       : "ยังไม่บันทึก"}
@@ -413,6 +426,22 @@ export default function ReadingsPage() {
                   ),
                 },
                 {
+                  key: "tenant",
+                  header: "ผู้เช่า",
+                  searchable: true,
+                  render: (item: {
+                    room: Room;
+                    currentGroup: MeterReadingGroup | null;
+                    missingElectric: boolean;
+                    missingWater: boolean;
+                    hasMissing: boolean;
+                  }) => (
+                    <span className="text-sm text-muted-foreground">
+                      {item.room.tenant?.name || "—"}
+                    </span>
+                  ),
+                },
+                {
                   key: "missing",
                   header: "ที่ขาด",
                   render: (item: {
@@ -526,6 +555,7 @@ export default function ReadingsPage() {
               description="เริ่มติดตามการใช้สาธารณูปโภคด้วยการเพิ่มการอ่านครั้งแรก"
               actionLabel="เพิ่มการอ่านครั้งแรก"
               actionHref="/overview/readings/new"
+              variant="inset"
             />
           ) : filteredReadings.length === 0 ? (
             <EmptyState
@@ -534,6 +564,7 @@ export default function ReadingsPage() {
               description={`ยังไม่มีข้อมูลการอ่านมิเตอร์สำหรับ ${monthLabel}`}
               actionLabel="เพิ่มการอ่าน"
               actionHref="/overview/readings/new"
+              variant="inset"
             />
           ) : (
             <DataTable

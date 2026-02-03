@@ -24,7 +24,7 @@ export function ConsumptionSummary({
               ปริมาณใช้น้ำ
             </span>
             <span className="text-2xl font-bold text-primary sm:text-3xl">
-              {water.toLocaleString()} m³
+              {water.toLocaleString()} ยูนิต
             </span>
           </div>
         </div>
