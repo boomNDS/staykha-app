@@ -3,8 +3,11 @@ export type ImportSuccessResponse = {
   message: string;
   data: {
     buildingsCreated: number;
+    buildingsUpdated?: number;
     roomsCreated: number;
+    roomsUpdated?: number;
     tenantsCreated: number;
+    tenantsUpdated?: number;
   };
 };
 

@@ -15,7 +15,7 @@ import {
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { LoadingState } from "@/components/loading-state";
 import { roomsApi, tenantsApi } from "@/lib/api-client";
-import { getData } from "@/lib/api/response-helpers";
+import { getData, getList } from "@/lib/api/response-helpers";
 import { useParams, useRouter } from "@/lib/router";
 import type { Room, Tenant } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -51,9 +51,8 @@ export default function RoomDetailPage() {
     description: "",
   });
 
-  const room = roomQuery.data ?? null;
-  // Tenants API returns array directly
-  const tenants = tenantsQuery.data ?? [];
+  const room = getData(roomQuery.data);
+  const tenants = getList(tenantsQuery.data);
 
   const updateTenantMutation = useMutation({
     mutationFn: (payload: { id: string; updates: Partial<Tenant> }) =>
@@ -115,8 +114,8 @@ export default function RoomDetailPage() {
       onConfirm: async () => {
         try {
           // Fetch tenant to get full data for update
-          // Tenants API returns tenant object directly
-          const tenant = await tenantsApi.getById(room.tenantId!);
+          const tenantResponse = await tenantsApi.getById(room.tenantId!);
+          const tenant = getData(tenantResponse);
           if (!tenant || !tenant.id) {
             throw new Error("ไม่พบข้อมูลผู้เช่า");
           }

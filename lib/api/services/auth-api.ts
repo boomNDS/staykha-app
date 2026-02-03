@@ -100,7 +100,7 @@ class AuthApi {
   ): Promise<{ user: User; token: string; refreshToken: string }> {
     try {
       const api = createAuthApi(null); // No token for auth endpoints
-      const response = await api.post<ApiResponse<LoginResponse> | LoginResponse>("/login", {
+      const response = await api.post<ApiResponse<LoginResponse>>("/login", {
         email,
         password,
       } satisfies LoginRequest);
@@ -109,8 +109,7 @@ class AuthApi {
         console.log("[AuthApi.login] Raw response:", response);
       }
       
-      // Handle both wrapped and unwrapped responses
-      const loginData = getData(response as ApiResponse<LoginResponse>) ?? (response as LoginResponse);
+      const loginData = getData(response);
       
       if (import.meta.env.DEV) {
         console.log("[AuthApi.login] Processed login data:", loginData);
@@ -231,27 +230,9 @@ class AuthApi {
         name: string;
         role: "OWNER" | "ADMIN";
         team: Team | null;
-      }> | {
-        id: string;
-        email: string;
-        name: string;
-        role: "OWNER" | "ADMIN";
-        team: Team | null;
-      }>("/me");
+      }>>("/me");
       
-      const meData = getData(response as ApiResponse<{
-        id: string;
-        email: string;
-        name: string;
-        role: "OWNER" | "ADMIN";
-        team: Team | null;
-      }>) ?? (response as {
-        id: string;
-        email: string;
-        name: string;
-        role: "OWNER" | "ADMIN";
-        team: Team | null;
-      });
+      const meData = getData(response);
       
       if (!meData || !meData.id || !meData.email) {
         throw new Error("Invalid /auth/me response structure");
@@ -295,7 +276,7 @@ class AuthApi {
       const rolePayload = (role ?? "admin").toUpperCase() as
         | "OWNER"
         | "ADMIN";
-      const response = await api.post<ApiResponse<RegisterResponse> | RegisterResponse>("/register", {
+      const response = await api.post<ApiResponse<RegisterResponse>>("/register", {
         email,
         password,
         passwordConfirm,
@@ -303,8 +284,11 @@ class AuthApi {
         role: rolePayload,
       } satisfies RegisterRequest);
       
-      // Handle both wrapped and unwrapped responses
-      return (getData(response as ApiResponse<RegisterResponse>) ?? response) as RegisterResponse;
+      const registerData = getData(response);
+      if (!registerData) {
+        throw new Error("Invalid register response structure");
+      }
+      return registerData;
     } catch (error: unknown) {
       this.handleError(error, "register", { email, role });
       return undefined as never; // handleError throws, this never executes

@@ -1,13 +1,9 @@
 import type { ApiListResponse, ApiResponse, OkResponse } from "@/lib/api/response";
 import type { Room } from "@/lib/types";
 
-// Direct array response (not wrapped)
-export type RoomsDirectListResponse = Room[];
-// Direct room response (not wrapped)
-export type RoomDirectResponse = Room;
 export type RoomsListResponse = ApiListResponse<Room>;
 export type RoomResponse = ApiResponse<Room>;
-export type RoomDeleteResponse = OkResponse;
+export type RoomDeleteResponse = ApiResponse<OkResponse>;
 
 export type CreateRoomData = {
   roomNumber: string;
@@ -38,3 +34,5 @@ export interface BulkCreateRoomsResponse {
   skippedRooms: string[];
   rooms: Room[];
 }
+
+export type BulkCreateRoomsWrappedResponse = ApiResponse<BulkCreateRoomsResponse>;

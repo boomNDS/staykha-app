@@ -57,6 +57,15 @@ const extractErrorMessage = (error: unknown): string => {
       if (typeof data.message === "string" && data.message.trim()) {
         return data.message;
       }
+      // Wrapped error payload: { data: { error } }
+      if (
+        data.data &&
+        typeof data.data === "object" &&
+        typeof (data.data as { error?: unknown }).error === "string" &&
+        (data.data as { error: string }).error.trim()
+      ) {
+        return (data.data as { error: string }).error;
+      }
       // Some APIs return error in different fields
       if (typeof data.error === "string" && data.error.trim()) {
         return data.error;
@@ -110,6 +119,11 @@ const extractErrorMessage = (error: unknown): string => {
     const maybeMessage = (error as { message?: string }).message;
     if (maybeMessage && maybeMessage.trim()) {
       return maybeMessage;
+    }
+    // Wrapped error payload
+    const maybeWrappedError = (error as { data?: { error?: string } }).data?.error;
+    if (maybeWrappedError && maybeWrappedError.trim()) {
+      return maybeWrappedError;
     }
     // Some APIs return error in 'error' field
     const maybeError = (error as { error?: string }).error;
@@ -195,6 +209,16 @@ export const getFieldErrors = (error: unknown): Record<string, string> => {
   if (error instanceof FetchError) {
     if (error.data && typeof error.data === "object") {
       const data = error.data as Record<string, unknown>;
+      // Wrapped errors: { data: { fieldErrors/errors } }
+      if (data.data && typeof data.data === "object") {
+        const wrapped = data.data as Record<string, unknown>;
+        if (wrapped.fieldErrors && typeof wrapped.fieldErrors === "object") {
+          return wrapped.fieldErrors as Record<string, string>;
+        }
+        if (wrapped.errors && typeof wrapped.errors === "object") {
+          return wrapped.errors as Record<string, string>;
+        }
+      }
       if (data.fieldErrors && typeof data.fieldErrors === "object") {
         return data.fieldErrors as Record<string, string>;
       }
@@ -208,6 +232,15 @@ export const getFieldErrors = (error: unknown): Record<string, string> => {
   // Handle object with fieldErrors property
   if (typeof error === "object" && error) {
     const obj = error as Record<string, unknown>;
+    if (obj.data && typeof obj.data === "object") {
+      const wrapped = obj.data as Record<string, unknown>;
+      if (wrapped.fieldErrors && typeof wrapped.fieldErrors === "object") {
+        return wrapped.fieldErrors as Record<string, string>;
+      }
+      if (wrapped.errors && typeof wrapped.errors === "object") {
+        return wrapped.errors as Record<string, string>;
+      }
+    }
     if (obj.fieldErrors && typeof obj.fieldErrors === "object") {
       return obj.fieldErrors as Record<string, string>;
     }

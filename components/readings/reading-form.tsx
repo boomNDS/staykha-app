@@ -118,8 +118,7 @@ export function ReadingForm({
     enabled: Boolean(readingGroupId),
   });
   const [isLoading, setIsLoading] = React.useState(false);
-  // Rooms API returns array directly
-  const rooms = roomsQuery.data ?? [];
+  const rooms = getList(roomsQuery.data);
   const normalizedInitialDate = normalizeDateParam(initialDate || todayValue());
   const [inputMode, setInputMode] = React.useState<InputMode>("ocr");
   const [meterScope, setMeterScope] =

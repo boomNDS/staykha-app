@@ -2,7 +2,6 @@ import { BaseApiService } from "../base-service";
 import type {
   TeamCreateRequest,
   TeamDeleteResponse,
-  TeamDirectResponse,
   TeamResponse,
   TeamUpdateRequest,
   TeamsListResponse,
@@ -27,10 +26,10 @@ class TeamsApi extends BaseApiService {
     }
   }
 
-  async create(data: TeamCreateRequest, token?: string): Promise<TeamDirectResponse> {
+  async create(data: TeamCreateRequest, token?: string): Promise<TeamResponse> {
     try {
       const api = this.createApi(token);
-      return api.post<TeamDirectResponse>("/teams", data);
+      return api.post<TeamResponse>("/teams", data);
     } catch (error: unknown) {
       this.handleError(error, "create", { name: data.name });
     }

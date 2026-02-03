@@ -50,8 +50,7 @@ export default function NewTenantPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  // Rooms API returns array directly
-  const rooms = (roomsQuery.data ?? []).filter(
+  const rooms = getList(roomsQuery.data).filter(
     (room: Room) => room.status === "vacant",
   );
 

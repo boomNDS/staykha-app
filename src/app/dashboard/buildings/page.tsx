@@ -49,8 +49,7 @@ export default function BuildingsPage() {
     queryKey: ["buildings"],
     queryFn: () => buildingsApi.getAll(),
   });
-  // Buildings API returns array directly
-  const buildings = buildingsQuery.data ?? [];
+  const buildings = getList(buildingsQuery.data);
   const isLoading = buildingsQuery.isLoading;
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
 

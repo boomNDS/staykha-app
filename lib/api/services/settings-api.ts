@@ -8,6 +8,7 @@ import type {
   SettingsUpdateRequest,
   SettingsUpdateResponse,
 } from "./settings-types";
+import { getData } from "../response-helpers";
 
 // Helper to map API response (string numbers, uppercase enums) to AdminSettings type
 function mapSettingsFromApi(apiSettings: any): AdminSettings {
@@ -83,15 +84,11 @@ class SettingsApi extends BaseApiService {
     try {
       const api = this.createApi(token);
       // GET /v1/settings - teamId inferred from token, but we keep it for consistency
-      // API returns direct object, not wrapped
-      const response = await api.get<any>("/settings");
+      const response = await api.get<SettingsResponse>("/settings");
       // Map the API response to match AdminSettings type
-      if (response) {
-        // Handle both direct object and wrapped response
-        const settingsData = response.data ?? response;
-        if (settingsData && typeof settingsData === "object") {
-          return { data: mapSettingsFromApi(settingsData) };
-        }
+      const settingsData = getData(response);
+      if (settingsData && typeof settingsData === "object") {
+        return { ...response, data: mapSettingsFromApi(settingsData) };
       }
       return { data: null };
     } catch (error: unknown) {
@@ -116,15 +113,11 @@ class SettingsApi extends BaseApiService {
     try {
       const api = this.createApi(token);
       // PATCH /v1/settings - teamId inferred from token
-      // API returns direct object, not wrapped
-      const response = await api.patch<any>("/settings", updates);
+      const response = await api.patch<SettingsUpdateResponse>("/settings", updates);
       // Map the API response to match AdminSettings type
-      if (response) {
-        // Handle both direct object and wrapped response
-        const settingsData = response.data ?? response;
-        if (settingsData && typeof settingsData === "object") {
-          return { data: mapSettingsFromApi(settingsData) };
-        }
+      const settingsData = getData(response);
+      if (settingsData && typeof settingsData === "object") {
+        return { ...response, data: mapSettingsFromApi(settingsData) };
       }
       throw new Error("Invalid response from settings update");
     } catch (error: unknown) {

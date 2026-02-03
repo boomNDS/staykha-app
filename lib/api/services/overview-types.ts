@@ -1,3 +1,4 @@
+import type { ApiResponse } from "@/lib/api/response";
 import type { Invoice, MeterReadingGroup, Tenant } from "@/lib/types";
 
 export interface OverviewSummary {
@@ -81,7 +82,7 @@ export interface OverviewReadingItem {
   } | null;
 }
 
-export interface OverviewResponse {
+export interface OverviewData {
   summary: OverviewSummary;
   revenue: OverviewRevenue;
   recentInvoices: OverviewInvoiceItem[];
@@ -89,3 +90,5 @@ export interface OverviewResponse {
   overdueInvoices: OverviewInvoiceItem[];
   pendingReadings: OverviewReadingItem[];
 }
+
+export type OverviewResponse = ApiResponse<OverviewData>;

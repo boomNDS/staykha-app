@@ -10,9 +10,7 @@ class OverviewApi extends BaseApiService {
   async get(token?: string): Promise<OverviewResponse> {
     try {
       const api = this.createApi(token);
-      // API returns direct object
-      const response = await api.get<OverviewResponse>("/overview");
-      return response;
+      return api.get<OverviewResponse>("/overview");
     } catch (error: unknown) {
       this.handleError(error, "get");
     }

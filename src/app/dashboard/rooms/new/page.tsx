@@ -64,8 +64,7 @@ export default function NewRoomPage() {
     },
     enabled: !!user?.teamId,
   });
-  // Buildings API returns array directly
-  const buildings = buildingsQuery.data ?? [];
+  const buildings = getList(buildingsQuery.data);
   const settings = getData(settingsQuery.data);
 
   const form = useForm<RoomFormValues>({

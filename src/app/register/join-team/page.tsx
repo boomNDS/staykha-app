@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { invitationsApi } from "@/lib/api-client";
+import { getData } from "@/lib/api/response-helpers";
 import { useAuth, useSetUser } from "@/lib/auth-context";
 import { normalizeErrorMessage } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
@@ -61,19 +62,23 @@ export default function JoinTeamPage() {
 
     try {
       // Accept invitation by code
-      const { team } = await invitationsApi.acceptByCode(
+      const response = await invitationsApi.acceptByCode(
         inviteCode.trim().toUpperCase(),
         user.id,
       );
+      const result = getData(response);
+      if (!result?.team) {
+        throw new Error("Invalid invitation response");
+      }
 
       // Update user state immediately with team info
-      const updatedUser = { ...user, teamId: team.id };
+      const updatedUser = { ...user, teamId: result.team.id };
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
       toast({
         title: "เข้าร่วมทีมสำเร็จ",
-        description: `Welcome to ${team.name}!`,
+        description: `Welcome to ${result.team.name}!`,
       });
 
       // Redirect immediately - don't wait for state propagation

@@ -53,8 +53,7 @@ export default function BulkRoomPage() {
     },
     enabled: !!user?.teamId,
   });
-  // Buildings API returns array directly
-  const buildings = buildingsQuery.data ?? [];
+  const buildings = getList(buildingsQuery.data);
 
   const [formData, setFormData] = React.useState<BulkRoomFormValues>({
     buildingId: "",
@@ -159,12 +158,16 @@ export default function BulkRoomPage() {
           : undefined,
         size: formData.size ? Number.parseFloat(formData.size) : undefined,
       });
+      const result = getData(response);
+      if (!result) {
+        throw new Error("Invalid bulk create response");
+      }
       toast({
         title: "สร้างห้องเรียบร้อย",
         description:
-          response.skippedRooms.length > 0
-            ? `สร้างห้อง ${response.createdCount} ห้อง ข้ามข้อมูลซ้ำ ${response.skippedRooms.length} รายการ`
-            : `สร้างห้อง ${response.createdCount} ห้อง`,
+          result.skippedRooms.length > 0
+            ? `สร้างห้อง ${result.createdCount} ห้อง ข้ามข้อมูลซ้ำ ${result.skippedRooms.length} รายการ`
+            : `สร้างห้อง ${result.createdCount} ห้อง`,
       });
       router.push("/overview/rooms");
     } catch (error: any) {

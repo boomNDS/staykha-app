@@ -1,19 +1,18 @@
 import { BaseApiService } from "../base-service";
-import type { User } from "@/lib/types";
 import type {
   AdminDeleteResponse,
   AdminsListResponse,
 } from "./admins-types";
+import { getList } from "../response-helpers";
 
 class AdminsApi extends BaseApiService {
-  async getAll(teamId?: string, token?: string): Promise<User[]> {
+  async getAll(teamId?: string, token?: string): Promise<AdminsListResponse> {
     try {
       const api = this.createApi(token);
       const response = await api.get<AdminsListResponse>("/admins", {
         params: teamId ? { teamId } : undefined,
       });
-      // Extract admins array from wrapped response
-      return response.admins ?? [];
+      return { ...response, data: getList(response) };
     } catch (error: unknown) {
       this.handleError(error, "getAll", { teamId });
     }

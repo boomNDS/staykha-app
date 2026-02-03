@@ -13,6 +13,7 @@ import * as React from "react";
 import { AdminRestrictionBanner } from "@/components/admin-restriction-banner";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
@@ -126,8 +127,11 @@ export default function SettingsPage() {
   );
   const [importResult, setImportResult] = React.useState<{
     buildingsCreated: number;
+    buildingsUpdated?: number;
     roomsCreated: number;
+    roomsUpdated?: number;
     tenantsCreated: number;
+    tenantsUpdated?: number;
   } | null>(null);
 
   const downloadDemoMutation = useMutation({
@@ -165,13 +169,22 @@ export default function SettingsPage() {
       mode: "upsert" | "create";
     }) => importsApi.importOwner(formData, { mode }),
     onSuccess: (response) => {
+      const stats = response?.data;
+      if (!stats) {
+        throw new Error("ไม่พบข้อมูลสรุปการนำเข้า");
+      }
       setImportErrors([]);
-      setImportResult(response.data);
+      setImportResult(stats);
       const summary = [
-        `เพิ่มอาคาร ${response.data.buildingsCreated}`,
-        `ห้อง ${response.data.roomsCreated}`,
-        `ผู้เช่า ${response.data.tenantsCreated}`,
-      ].join(" ");
+        `เพิ่มอาคาร ${stats.buildingsCreated}`,
+        stats.buildingsUpdated ? `อัปเดตอาคาร ${stats.buildingsUpdated}` : null,
+        `ห้อง ${stats.roomsCreated}`,
+        stats.roomsUpdated ? `อัปเดตห้อง ${stats.roomsUpdated}` : null,
+        `ผู้เช่า ${stats.tenantsCreated}`,
+        stats.tenantsUpdated ? `อัปเดตผู้เช่า ${stats.tenantsUpdated}` : null,
+      ]
+        .filter(Boolean)
+        .join(" • ");
       toast({
         title: "นำเข้าสำเร็จ",
         description: summary,
@@ -811,10 +824,35 @@ export default function SettingsPage() {
                 {importResult && (
                   <div className="rounded-lg border border-border bg-muted/20 p-4 text-sm">
                     <p className="font-medium text-foreground">สรุปการนำเข้า</p>
-                    <p className="text-muted-foreground">
-                      อาคาร {importResult.buildingsCreated} ห้อง {importResult.roomsCreated} ผู้เช่า{" "}
-                      {importResult.tenantsCreated}
-                    </p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">อาคาร</p>
+                        <p className="font-semibold text-foreground">
+                          เพิ่ม {importResult.buildingsCreated}
+                          {importResult.buildingsUpdated
+                            ? ` • อัปเดต ${importResult.buildingsUpdated}`
+                            : ""}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">ห้อง</p>
+                        <p className="font-semibold text-foreground">
+                          เพิ่ม {importResult.roomsCreated}
+                          {importResult.roomsUpdated
+                            ? ` • อัปเดต ${importResult.roomsUpdated}`
+                            : ""}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">ผู้เช่า</p>
+                        <p className="font-semibold text-foreground">
+                          เพิ่ม {importResult.tenantsCreated}
+                          {importResult.tenantsUpdated
+                            ? ` • อัปเดต ${importResult.tenantsUpdated}`
+                            : ""}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -840,6 +878,45 @@ export default function SettingsPage() {
                 )}
               </>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-start justify-between gap-4">
+            <div>
+              <CardTitle>ตั้งค่า LINE OA</CardTitle>
+              <CardDescription>
+                เชื่อมต่อ LINE Official Account เพื่อส่งข้อความถึงผู้เช่า
+              </CardDescription>
+            </div>
+            <Badge variant="outline">Coming soon</Badge>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              ฟีเจอร์นี้กำลังพัฒนา จะรองรับการเชื่อมต่อ LINE OA และส่งข้อความอัตโนมัติ
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>LINE OA ID</Label>
+                <Input disabled placeholder="ใส่ LINE OA ID" />
+              </div>
+              <div className="space-y-2">
+                <Label>Channel Access Token</Label>
+                <Input disabled placeholder="ใส่ Channel Access Token" />
+              </div>
+              <div className="space-y-2">
+                <Label>Channel Secret</Label>
+                <Input disabled placeholder="ใส่ Channel Secret" />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" disabled>
+                บันทึกการเชื่อมต่อ
+              </Button>
+              <Button type="button" variant="outline" disabled>
+                ส่งข้อความทดสอบ
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

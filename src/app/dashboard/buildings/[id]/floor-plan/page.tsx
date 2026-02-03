@@ -28,10 +28,8 @@ export default function BuildingFloorPlanPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  // Buildings API returns building object directly
-  const building = buildingQuery.data ?? null;
-  // Rooms API returns array directly
-  const rooms = (roomsQuery.data ?? []).filter(
+  const building = getData(buildingQuery.data);
+  const rooms = getList(roomsQuery.data).filter(
     (room: Room) => room.buildingId === buildingId,
   );
   const isLoading = buildingQuery.isLoading || roomsQuery.isLoading;

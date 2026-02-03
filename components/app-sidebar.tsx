@@ -7,6 +7,7 @@ import {
   Gauge,
   Home,
   LayoutDashboard,
+  MessageSquare,
   LogOut,
   Settings,
   Users,
@@ -57,6 +58,14 @@ const navigation = [
     href: "/overview/billing",
     icon: FileText,
     roles: ["owner", "admin"],
+  },
+  {
+    name: "LINE OA",
+    href: "/overview/settings",
+    icon: MessageSquare,
+    roles: ["owner"],
+    badge: "Coming soon",
+    disabled: true,
   },
   {
     name: "ผู้ดูแลระบบ",
@@ -171,20 +180,47 @@ export function AppSidebar({ className, onLogout }: AppSidebarProps) {
           return (
             <Button
               key={item.name}
-              asChild
+              asChild={!item.disabled}
               variant={isActive ? "secondary" : "ghost"}
               className={cn(
                 "w-full justify-start gap-3",
                 isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
                 !isActive &&
                   "text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                item.disabled &&
+                  "cursor-not-allowed opacity-60 hover:bg-transparent hover:text-sidebar-foreground/80",
                 isCollapsed && "justify-center",
               )}
             >
-              <Link to={item.href} aria-current={isActive ? "page" : undefined}>
-                <Icon className="h-5 w-5 shrink-0" />
-                {!isCollapsed && <span>{item.name}</span>}
-              </Link>
+              {item.disabled ? (
+                <div className="flex w-full items-center gap-3">
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && (
+                    <>
+                      <span className="flex-1 text-left">{item.name}</span>
+                      {item.badge && (
+                        <Badge variant="outline" className="text-xs">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </div>
+              ) : (
+                <Link to={item.href} aria-current={isActive ? "page" : undefined}>
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {!isCollapsed && (
+                    <>
+                      <span className="flex-1 text-left">{item.name}</span>
+                      {item.badge && (
+                        <Badge variant="outline" className="text-xs">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </Link>
+              )}
             </Button>
           );
         })}

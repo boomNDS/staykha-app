@@ -6,6 +6,7 @@ import type {
   InvoiceUpdateRequest,
   InvoicesListResponse,
 } from "./invoices-types";
+import { getData, getList } from "../response-helpers";
 
 // Helper to map API response (string numbers, uppercase enums) to Invoice type
 function mapInvoiceFromApi(apiInvoice: any): Invoice {
@@ -128,17 +129,9 @@ class InvoicesApi extends BaseApiService {
   async getAll(token?: string): Promise<InvoicesListResponse> {
     try {
       const api = this.createApi(token);
-      // API returns direct array or wrapped response
-      const response = await api.get<any>("/invoices");
-      if (response) {
-        // Handle both direct array and wrapped response
-        const invoices = (response.invoices ?? response.data ?? response.items ?? response) as any[];
-        if (Array.isArray(invoices)) {
-          const mappedInvoices = invoices.map(mapInvoiceFromApi);
-          return { data: mappedInvoices } as InvoicesListResponse;
-        }
-      }
-      return { data: [] } as InvoicesListResponse;
+      const response = await api.get<InvoicesListResponse>("/invoices");
+      const invoices = getList(response);
+      return { ...response, data: invoices.map(mapInvoiceFromApi) };
     } catch (error: unknown) {
       this.handleError(error, "getAll");
     }
@@ -147,17 +140,12 @@ class InvoicesApi extends BaseApiService {
   async getById(id: string, token?: string): Promise<InvoiceResponse> {
     try {
       const api = this.createApi(token);
-      // API returns direct object or wrapped response
-      const response = await api.get<any>(`/invoices/${id}`);
-      if (response) {
-        // Handle both direct object and wrapped response
-        const invoiceData = response.invoice ?? response.data ?? response;
-        if (invoiceData && typeof invoiceData === "object") {
-          const mappedInvoice = mapInvoiceFromApi(invoiceData);
-          return { data: mappedInvoice } as InvoiceResponse;
-        }
+      const response = await api.get<InvoiceResponse>(`/invoices/${id}`);
+      const invoiceData = getData(response);
+      if (!invoiceData) {
+        throw new Error("Invoice not found");
       }
-      throw new Error("Invoice not found");
+      return { ...response, data: mapInvoiceFromApi(invoiceData) };
     } catch (error: unknown) {
       this.handleError(error, "getById", { id });
     }
@@ -190,7 +178,6 @@ class InvoicesApi extends BaseApiService {
   /**
    * POST /v1/invoices/from-reading-group
    * Generate an invoice from a reading group
-   * API returns: { invoice: Invoice }
    */
   async generateFromReadingGroup(
     readingGroupId: string,
@@ -198,16 +185,14 @@ class InvoicesApi extends BaseApiService {
   ): Promise<InvoiceResponse> {
     try {
       const api = this.createApi(token);
-      // API returns: { invoice: Invoice }
-      const response = await api.post<{ invoice: any }>("/invoices/from-reading-group", {
+      const response = await api.post<InvoiceResponse>("/invoices/from-reading-group", {
         readingGroupId,
       });
-      // Extract and map invoice from response
-      if (response?.invoice && typeof response.invoice === "object") {
-        const mappedInvoice = mapInvoiceFromApi(response.invoice);
-        return { data: mappedInvoice } as InvoiceResponse;
+      const invoiceData = getData(response);
+      if (!invoiceData) {
+        throw new Error("Invalid response from invoice generation");
       }
-      throw new Error("Invalid response from invoice generation");
+      return { ...response, data: mapInvoiceFromApi(invoiceData) };
     } catch (error: unknown) {
       this.handleError(error, "generateFromReadingGroup", {
         readingGroupId,

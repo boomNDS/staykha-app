@@ -6,6 +6,8 @@ import type {
   ReadingUpdateRequest,
   ReadingsListResponse,
 } from "./readings-types";
+import { getData, getList } from "../response-helpers";
+import type { ApiResponse } from "../response";
 
 // Helper to map API response (string numbers, uppercase enums) to MeterReading type
 function mapReadingFromApi(apiReading: any): MeterReading & { readingGroupId?: string | null } {
@@ -103,19 +105,16 @@ class ReadingsApi extends BaseApiService {
   async getAll(token?: string): Promise<ReadingsListResponse> {
     try {
       const api = this.createApi(token);
-      // API returns direct object with readings array: { readings: MeterReading[] }
-      const response = await api.get<{ readings: any[] }>("/readings");
-      
-      if (response?.readings && Array.isArray(response.readings)) {
-        // Map each reading from API format to frontend format
-        const mappedReadings = response.readings.map(mapReadingFromApi);
-        // Group readings into MeterReadingGroup objects
-        const groupedReadings = groupReadings(mappedReadings);
-        // Return in the expected format
-        return { data: groupedReadings } as ReadingsListResponse;
-      }
-      
-      return { data: [] } as ReadingsListResponse;
+      const response = await api.get<ReadingsListResponse>("/readings");
+      const responseData = getData(response as ApiResponse<{ readings?: any[] }>);
+      const readingsList = Array.isArray(responseData)
+        ? responseData
+        : responseData?.readings && Array.isArray(responseData.readings)
+          ? responseData.readings
+          : getList(response);
+      const mappedReadings = readingsList.map(mapReadingFromApi);
+      const groupedReadings = groupReadings(mappedReadings);
+      return { ...response, data: groupedReadings };
     } catch (error: unknown) {
       this.handleError(error, "getAll");
     }
@@ -143,20 +142,11 @@ class ReadingsApi extends BaseApiService {
           params: { roomId, readingDate },
         },
       );
-      const data = response as Record<string, unknown>;
-      const reading = (data.reading ??
-        data.item ??
-        data.data ??
-        data.result) as MeterReadingGroup | null | undefined;
-      if (reading && typeof reading === "object") {
+      const reading = getData(response as ReadingResponse);
+      if (reading) {
         return { reading };
       }
-      const list =
-        (data.readings as MeterReadingGroup[] | undefined) ??
-        (data.items as MeterReadingGroup[] | undefined) ??
-        (data.data as MeterReadingGroup[] | undefined) ??
-        (data.results as MeterReadingGroup[] | undefined) ??
-        [];
+      const list = getList(response as ReadingsListResponse);
       return { reading: list[0] ?? null };
     } catch (error: unknown) {
       this.handleError(error, "getByRoomDate", { roomId, readingDate });
@@ -172,7 +162,7 @@ class ReadingsApi extends BaseApiService {
   async create(
     data: CreateReadingData,
     token?: string,
-  ): Promise<{ readings: MeterReading[] }> {
+  ): Promise<ApiResponse<{ readings: MeterReading[] }>> {
     try {
       const api = this.createApi(token);
       // Remove meterType and consumption from payload - API infers/calculates these
@@ -196,7 +186,15 @@ class ReadingsApi extends BaseApiService {
           },
         }),
       };
-      return api.post<{ readings: MeterReading[] }>("/readings/batch", payload);
+      const response = await api.post<ApiResponse<{ readings: MeterReading[] }>>(
+        "/readings/batch",
+        payload,
+      );
+      const responseData = getData(response);
+      return {
+        ...response,
+        data: { readings: responseData?.readings ?? [] },
+      };
     } catch (error: unknown) {
       this.handleError(error, "create", { roomId: data.roomId });
     }

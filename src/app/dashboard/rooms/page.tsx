@@ -76,10 +76,8 @@ export default function RoomsPage() {
     description: "",
   });
 
-  // Rooms API returns array directly
-  const rooms = roomsQuery.data ?? [];
-  // Tenants API returns array directly
-  const tenants = tenantsQuery.data ?? [];
+  const rooms = getList(roomsQuery.data);
+  const tenants = getList(tenantsQuery.data);
   const loading = roomsQuery.isLoading || tenantsQuery.isLoading;
 
   const deleteRoomMutation = useMutation({

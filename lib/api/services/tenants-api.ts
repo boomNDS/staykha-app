@@ -2,26 +2,25 @@ import { BaseApiService } from "../base-service";
 import type {
   TenantCreateRequest,
   TenantDeleteResponse,
-  TenantDirectResponse,
   TenantResponse,
   TenantUpdateRequest,
-  TenantsDirectListResponse,
+  TenantsListResponse,
 } from "./tenants-types";
 
 class TenantsApi extends BaseApiService {
-  async getAll(token?: string): Promise<TenantsDirectListResponse> {
+  async getAll(token?: string): Promise<TenantsListResponse> {
     try {
       const api = this.createApi(token);
-      return api.get<TenantsDirectListResponse>("/tenants");
+      return api.get<TenantsListResponse>("/tenants");
     } catch (error: unknown) {
       this.handleError(error, "getAll");
     }
   }
 
-  async getById(id: string, token?: string): Promise<TenantDirectResponse> {
+  async getById(id: string, token?: string): Promise<TenantResponse> {
     try {
       const api = this.createApi(token);
-      return api.get<TenantDirectResponse>(`/tenants/${id}`);
+      return api.get<TenantResponse>(`/tenants/${id}`);
     } catch (error: unknown) {
       this.handleError(error, "getById", { id });
     }
@@ -30,10 +29,10 @@ class TenantsApi extends BaseApiService {
   async create(
     data: TenantCreateRequest,
     token?: string,
-  ): Promise<TenantDirectResponse> {
+  ): Promise<TenantResponse> {
     try {
       const api = this.createApi(token);
-      return api.post<TenantDirectResponse>("/tenants", data);
+      return api.post<TenantResponse>("/tenants", data);
     } catch (error: unknown) {
       this.handleError(error, "create", { name: data.name });
     }
@@ -43,10 +42,10 @@ class TenantsApi extends BaseApiService {
     id: string,
     updates: TenantUpdateRequest,
     token?: string,
-  ): Promise<TenantDirectResponse> {
+  ): Promise<TenantResponse> {
     try {
       const api = this.createApi(token);
-      return api.patch<TenantDirectResponse>(`/tenants/${id}`, updates);
+      return api.patch<TenantResponse>(`/tenants/${id}`, updates);
     } catch (error: unknown) {
       this.handleError(error, "update", { id });
     }

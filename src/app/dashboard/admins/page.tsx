@@ -34,9 +34,8 @@ export default function AdminsPage() {
     queryFn: () => invitationsApi.getAll(user?.teamId),
     enabled: !!user?.teamId,
   });
-  // API now returns arrays directly
-  const admins = adminsQuery.data ?? [];
-  const invitations = invitationsQuery.data ?? [];
+  const admins = getList(adminsQuery.data);
+  const invitations = getList(invitationsQuery.data);
   const isLoading = adminsQuery.isLoading || invitationsQuery.isLoading;
   const [confirmState, setConfirmState] = useState<{
     open: boolean;

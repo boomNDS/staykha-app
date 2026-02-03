@@ -467,6 +467,26 @@ export default function InvoiceDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Card className="screen-only">
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <div>
+            <CardTitle>ส่งใบแจ้งหนี้ผ่าน LINE</CardTitle>
+            <CardDescription>
+              ส่งใบแจ้งหนี้ให้ผู้เช่าผ่าน LINE OA
+            </CardDescription>
+          </div>
+          <Badge variant="outline">Coming soon</Badge>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            ฟีเจอร์นี้กำลังพัฒนาเพื่อส่งใบแจ้งหนี้ไปยัง LINE ของผู้เช่า
+          </p>
+          <Button type="button" disabled>
+            ส่งใบแจ้งหนี้ผ่าน LINE
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -41,7 +41,7 @@ export default function DashboardPage() {
     enabled: !!user?.teamId,
   });
 
-  const overview = overviewQuery.data;
+  const overview = getData(overviewQuery.data);
   const settingsConfigured = Boolean(getData(settingsQuery.data));
   const isLoading = overviewQuery.isLoading || settingsQuery.isLoading;
 

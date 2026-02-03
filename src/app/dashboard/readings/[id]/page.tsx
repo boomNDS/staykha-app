@@ -65,8 +65,7 @@ export default function ReadingDetailPage() {
   }
 
   const reading = getData(readingQuery.data) as MeterReadingGroup | null;
-  // Rooms API returns room object directly
-  const room = roomQuery.data ?? null;
+  const room = getData(roomQuery.data);
 
   if (!reading) {
     return <div className="py-12 text-center">ไม่พบการอ่านมิเตอร์</div>;

@@ -40,10 +40,8 @@ export default function TenantsPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  // Tenants API returns array directly
-  const tenants = tenantsQuery.data ?? [];
-  // Rooms API returns array directly
-  const rooms = roomsQuery.data ?? [];
+  const tenants = getList(tenantsQuery.data);
+  const rooms = getList(roomsQuery.data);
   const loading = tenantsQuery.isLoading || roomsQuery.isLoading;
   const [confirmState, setConfirmState] = React.useState<{
     open: boolean;

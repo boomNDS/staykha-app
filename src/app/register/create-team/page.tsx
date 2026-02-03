@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { authApi, teamsApi } from "@/lib/api-client";
+import { getData } from "@/lib/api/response-helpers";
 import { useAuth, useSetUser } from "@/lib/auth-context";
 import { normalizeErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
@@ -66,9 +67,9 @@ export default function CreateTeamPage() {
     setIsLoading(true);
 
     try {
-      // Create team - API returns team object directly
       // Backend should automatically assign team to the user
-      const team = await teamsApi.create({ name: teamName.trim() });
+      const response = await teamsApi.create({ name: teamName.trim() });
+      const team = getData(response);
       if (!team || !team.id) {
         throw new Error("ไม่พบข้อมูลทีมที่สร้าง");
       }

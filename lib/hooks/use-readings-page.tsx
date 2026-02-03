@@ -108,10 +108,8 @@ export function useReadingsPage() {
 
   // Data extraction
   const readings = getList(readingsQuery.data);
-  // Buildings API returns array directly
-  const buildings = buildingsQuery.data ?? [];
-  // Rooms API returns array directly
-  const rooms = roomsQuery.data ?? [];
+  const buildings = getList(buildingsQuery.data);
+  const rooms = getList(roomsQuery.data);
   const settings = getData(settingsQuery.data);
   const isLoading = readingsQuery.isLoading;
   const waterBillingMode = settings?.waterBillingMode ?? WaterBillingMode.METERED;

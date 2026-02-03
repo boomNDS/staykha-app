@@ -6,6 +6,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -58,16 +59,15 @@ export default function EditTenantPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  // Rooms API returns array directly
-  const rooms = (roomsQuery.data ?? []).filter(
+  const rooms = getList(roomsQuery.data).filter(
     (room: Room) => {
-      const tenantRoomId = tenantQuery.data?.room?.id || tenantQuery.data?.roomId;
+      const tenantData = getData(tenantQuery.data);
+      const tenantRoomId = tenantData?.room?.id || tenantData?.roomId;
       return room.status === "vacant" || room.id === tenantRoomId;
     },
   );
 
-  // Tenants API returns tenant object directly
-  const tenant = tenantQuery.data ?? null;
+  const tenant = getData(tenantQuery.data);
 
   // Debug logging
   if (import.meta.env.DEV) {
@@ -509,6 +509,31 @@ export default function EditTenantPage() {
               </div>
             </form>
           </Form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <div>
+            <CardTitle>เชื่อมต่อ LINE</CardTitle>
+            <CardDescription>
+              สร้างโค้ดเพื่อให้ผู้เช่าเชื่อมบัญชี LINE กับระบบ
+            </CardDescription>
+          </div>
+          <Badge variant="outline">Coming soon</Badge>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            ฟีเจอร์นี้กำลังพัฒนา จะช่วยส่งโค้ดเชื่อมต่อ LINE ให้ผู้เช่า
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" disabled>
+              สร้างโค้ด LINE
+            </Button>
+            <Button type="button" variant="outline" disabled>
+              ส่งข้อความทดสอบ
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

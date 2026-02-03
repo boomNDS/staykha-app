@@ -99,15 +99,10 @@ export default function EditRoomPage() {
     queryKey: ["rooms"],
     queryFn: () => roomsApi.getAll(),
   });
-  // Buildings API returns array directly
-  const buildings = buildingsQuery.data ?? [];
-  // Tenants API returns array directly
-  const tenants = tenantsQuery.data ?? [];
-  // Rooms API returns array directly (for checking current room assignments)
-  const allRooms = allRoomsQuery.data ?? [];
-
-  // Rooms API returns room object directly
-  const room = roomQuery.data ?? null;
+  const buildings = getList(buildingsQuery.data);
+  const tenants = getList(tenantsQuery.data);
+  const allRooms = getList(allRoomsQuery.data);
+  const room = getData(roomQuery.data);
 
   const form = useForm<RoomFormValues>({
     resolver: zodResolver(roomFormSchema),
@@ -265,8 +260,8 @@ export default function EditRoomPage() {
       onConfirm: async () => {
         try {
           // Fetch tenant to get full data for update
-          // Tenants API returns tenant object directly
-          const tenant = await tenantsApi.getById(room.tenantId!);
+          const tenantResponse = await tenantsApi.getById(room.tenantId!);
+          const tenant = getData(tenantResponse);
           if (!tenant) {
             throw new Error("ไม่พบข้อมูลผู้เช่า");
           }
