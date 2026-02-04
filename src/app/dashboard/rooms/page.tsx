@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { roomsApi, tenantsApi } from "@/lib/api-client";
-import { getList } from "@/lib/api/response-helpers";
+import { getList, getPaginationMeta } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@/lib/router";
 import { mapZodErrors, tenantDraftSchema } from "@/lib/schemas";
@@ -42,13 +42,15 @@ export default function RoomsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [page, setPage] = React.useState(1);
+  const limit = 4;
   const roomsQuery = useQuery({
-    queryKey: ["rooms"],
-    queryFn: () => roomsApi.getAll(),
+    queryKey: ["rooms", page, limit],
+    queryFn: () => roomsApi.getAll(undefined, { page, limit }),
   });
   const tenantsQuery = useQuery({
-    queryKey: ["tenants"],
-    queryFn: () => tenantsApi.getAll(),
+    queryKey: ["tenants", "all"],
+    queryFn: () => tenantsApi.getAll(undefined, { page: 1, limit: 1000 }),
   });
   const [assignDialogOpen, setAssignDialogOpen] = React.useState(false);
   const [selectedRoom, setSelectedRoom] = React.useState<Room | null>(null);
@@ -77,8 +79,10 @@ export default function RoomsPage() {
   });
 
   const rooms = getList(roomsQuery.data);
+  const roomsMeta = getPaginationMeta(roomsQuery.data);
   const tenants = getList(tenantsQuery.data);
   const loading = roomsQuery.isLoading || tenantsQuery.isLoading;
+  const totalRooms = roomsMeta.total || rooms.length;
 
   const deleteRoomMutation = useMutation({
     mutationFn: (id: string) => roomsApi.remove(id),
@@ -516,7 +520,7 @@ export default function RoomsPage() {
                   จำนวนห้องทั้งหมด
                 </p>
                 <p className="mt-2 text-2xl font-semibold text-foreground">
-                  {rooms.length}
+                  {totalRooms}
                 </p>
               </div>
               <div className="rounded-xl border bg-card p-4">
@@ -553,6 +557,13 @@ export default function RoomsPage() {
                 filters={filters}
                 pageSize={4}
                 forcePagination
+                pagination={{
+                  page,
+                  limit,
+                  total: roomsMeta.total,
+                  hasMore: roomsMeta.hasMore,
+                  onPageChange: setPage,
+                }}
               />
             </div>
           </>

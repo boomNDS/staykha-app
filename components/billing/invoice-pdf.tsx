@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
+import { Document, Image, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
 import type { Invoice } from "@/lib/types";
 import type { AdminSettings } from "@/lib/types";
 import {
@@ -10,6 +10,29 @@ import {
   getInvoiceRoomLabel,
   getWaterReading,
 } from "@/lib/utils/invoice-helpers";
+
+const getBankLogoMeta = (bankName?: string | null) => {
+  switch (bankName) {
+    case "ธนาคารกสิกรไทย":
+      return { logo: "/banks/kbank.svg", color: "#16a34a" };
+    case "ธนาคารกรุงไทย":
+      return { logo: "/banks/ktb.svg", color: "#2563eb" };
+    case "ธนาคารกรุงเทพ":
+      return { logo: "/banks/bbl.svg", color: "#1d4ed8" };
+    case "ธนาคารไทยพาณิชย์":
+      return { logo: "/banks/scb.svg", color: "#6d28d9" };
+    case "ธนาคารกรุงศรีอยุธยา":
+      return { logo: "/banks/bay.svg", color: "#f59e0b" };
+    case "ธนาคารทหารไทยธนชาต":
+      return { logo: "/banks/ttb.svg", color: "#0ea5e9" };
+    case "ธนาคารออมสิน":
+      return { logo: "/banks/gsb.svg", color: "#ec4899" };
+    default:
+      return null;
+  }
+};
+
+const PROMPTPAY_LOGO = "/banks/promptpay.svg";
 
 // Register Thai font - using THSarabunNew font from local files
 // Font files located in: public/fonts/
@@ -160,6 +183,33 @@ const singlePageStyles = StyleSheet.create({
   },
   footerBankInfo: {
     marginTop: 6,
+  },
+  bankRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 2,
+  },
+  bankLogo: {
+    width: 18,
+    height: 18,
+  },
+  bankLogoBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  promptpayRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 6,
+  },
+  promptpayQr: {
+    width: 70,
+    height: 70,
   },
   footerBankText: {
     fontSize: 14,
@@ -333,6 +383,33 @@ const gridPageStyles = StyleSheet.create({
   footerBankInfo: {
     marginTop: 4,
   },
+  bankRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 2,
+  },
+  bankLogo: {
+    width: 12,
+    height: 12,
+  },
+  bankLogoBox: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  promptpayRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+  },
+  promptpayQr: {
+    width: 48,
+    height: 48,
+  },
   footerBankText: {
     fontSize: 7,
     marginBottom: 1,
@@ -370,9 +447,15 @@ interface InvoicePDFProps {
   invoices: Invoice[];
   settings?: AdminSettings | null;
   gridLayout?: boolean; // If true, render 4 invoices per page (2x2 grid)
+  promptpayQrDataUrl?: string | null;
 }
 
-export function InvoicePDFDocument({ invoices, settings, gridLayout = false }: InvoicePDFProps) {
+export function InvoicePDFDocument({
+  invoices,
+  settings,
+  gridLayout = false,
+  promptpayQrDataUrl = null,
+}: InvoicePDFProps) {
   // Validate and filter out any invalid invoices
   const validInvoices = (invoices || []).filter((inv): inv is Invoice => inv != null && typeof inv === "object" && "id" in inv);
   
@@ -429,6 +512,9 @@ export function InvoicePDFDocument({ invoices, settings, gridLayout = false }: I
       calculateInvoiceAmounts(invoice);
     const { isWaterFixed, taxRate } = getInvoiceMetadata(invoice, settings);
     const labels = getInvoiceLabels(settings);
+    const bankLogoMeta = getBankLogoMeta(settings?.bankName);
+    const promptpayEnabled = Boolean(settings?.promptpayEnabled);
+    const promptpayId = settings?.promptpayId || "";
 
     return (
       <View key={invoice.id}>
@@ -536,21 +622,47 @@ export function InvoicePDFDocument({ invoices, settings, gridLayout = false }: I
           {(settings?.bankName || settings?.bankAccountNumber || settings?.lineId) && (
             <View style={styles.footerBankInfo}>
               {(settings?.bankName || settings?.bankAccountNumber) && (
-                <Text style={styles.footerBankText}>
-                  {settings?.bankName && settings?.bankAccountNumber
-                    ? `ชำระเงินได้ที่ ${settings.bankName} เลขบัญชี ${settings.bankAccountNumber}`
-                    : settings?.bankName
-                      ? `ชำระเงินได้ที่ ${settings.bankName}`
-                      : settings?.bankAccountNumber
-                        ? `เลขบัญชี ${settings.bankAccountNumber}`
-                        : ""}
-                </Text>
+                <View style={styles.bankRow}>
+                  {bankLogoMeta?.logo && (
+                    <View
+                      style={[
+                        styles.bankLogoBox,
+                        { backgroundColor: bankLogoMeta.color },
+                      ]}
+                    >
+                      <Image style={styles.bankLogo} src={bankLogoMeta.logo} />
+                    </View>
+                  )}
+                  <Text style={styles.footerBankText}>
+                    {settings?.bankName && settings?.bankAccountNumber
+                      ? `ชำระเงินได้ที่ ${settings.bankName} เลขบัญชี ${settings.bankAccountNumber}`
+                      : settings?.bankName
+                        ? `ชำระเงินได้ที่ ${settings.bankName}`
+                        : settings?.bankAccountNumber
+                          ? `เลขบัญชี ${settings.bankAccountNumber}`
+                          : ""}
+                  </Text>
+                </View>
               )}
               {settings?.lineId && (
                 <Text style={styles.footerBankText}>
                   ไอดีไลน์ {settings.lineId}
                 </Text>
               )}
+            </View>
+          )}
+          {promptpayEnabled && promptpayId && promptpayQrDataUrl && (
+            <View style={styles.promptpayRow}>
+              <Image style={styles.promptpayQr} src={promptpayQrDataUrl} />
+              <View>
+                <View style={styles.bankRow}>
+                  <View style={[styles.bankLogoBox, { backgroundColor: "#0ea5e9" }]}>
+                    <Image style={styles.bankLogo} src={PROMPTPAY_LOGO} />
+                  </View>
+                  <Text style={styles.footerBankText}>พร้อมเพย์ (PromptPay)</Text>
+                </View>
+                <Text style={styles.footerBankText}>รหัส: {promptpayId}</Text>
+              </View>
             </View>
           )}
 

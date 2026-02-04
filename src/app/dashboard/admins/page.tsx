@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminsApi, invitationsApi } from "@/lib/api-client";
-import { getList } from "@/lib/api/response-helpers";
+import { getList, getPaginationMeta } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import type { AdminInvitation, User } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
@@ -24,9 +24,11 @@ export default function AdminsPage() {
 
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const limit = 10;
   const adminsQuery = useQuery({
-    queryKey: ["admins", user?.teamId],
-    queryFn: () => adminsApi.getAll(user?.teamId),
+    queryKey: ["admins", user?.teamId, page, limit],
+    queryFn: () => adminsApi.getAll(user?.teamId, undefined, { page, limit }),
     enabled: !!user?.teamId,
   });
   const invitationsQuery = useQuery({
@@ -35,6 +37,7 @@ export default function AdminsPage() {
     enabled: !!user?.teamId,
   });
   const admins = getList(adminsQuery.data);
+  const adminsMeta = getPaginationMeta(adminsQuery.data);
   const invitations = getList(invitationsQuery.data);
   const isLoading = adminsQuery.isLoading || invitationsQuery.isLoading;
   const [confirmState, setConfirmState] = useState<{
@@ -233,7 +236,9 @@ export default function AdminsPage() {
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold">ผู้ดูแลที่ใช้งานอยู่</h2>
-              <Badge variant="secondary">{admins.length}</Badge>
+              <Badge variant="secondary">
+                {adminsMeta.total || admins.length}
+              </Badge>
             </div>
           </div>
           <div className="p-4">
@@ -259,6 +264,13 @@ export default function AdminsPage() {
                 hideSearch={false}
                 searchPlaceholder="ค้นหาผู้ดูแล..."
                 forcePagination
+                pagination={{
+                  page,
+                  limit,
+                  total: adminsMeta.total,
+                  hasMore: adminsMeta.hasMore,
+                  onPageChange: setPage,
+                }}
               />
             ) : (
               <EmptyState

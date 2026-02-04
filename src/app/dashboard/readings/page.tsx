@@ -36,6 +36,7 @@ export default function ReadingsPage() {
     settingsQuery,
     roomsQuery,
     readings,
+    readingsMeta,
     buildings,
     rooms,
     settings,
@@ -43,6 +44,9 @@ export default function ReadingsPage() {
     isWaterFixed,
     selectedPeriod,
     setSelectedPeriod,
+    page,
+    setPage,
+    limit,
     setSelectedGroupId,
     generatingInvoiceId,
     setGeneratingInvoiceId,
@@ -574,6 +578,13 @@ export default function ReadingsPage() {
               filters={filters}
               pageSize={10}
               forcePagination
+              pagination={{
+                page,
+                limit,
+                total: readingsMeta.total,
+                hasMore: readingsMeta.hasMore,
+                onPageChange: setPage,
+              }}
             />
           )}
         </CardContent>

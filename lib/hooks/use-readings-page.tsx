@@ -13,7 +13,7 @@ import {
   roomsApi,
   settingsApi,
 } from "@/lib/api-client";
-import { getData, getList } from "@/lib/api/response-helpers";
+import { getData, getList, getPaginationMeta } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
@@ -37,18 +37,20 @@ export function useReadingsPage() {
     null,
   );
   const [selectedPeriod, setSelectedPeriod] = React.useState("all");
+  const [page, setPage] = React.useState(1);
+  const limit = 10;
 
   const hasTeam = !!user?.teamId;
   
   // Queries - only enabled if user has team
   const readingsQuery = useQuery({
-    queryKey: ["readings"],
-    queryFn: () => readingsApi.getAll(),
+    queryKey: ["readings", page, limit],
+    queryFn: () => readingsApi.getAll(undefined, { page, limit }),
     enabled: hasTeam, // Only fetch if user has team
   });
   const buildingsQuery = useQuery({
-    queryKey: ["buildings"],
-    queryFn: () => buildingsApi.getAll(),
+    queryKey: ["buildings", "all"],
+    queryFn: () => buildingsApi.getAll(undefined, { page: 1, limit: 1000 }),
     enabled: hasTeam, // Only fetch if user has team
   });
   const settingsQuery = useQuery({
@@ -62,13 +64,13 @@ export function useReadingsPage() {
     enabled: hasTeam, // Only fetch if user has team
   });
   const roomsQuery = useQuery({
-    queryKey: ["rooms"],
-    queryFn: () => roomsApi.getAll(),
+    queryKey: ["rooms", "all"],
+    queryFn: () => roomsApi.getAll(undefined, { page: 1, limit: 1000 }),
     enabled: hasTeam, // Only fetch if user has team
   });
   const invoicesQuery = useQuery({
-    queryKey: ["invoices"],
-    queryFn: () => invoicesApi.getAll(),
+    queryKey: ["invoices", "all"],
+    queryFn: () => invoicesApi.getAll(undefined, { page: 1, limit: 1000 }),
     enabled: hasTeam, // Only fetch if user has team
   });
 
@@ -108,6 +110,7 @@ export function useReadingsPage() {
 
   // Data extraction
   const readings = getList(readingsQuery.data);
+  const readingsMeta = getPaginationMeta(readingsQuery.data);
   const buildings = getList(buildingsQuery.data);
   const rooms = getList(roomsQuery.data);
   const settings = getData(settingsQuery.data);
@@ -135,6 +138,10 @@ export function useReadingsPage() {
       return group;
     });
   }, [readings, rooms]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [selectedPeriod]);
 
   // Computed values
   const periodOptions = React.useMemo(() => {
@@ -528,6 +535,7 @@ export function useReadingsPage() {
     invoicesQuery,
     // Data
     readings: groupedReadings,
+    readingsMeta,
     buildings,
     rooms,
     settings,
@@ -536,6 +544,9 @@ export function useReadingsPage() {
     // State
     selectedPeriod,
     setSelectedPeriod,
+    page,
+    setPage,
+    limit,
     selectedGroupId,
     setSelectedGroupId,
     generatingInvoiceId,

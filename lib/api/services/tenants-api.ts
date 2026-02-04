@@ -6,12 +6,29 @@ import type {
   TenantUpdateRequest,
   TenantsListResponse,
 } from "./tenants-types";
+import { getData, getList } from "../response-helpers";
 
 class TenantsApi extends BaseApiService {
-  async getAll(token?: string): Promise<TenantsListResponse> {
+  async getAll(
+    token?: string,
+    options: { page?: number; limit?: number } = {},
+  ): Promise<TenantsListResponse> {
     try {
       const api = this.createApi(token);
-      return api.get<TenantsListResponse>("/tenants");
+      const response = await api.get<TenantsListResponse>("/tenants", {
+        params: {
+          page: options.page ?? 1,
+          limit: options.limit ?? 20,
+        },
+      });
+      const data = getData(response) as { tenants?: any[]; items?: any[] } | null;
+      const items =
+        data?.tenants && Array.isArray(data.tenants)
+          ? data.tenants
+          : data?.items && Array.isArray(data.items)
+            ? data.items
+            : getList(response);
+      return { ...response, data: { ...(data ?? {}), items } } as TenantsListResponse;
     } catch (error: unknown) {
       this.handleError(error, "getAll");
     }

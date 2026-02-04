@@ -56,6 +56,13 @@ interface DataTableProps<T> {
   rowClassName?: (item: T) => string | undefined;
   forcePagination?: boolean;
   className?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export function DataTable<T>({
@@ -73,9 +80,10 @@ export function DataTable<T>({
   rowClassName,
   forcePagination = false,
   className,
+  pagination,
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [currentPage, setCurrentPage] = React.useState(1);
+  const [internalPage, setInternalPage] = React.useState(1);
   const [activeFilters, setActiveFilters] = React.useState<
     Record<string, string>
   >({});
@@ -108,11 +116,17 @@ export function DataTable<T>({
     return result;
   }, [data, searchTerm, activeFilters, columns, filters]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredData.length / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedData = filteredData.slice(startIndex, endIndex);
+  const currentPage = pagination?.page ?? internalPage;
+  const totalPages = pagination
+    ? Math.max(1, Math.ceil(pagination.total / pagination.limit))
+    : Math.ceil(filteredData.length / pageSize);
+  const startIndex = pagination
+    ? (currentPage - 1) * (pagination.limit || pageSize)
+    : (currentPage - 1) * pageSize;
+  const endIndex = pagination
+    ? startIndex + filteredData.length
+    : startIndex + pageSize;
+  const paginatedData = pagination ? filteredData : filteredData.slice(startIndex, endIndex);
   const selectionEnabled = Boolean(
     getRowId && selectedRowIds && onSelectionChange,
   );
@@ -143,7 +157,11 @@ export function DataTable<T>({
       JSON.stringify(prev.activeFilters) !== JSON.stringify(activeFilters);
 
     if (filtersChanged) {
-      setCurrentPage(1);
+      if (pagination) {
+        pagination.onPageChange(1);
+      } else {
+        setInternalPage(1);
+      }
       prevFiltersRef.current = { searchTerm, activeFilters };
     }
   }, [searchTerm, activeFilters]);
@@ -292,8 +310,20 @@ export function DataTable<T>({
       {!hidePagination && (forcePagination || totalPages > 1) && (
         <div className="flex flex-col gap-2">
           <div className="text-sm text-muted-foreground">
-            แสดง {startIndex + 1} ถึง {Math.min(endIndex, filteredData.length)}{" "}
-            จากทั้งหมด {filteredData.length} รายการ
+            {pagination ? (
+              <>
+                แสดง {filteredData.length === 0 ? 0 : startIndex + 1} ถึง{" "}
+                {filteredData.length === 0
+                  ? 0
+                  : Math.min(startIndex + filteredData.length, pagination.total)}{" "}
+                จากทั้งหมด {pagination.total} รายการ
+              </>
+            ) : (
+              <>
+                แสดง {startIndex + 1} ถึง {Math.min(endIndex, filteredData.length)}{" "}
+                จากทั้งหมด {filteredData.length} รายการ
+              </>
+            )}
           </div>
           <Pagination className="justify-end">
             <PaginationContent>
@@ -304,7 +334,11 @@ export function DataTable<T>({
                       e.preventDefault();
                       return;
                     }
-                    setCurrentPage((p) => Math.max(1, p - 1));
+                    if (pagination) {
+                      pagination.onPageChange(Math.max(1, currentPage - 1));
+                    } else {
+                      setInternalPage((p) => Math.max(1, p - 1));
+                    }
                   }}
                   aria-disabled={currentPage === 1}
                   className={
@@ -323,7 +357,13 @@ export function DataTable<T>({
                       <PaginationItem key={page}>
                         <PaginationLink
                           isActive={page === currentPage}
-                          onClick={() => setCurrentPage(page)}
+                          onClick={() => {
+                            if (pagination) {
+                              pagination.onPageChange(page);
+                            } else {
+                              setInternalPage(page);
+                            }
+                          }}
                         >
                           {page}
                         </PaginationLink>
@@ -343,15 +383,24 @@ export function DataTable<T>({
               <PaginationItem>
                 <PaginationNext
                   onClick={(e) => {
-                    if (currentPage === totalPages) {
+                    const isLastPage = pagination
+                      ? !pagination.hasMore
+                      : currentPage === totalPages;
+                    if (isLastPage) {
                       e.preventDefault();
                       return;
                     }
-                    setCurrentPage((p) => Math.min(totalPages, p + 1));
+                    if (pagination) {
+                      pagination.onPageChange(currentPage + 1);
+                    } else {
+                      setInternalPage((p) => Math.min(totalPages, p + 1));
+                    }
                   }}
-                  aria-disabled={currentPage === totalPages}
+                  aria-disabled={
+                    pagination ? !pagination.hasMore : currentPage === totalPages
+                  }
                   className={
-                    currentPage === totalPages
+                    (pagination ? !pagination.hasMore : currentPage === totalPages)
                       ? "pointer-events-none opacity-50"
                       : ""
                   }

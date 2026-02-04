@@ -40,12 +40,27 @@ function mapRoomFromApi(apiRoom: any): Room {
 }
 
 class RoomsApi extends BaseApiService {
-  async getAll(token?: string): Promise<RoomsListResponse> {
+  async getAll(
+    token?: string,
+    options: { page?: number; limit?: number } = {},
+  ): Promise<RoomsListResponse> {
     try {
       const api = this.createApi(token);
-      const response = await api.get<RoomsListResponse>("/rooms");
-      const rooms = getList(response).map(mapRoomFromApi);
-      return { ...response, data: rooms };
+      const response = await api.get<RoomsListResponse>("/rooms", {
+        params: {
+          page: options.page ?? 1,
+          limit: options.limit ?? 20,
+        },
+      });
+      const data = getData(response) as { items?: any[]; rooms?: any[] } | null;
+      const items =
+        data?.rooms && Array.isArray(data.rooms)
+          ? data.rooms
+          : data?.items && Array.isArray(data.items)
+            ? data.items
+            : getList(response);
+      const rooms = items.map(mapRoomFromApi);
+      return { ...response, data: { ...(data ?? {}), items: rooms } } as RoomsListResponse;
     } catch (error: unknown) {
       this.handleError(error, "getAll");
     }

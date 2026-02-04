@@ -11,11 +11,13 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { AdminRestrictionBanner } from "@/components/admin-restriction-banner";
+import { BankLogo, BANK_OPTIONS } from "@/components/bank-logo";
 import { LoadingState } from "@/components/loading-state";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -48,6 +50,7 @@ import {
   DropZoneArea,
   useDropzone,
 } from "@/components/dropzone";
+import { getData } from "@/lib/api/response-helpers";
 import { useToast } from "@/hooks/use-toast";
 import { importsApi, settingsApi } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
@@ -109,6 +112,10 @@ export default function SettingsPage() {
   const { settings, isLoading, updateSettings } = useSettings();
   const { team, isUpdating: isSavingTeam, updateTeam } = useTeam();
   const [isSaving, setIsSaving] = React.useState(false);
+  const [promptpayErrors, setPromptpayErrors] = React.useState<{
+    type?: string;
+    id?: string;
+  }>({});
   const [teamName, setTeamName] = React.useState("");
   const [importMode, setImportMode] = React.useState<"excel" | "csv">("excel");
   const [excelFile, setExcelFile] = React.useState<File | null>(null);
@@ -227,6 +234,9 @@ export default function SettingsPage() {
     bankName: "",
     bankAccountNumber: "",
     lineId: "",
+    promptpayEnabled: false,
+    promptpayType: "PHONE",
+    promptpayId: "",
     latePaymentPenaltyPerDay: 0,
     dueDateDayOfMonth: 5,
     // Thai Labels defaults
@@ -314,6 +324,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
+    setPromptpayErrors({});
     try {
       // Ensure teamId is set
       const teamId = formSettings.teamId || user?.teamId || "";
@@ -321,11 +332,31 @@ export default function SettingsPage() {
         throw new Error("ไม่พบข้อมูลทีม");
       }
 
-      const settingsToSave = {
-        ...formSettings,
-        teamId,
-        // waterBillingMode is already an enum value (METERED | FIXED)
-      };
+      const baseSettings = settings ?? ({} as AdminSettings);
+      const settingsToSave = Object.keys(formSettings).reduce(
+        (acc, key) => {
+          const typedKey = key as keyof AdminSettings;
+          if (typedKey === "teamId" || typedKey === "team") return acc;
+          const nextValue = formSettings[typedKey];
+          const prevValue = baseSettings[typedKey];
+          if (nextValue !== prevValue) {
+            acc[typedKey] = nextValue as never;
+          }
+          return acc;
+        },
+        {} as Partial<AdminSettings>,
+      );
+
+      if (settingsToSave.promptpayEnabled === true) {
+        settingsToSave.promptpayType =
+          formSettings.promptpayType || "PHONE";
+        settingsToSave.promptpayId = formSettings.promptpayId || "";
+      }
+
+      if (settingsToSave.promptpayEnabled === false) {
+        delete settingsToSave.promptpayType;
+        delete settingsToSave.promptpayId;
+      }
 
       // GET /v1/settings auto-creates defaults if they don't exist,
       // so we can always use PATCH to update
@@ -343,7 +374,14 @@ export default function SettingsPage() {
       if (import.meta.env.DEV) {
         console.log("[Settings] Updating settings:", settingsToSave);
       }
-      await updateSettings(settingsToSave);
+      const updatedResponse = await updateSettings(settingsToSave);
+      const updatedSettings = getData(updatedResponse);
+      if (updatedSettings) {
+        setFormSettings({
+          ...updatedSettings,
+          teamId: updatedSettings.teamId || teamId,
+        });
+      }
       toast({
         title: "บันทึกสำเร็จ",
         description: "บันทึก Settings เรียบร้อย",
@@ -354,6 +392,18 @@ export default function SettingsPage() {
         error?.response?.data?.message ||
         error?.message ||
         "Failed to save settings";
+      if (errorMessage === "promptpayId required") {
+        setPromptpayErrors((prev) => ({
+          ...prev,
+          id: "กรุณากรอกเลขพร้อมเพย์",
+        }));
+      }
+      if (errorMessage === "invalid promptpayType") {
+        setPromptpayErrors((prev) => ({
+          ...prev,
+          type: "ประเภทพร้อมเพย์ไม่ถูกต้อง",
+        }));
+      }
       toast({
         title: "เกิดข้อผิดพลาด",
         description: errorMessage,
@@ -1248,17 +1298,38 @@ export default function SettingsPage() {
                 >
                   ชื่อธนาคาร
                 </LabelWithInfo>
-                <Input
-                  id="bankName"
+                <Select
                   value={formSettings.bankName || ""}
-                  onChange={(e) =>
+                  onValueChange={(value) =>
                     setFormSettings({
                       ...formSettings,
-                      bankName: e.target.value,
+                      bankName: value,
                     })
                   }
-                  placeholder="ธนาคารกรุงไทย"
-                />
+                >
+                  <SelectTrigger id="bankName" className="h-11">
+                    <div className="flex items-center gap-2">
+                      {formSettings.bankName ? (
+                        <>
+                          <BankLogo name={formSettings.bankName} size="sm" />
+                          <span>{formSettings.bankName}</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">เลือกธนาคาร</span>
+                      )}
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BANK_OPTIONS.map((bank) => (
+                      <SelectItem key={bank.value} value={bank.value}>
+                        <div className="flex items-center gap-2">
+                          <BankLogo name={bank.value} size="sm" />
+                          <span>{bank.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <LabelWithInfo
@@ -1300,6 +1371,99 @@ export default function SettingsPage() {
                   placeholder="@379zxxta"
                 />
               </div>
+              <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 bg-muted/40 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    เปิดใช้ PromptPay
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    แสดง QR พร้อมเพย์บนใบแจ้งหนี้
+                  </p>
+                </div>
+                <Switch
+                  checked={Boolean(formSettings.promptpayEnabled)}
+                  onCheckedChange={(checked) => {
+                    setPromptpayErrors({});
+                    setFormSettings({
+                      ...formSettings,
+                      promptpayEnabled: checked,
+                      promptpayType: checked
+                        ? formSettings.promptpayType || "PHONE"
+                        : "PHONE",
+                      promptpayId: checked ? formSettings.promptpayId : "",
+                    });
+                  }}
+                />
+              </div>
+            </div>
+            {formSettings.promptpayEnabled && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <LabelWithInfo
+                    htmlFor="promptpayType"
+                    tooltip="ประเภทพร้อมเพย์ที่จะแสดงบนใบแจ้งหนี้ (ใช้ร่วมกับเลขพร้อมเพย์)"
+                  >
+                    ประเภทพร้อมเพย์
+                  </LabelWithInfo>
+                  <Select
+                    value={formSettings.promptpayType || "PHONE"}
+                    onValueChange={(value) => {
+                      setPromptpayErrors((prev) => ({ ...prev, type: undefined }));
+                      setFormSettings({
+                        ...formSettings,
+                        promptpayType: value as AdminSettings["promptpayType"],
+                      });
+                    }}
+                  >
+                    <SelectTrigger id="promptpayType" className="h-11">
+                      <SelectValue placeholder="เลือกประเภท" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="PHONE">เบอร์โทรศัพท์</SelectItem>
+                      <SelectItem value="NATIONAL_ID">เลขบัตรประชาชน</SelectItem>
+                      <SelectItem value="EWALLET">กระเป๋าเงินอิเล็กทรอนิกส์</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {promptpayErrors.type && (
+                    <p className="text-xs text-destructive">
+                      {promptpayErrors.type}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <LabelWithInfo
+                    htmlFor="promptpayId"
+                    tooltip="เลขพร้อมเพย์ ใช้สำหรับสร้าง QR Code ในใบแจ้งหนี้"
+                  >
+                    เลขพร้อมเพย์
+                  </LabelWithInfo>
+                  <Input
+                    id="promptpayId"
+                    value={formSettings.promptpayId || ""}
+                    onChange={(e) => {
+                      setPromptpayErrors((prev) => ({ ...prev, id: undefined }));
+                      setFormSettings({
+                        ...formSettings,
+                        promptpayId: e.target.value,
+                      });
+                    }}
+                    placeholder={
+                      formSettings.promptpayType === "NATIONAL_ID"
+                        ? "1-2345-67890-12-3"
+                        : formSettings.promptpayType === "EWALLET"
+                          ? "1234567890"
+                          : "081-234-5678"
+                    }
+                  />
+                  {promptpayErrors.id && (
+                    <p className="text-xs text-destructive">
+                      {promptpayErrors.id}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <LabelWithInfo
                   htmlFor="dueDateDayOfMonth"

@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { buildingsApi } from "@/lib/api-client";
-import { getList } from "@/lib/api/response-helpers";
+import { getList, getPaginationMeta } from "@/lib/api/response-helpers";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "@/lib/router";
 import type { Building } from "@/lib/types";
@@ -45,11 +45,14 @@ export default function BuildingsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [page, setPage] = React.useState(1);
+  const limit = 10;
   const buildingsQuery = useQuery({
-    queryKey: ["buildings"],
-    queryFn: () => buildingsApi.getAll(),
+    queryKey: ["buildings", page, limit],
+    queryFn: () => buildingsApi.getAll(undefined, { page, limit }),
   });
   const buildings = getList(buildingsQuery.data);
+  const buildingsMeta = getPaginationMeta(buildingsQuery.data);
   const isLoading = buildingsQuery.isLoading;
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
@@ -238,6 +241,13 @@ export default function BuildingsPage() {
             data={buildings}
             searchPlaceholder="ค้นหาอาคาร..."
             forcePagination
+            pagination={{
+              page,
+              limit,
+              total: buildingsMeta.total,
+              hasMore: buildingsMeta.hasMore,
+              onPageChange: setPage,
+            }}
           />
         </div>
       )}

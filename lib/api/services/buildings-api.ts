@@ -6,12 +6,29 @@ import type {
   BuildingUpdateRequest,
   BuildingsListResponse,
 } from "./buildings-types";
+import { getData, getList } from "../response-helpers";
 
 class BuildingsApi extends BaseApiService {
-  async getAll(token?: string): Promise<BuildingsListResponse> {
+  async getAll(
+    token?: string,
+    options: { page?: number; limit?: number } = {},
+  ): Promise<BuildingsListResponse> {
     try {
       const api = this.createApi(token);
-      return api.get<BuildingsListResponse>("/buildings");
+      const response = await api.get<BuildingsListResponse>("/buildings", {
+        params: {
+          page: options.page ?? 1,
+          limit: options.limit ?? 20,
+        },
+      });
+      const data = getData(response) as { buildings?: any[]; items?: any[] } | null;
+      const items =
+        data?.buildings && Array.isArray(data.buildings)
+          ? data.buildings
+          : data?.items && Array.isArray(data.items)
+            ? data.items
+            : getList(response);
+      return { ...response, data: { ...(data ?? {}), items } } as BuildingsListResponse;
     } catch (error: unknown) {
       this.handleError(error, "getAll");
     }

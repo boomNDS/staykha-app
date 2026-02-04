@@ -67,6 +67,12 @@ function mapSettingsFromApi(apiSettings: any): AdminSettings {
     bankName: apiSettings.bankName ?? undefined,
     bankAccountNumber: apiSettings.bankAccountNumber ?? undefined,
     lineId: apiSettings.lineId ?? undefined,
+    promptpayEnabled:
+      typeof apiSettings.promptpayEnabled === "boolean"
+        ? apiSettings.promptpayEnabled
+        : false,
+    promptpayType: apiSettings.promptpayType ?? undefined,
+    promptpayId: apiSettings.promptpayId ?? undefined,
     labelInvoice: apiSettings.labelInvoice ?? undefined,
     labelRoomRent: apiSettings.labelRoomRent ?? undefined,
     labelWater: apiSettings.labelWater ?? undefined,

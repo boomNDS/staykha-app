@@ -265,6 +265,9 @@ export interface AdminSettings {
   bankName?: string;
   bankAccountNumber?: string;
   lineId?: string;
+  promptpayEnabled?: boolean;
+  promptpayType?: "PHONE" | "NATIONAL_ID" | "EWALLET";
+  promptpayId?: string;
   latePaymentPenaltyPerDay?: number;
   dueDateDayOfMonth?: number; // Day of month (1-31) when bills are due
   // Thai Labels (optional - defaults to Thai if not set)

@@ -2,6 +2,7 @@ import { pdf } from "@react-pdf/renderer";
 import type { Invoice } from "@/lib/types";
 import type { AdminSettings } from "@/lib/types";
 import { InvoicePDFDocument } from "@/components/billing/invoice-pdf";
+import { createPromptPayQrDataUrl } from "@/lib/utils/promptpay";
 
 /**
  * Generate filename for invoice export
@@ -47,12 +48,22 @@ export async function exportInvoicesAsPdf(
   }
 
   try {
+    const promptpayQrDataUrl =
+      settings?.promptpayEnabled && settings?.promptpayId
+        ? await createPromptPayQrDataUrl(
+            settings.promptpayId,
+            settings.promptpayType || "PHONE",
+            invoices.length === 1 ? invoices[0].total : undefined,
+          )
+        : null;
+
     // Create PDF document
     const doc = (
       <InvoicePDFDocument
         invoices={invoices}
         settings={settings}
         gridLayout={gridLayout}
+        promptpayQrDataUrl={promptpayQrDataUrl}
       />
     );
 
@@ -103,12 +114,22 @@ export async function printInvoicesAsPdf(
   }
 
   try {
+    const promptpayQrDataUrl =
+      settings?.promptpayEnabled && settings?.promptpayId
+        ? await createPromptPayQrDataUrl(
+            settings.promptpayId,
+            settings.promptpayType || "PHONE",
+            invoices.length === 1 ? invoices[0].total : undefined,
+          )
+        : null;
+
     // Create PDF document
     const doc = (
       <InvoicePDFDocument
         invoices={invoices}
         settings={settings}
         gridLayout={gridLayout}
+        promptpayQrDataUrl={promptpayQrDataUrl}
       />
     );
 

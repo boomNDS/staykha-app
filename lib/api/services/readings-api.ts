@@ -102,19 +102,29 @@ class ReadingsApi extends BaseApiService {
    * GET /v1/readings
    * Returns individual readings array, which we group into MeterReadingGroup objects
    */
-  async getAll(token?: string): Promise<ReadingsListResponse> {
+  async getAll(
+    token?: string,
+    options: { page?: number; limit?: number } = {},
+  ): Promise<ReadingsListResponse> {
     try {
       const api = this.createApi(token);
-      const response = await api.get<ReadingsListResponse>("/readings");
+      const response = await api.get<ReadingsListResponse>("/readings", {
+        params: {
+          page: options.page ?? 1,
+          limit: options.limit ?? 20,
+        },
+      });
       const responseData = getData(response as ApiResponse<{ readings?: any[] }>);
       const readingsList = Array.isArray(responseData)
         ? responseData
         : responseData?.readings && Array.isArray(responseData.readings)
           ? responseData.readings
-          : getList(response);
+          : (responseData as any)?.items && Array.isArray((responseData as any).items)
+            ? (responseData as any).items
+            : getList(response);
       const mappedReadings = readingsList.map(mapReadingFromApi);
       const groupedReadings = groupReadings(mappedReadings);
-      return { ...response, data: groupedReadings };
+      return { ...response, data: { ...(responseData ?? {}), items: groupedReadings } } as ReadingsListResponse;
     } catch (error: unknown) {
       this.handleError(error, "getAll");
     }

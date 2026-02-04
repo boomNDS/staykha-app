@@ -126,12 +126,27 @@ function mapInvoiceFromApi(apiInvoice: any): Invoice {
 }
 
 class InvoicesApi extends BaseApiService {
-  async getAll(token?: string): Promise<InvoicesListResponse> {
+  async getAll(
+    token?: string,
+    options: { page?: number; limit?: number } = {},
+  ): Promise<InvoicesListResponse> {
     try {
       const api = this.createApi(token);
-      const response = await api.get<InvoicesListResponse>("/invoices");
-      const invoices = getList(response);
-      return { ...response, data: invoices.map(mapInvoiceFromApi) };
+      const response = await api.get<InvoicesListResponse>("/invoices", {
+        params: {
+          page: options.page ?? 1,
+          limit: options.limit ?? 20,
+        },
+      });
+      const data = getData(response) as { invoices?: any[] } | null;
+      const items =
+        data?.invoices && Array.isArray(data.invoices)
+          ? data.invoices
+          : data?.items && Array.isArray((data as any).items)
+            ? (data as any).items
+            : getList(response);
+      const invoices = items.map(mapInvoiceFromApi);
+      return { ...response, data: { ...(data ?? {}), items: invoices } } as InvoicesListResponse;
     } catch (error: unknown) {
       this.handleError(error, "getAll");
     }
@@ -188,7 +203,8 @@ class InvoicesApi extends BaseApiService {
       const response = await api.post<InvoiceResponse>("/invoices/from-reading-group", {
         readingGroupId,
       });
-      const invoiceData = getData(response);
+      const data = getData(response);
+      const invoiceData = (data as any)?.invoice ?? data;
       if (!invoiceData) {
         throw new Error("Invalid response from invoice generation");
       }

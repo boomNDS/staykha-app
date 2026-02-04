@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { roomsApi, tenantsApi } from "@/lib/api-client";
-import { getList } from "@/lib/api/response-helpers";
+import { getList, getPaginationMeta } from "@/lib/api/response-helpers";
 import { useRouter } from "@/lib/router";
 import type { Tenant } from "@/lib/types";
 import { TenantStatus } from "@/lib/types";
@@ -32,15 +32,18 @@ export default function TenantsPage() {
 
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [page, setPage] = React.useState(1);
+  const limit = 10;
   const tenantsQuery = useQuery({
-    queryKey: ["tenants"],
-    queryFn: () => tenantsApi.getAll(),
+    queryKey: ["tenants", page, limit],
+    queryFn: () => tenantsApi.getAll(undefined, { page, limit }),
   });
   const roomsQuery = useQuery({
     queryKey: ["rooms"],
-    queryFn: () => roomsApi.getAll(),
+    queryFn: () => roomsApi.getAll(undefined, { page: 1, limit: 1000 }),
   });
   const tenants = getList(tenantsQuery.data);
+  const tenantsMeta = getPaginationMeta(tenantsQuery.data);
   const rooms = getList(roomsQuery.data);
   const loading = tenantsQuery.isLoading || roomsQuery.isLoading;
   const [confirmState, setConfirmState] = React.useState<{
@@ -272,6 +275,13 @@ export default function TenantsPage() {
             searchPlaceholder="ค้นหาผู้เช่า..."
             pageSize={10}
             forcePagination
+            pagination={{
+              page,
+              limit,
+              total: tenantsMeta.total,
+              hasMore: tenantsMeta.hasMore,
+              onPageChange: setPage,
+            }}
           />
         )}
       </div>

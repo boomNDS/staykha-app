@@ -34,7 +34,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { invoicesApi } from "@/lib/api-client";
-import { getData, getList } from "@/lib/api/response-helpers";
+import { getData, getList, getPaginationMeta } from "@/lib/api/response-helpers";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter, useSearchParams } from "@/lib/router";
 import type { Invoice } from "@/lib/types";
@@ -56,11 +56,14 @@ export default function BillingPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { settings } = useSettings();
+  const [page, setPage] = React.useState(1);
+  const limit = 10;
   const invoicesQuery = useQuery({
-    queryKey: ["invoices"],
-    queryFn: () => invoicesApi.getAll(),
+    queryKey: ["invoices", page, limit],
+    queryFn: () => invoicesApi.getAll(undefined, { page, limit }),
   });
   const invoices = getList(invoicesQuery.data);
+  const invoiceMeta = getPaginationMeta(invoicesQuery.data);
   const isLoading = invoicesQuery.isLoading;
   const hasGenerated = React.useRef(false);
   const [selectedInvoiceIds, setSelectedInvoiceIds] = React.useState<
@@ -105,6 +108,9 @@ export default function BillingPage() {
       (invoice) => getInvoicePeriodKey(invoice) === selectedPeriod,
     );
   }, [invoices, selectedPeriod]);
+  React.useEffect(() => {
+    setPage(1);
+  }, [selectedPeriod]);
   const periodLabel =
     selectedPeriod === "all"
       ? "ทุกงวด"
@@ -831,6 +837,13 @@ export default function BillingPage() {
                 }
               }}
               selectionLabel="เลือกใบแจ้งหนี้ (สูงสุด 4 รายการ)"
+              pagination={{
+                page,
+                limit,
+                total: invoiceMeta.total,
+                hasMore: invoiceMeta.hasMore,
+                onPageChange: setPage,
+              }}
             />
           )}
         </CardContent>

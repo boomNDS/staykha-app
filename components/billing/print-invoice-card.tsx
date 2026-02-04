@@ -1,8 +1,11 @@
 "use client";
 
+import * as React from "react";
 import { useSettings } from "@/lib/hooks/use-settings";
 import type { Invoice } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+import { BankLogo } from "@/components/bank-logo";
+import { createPromptPayQrDataUrl } from "@/lib/utils/promptpay";
 import {
   calculateInvoiceAmounts,
   formatMeterReading,
@@ -23,6 +26,8 @@ export function PrintInvoiceCard({
   className,
 }: PrintInvoiceCardProps) {
   const { settings } = useSettings();
+  const [promptpayQr, setPromptpayQr] = React.useState<string | null>(null);
+  const [promptpayLogoError, setPromptpayLogoError] = React.useState(false);
 
   // Use shared utility functions
   const roomLabel = getInvoiceRoomLabel(invoice);
@@ -39,6 +44,9 @@ export function PrintInvoiceCard({
   const lineId = settings?.lineId || "";
   const latePaymentPenalty = settings?.latePaymentPenaltyPerDay || 0;
   const dueDateDay = settings?.dueDateDayOfMonth || 5;
+  const promptpayEnabled = Boolean(settings?.promptpayEnabled);
+  const promptpayId = promptpayEnabled ? settings?.promptpayId?.trim() || "" : "";
+  const promptpayType = settings?.promptpayType || "PHONE";
 
   // Format due date message
   const dueDateMessage = `ภายในวันที่ ${dueDateDay} ของทุกเดือน`;
@@ -46,6 +54,28 @@ export function PrintInvoiceCard({
     latePaymentPenalty > 0
       ? `หากเกินกำหนด ชำระค่าปรับวันละ ${formatCurrency(latePaymentPenalty, settings?.currency || "THB")}`
       : "";
+
+  React.useEffect(() => {
+    let cancelled = false;
+    if (!promptpayId) {
+      setPromptpayQr(null);
+      return undefined;
+    }
+    createPromptPayQrDataUrl(promptpayId, promptpayType, total)
+      .then((dataUrl) => {
+        if (!cancelled) {
+          setPromptpayQr(dataUrl);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPromptpayQr(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [promptpayId, promptpayType, total]);
 
   return (
     <div className={className}>
@@ -213,23 +243,72 @@ export function PrintInvoiceCard({
           {(bankName || bankAccountNumber || lineId) && (
             <div className="space-y-0.5">
               {(bankName || bankAccountNumber) && (
-                <p className="font-medium text-slate-700 text-base print:text-lg">
-                  {bankName && bankAccountNumber ? (
-                    <>
-                      ชำระเงินได้ที่ {bankName} เลขบัญชี {bankAccountNumber}
-                    </>
-                  ) : bankName ? (
-                    <>ชำระเงินได้ที่ {bankName}</>
-                  ) : bankAccountNumber ? (
-                    <>เลขบัญชี {bankAccountNumber}</>
+                <div className="flex items-center gap-2">
+                  {bankName ? (
+                    <BankLogo
+                      name={bankName}
+                      size="sm"
+                      className="shrink-0 print:h-7 print:w-7"
+                    />
                   ) : null}
-                </p>
+                  <p className="font-medium text-slate-700 text-base print:text-lg">
+                    {bankName && bankAccountNumber ? (
+                      <>
+                        ชำระเงินได้ที่ {bankName} เลขบัญชี {bankAccountNumber}
+                      </>
+                    ) : bankName ? (
+                      <>ชำระเงินได้ที่ {bankName}</>
+                    ) : bankAccountNumber ? (
+                      <>เลขบัญชี {bankAccountNumber}</>
+                    ) : null}
+                  </p>
+                </div>
               )}
               {lineId && (
                 <p className="font-medium text-slate-700 text-base print:text-lg">
                   ไอดีไลน์ {lineId}
                 </p>
               )}
+            </div>
+          )}
+          {promptpayEnabled && promptpayId && (
+            <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-slate-200 bg-slate-50/60 p-3">
+              <div className="flex h-24 w-24 items-center justify-center rounded-md border border-slate-200 bg-white">
+                {promptpayQr ? (
+                  <img
+                    src={promptpayQr}
+                    alt="PromptPay QR"
+                    className="h-20 w-20 object-contain"
+                  />
+                ) : (
+                  <span className="text-xs text-slate-400">QR</span>
+                )}
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  {!promptpayLogoError ? (
+                    <img
+                      src="/banks/promptpay.svg"
+                      alt="PromptPay"
+                      className="h-6 w-6 object-contain"
+                      onError={() => setPromptpayLogoError(true)}
+                    />
+                  ) : (
+                    <span className="inline-flex h-6 items-center rounded-full bg-blue-600 px-2 text-xs font-semibold text-white">
+                      PromptPay
+                    </span>
+                  )}
+                  <p className="font-semibold text-slate-900 text-base print:text-lg">
+                    พร้อมเพย์
+                  </p>
+                </div>
+                <p className="text-sm text-slate-600 print:text-base">
+                  รหัส: {promptpayId}
+                </p>
+                <p className="text-sm text-slate-600 print:text-base">
+                  ยอดชำระ: {formatCurrency(total, settings?.currency || "THB")}
+                </p>
+              </div>
             </div>
           )}
         </div>

@@ -6,19 +6,31 @@ import type {
   InvitationResponse,
   InvitationsListResponse,
 } from "./invitations-types";
-import { getList } from "../response-helpers";
+import { getData, getList } from "../response-helpers";
 
 class InvitationsApi extends BaseApiService {
   async getAll(
     teamId?: string,
     token?: string,
+    options: { page?: number; limit?: number } = {},
   ): Promise<InvitationsListResponse> {
     try {
       const api = this.createApi(token);
       const response = await api.get<InvitationsListResponse>("/invitations", {
-        params: teamId ? { teamId } : undefined,
+        params: {
+          ...(teamId ? { teamId } : {}),
+          page: options.page ?? 1,
+          limit: options.limit ?? 20,
+        },
       });
-      return { ...response, data: getList(response) };
+      const data = getData(response) as { items?: any[]; invitations?: any[] } | null;
+      const items =
+        data?.invitations && Array.isArray(data.invitations)
+          ? data.invitations
+          : data?.items && Array.isArray(data.items)
+            ? data.items
+            : getList(response);
+      return { ...response, data: { ...(data ?? {}), items } } as InvitationsListResponse;
     } catch (error: unknown) {
       this.handleError(error, "getAll", { teamId });
     }
