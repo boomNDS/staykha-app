@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { invitationsApi } from "@/lib/api-client";
 import { getData } from "@/lib/api/response-helpers";
-import { useAuth, useSetUser } from "@/lib/auth-context";
+import { useAuth, useSetUser } from "@/lib/auth-hooks";
 import { normalizeErrorMessage } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { usePageTitle } from "@/lib/use-page-title";

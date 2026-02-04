@@ -14,7 +14,7 @@ import {
   settingsApi,
 } from "@/lib/api-client";
 import { getData, getList, getPaginationMeta } from "@/lib/api/response-helpers";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import type { Invoice, MeterReadingGroup, Room } from "@/lib/types";

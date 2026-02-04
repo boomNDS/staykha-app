@@ -53,7 +53,7 @@ import {
 import { getData } from "@/lib/api/response-helpers";
 import { useToast } from "@/hooks/use-toast";
 import { importsApi, settingsApi } from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import { useSettings } from "@/lib/hooks/use-settings";
 import { useTeam } from "@/lib/hooks/use-team";
 import { useSearchParams } from "@/lib/router";

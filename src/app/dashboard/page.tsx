@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { overviewApi, settingsApi } from "@/lib/api-client";
 import { getData } from "@/lib/api/response-helpers";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import type { MeterReadingGroup } from "@/lib/types";
 import { InvoiceStatus, TenantStatus } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";

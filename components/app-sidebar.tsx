@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { teamsApi } from "@/lib/api-client";
 import { getData } from "@/lib/api/response-helpers";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import { usePathname } from "@/lib/router";
 import { cn } from "@/lib/utils";
 

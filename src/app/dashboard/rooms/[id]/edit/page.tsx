@@ -37,7 +37,7 @@ import { User, UserPlus, UserX } from "lucide-react";
 import { buildingsApi, roomsApi, tenantsApi } from "@/lib/api-client";
 import type { TenantCreateRequest } from "@/lib/api/services/tenants-types";
 import { getData, getList } from "@/lib/api/response-helpers";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import { useParams, useRouter } from "@/lib/router";
 import { roomFormSchema, tenantDraftSchema } from "@/lib/schemas";
 import type { Tenant, TenantDraft } from "@/lib/types";

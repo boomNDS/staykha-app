@@ -14,7 +14,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { adminsApi, invitationsApi } from "@/lib/api-client";
 import { getList, getPaginationMeta } from "@/lib/api/response-helpers";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import type { AdminInvitation, User } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";
 import { formatDate } from "@/lib/utils";

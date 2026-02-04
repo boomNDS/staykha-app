@@ -26,7 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { buildingsApi } from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { buildingFormSchema } from "@/lib/schemas";

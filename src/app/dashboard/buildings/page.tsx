@@ -32,7 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { buildingsApi } from "@/lib/api-client";
 import { getList, getPaginationMeta } from "@/lib/api/response-helpers";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import { useRouter } from "@/lib/router";
 import type { Building } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";

@@ -8,7 +8,7 @@ import { StayKhaLogo } from "@/components/staykha-logo";
 import { Button } from "@/components/ui/button";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import { useRouter } from "@/lib/router";
 
 export default function DashboardLayout({

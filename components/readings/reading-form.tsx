@@ -36,7 +36,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useToast } from "@/hooks/use-toast";
 import { readingsApi, roomsApi, settingsApi } from "@/lib/api-client";
 import { getData, getList } from "@/lib/api/response-helpers";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import { getErrorMessage, logError } from "@/lib/error-utils";
 import { useRouter } from "@/lib/router";
 import { createReadingFormSchema, mapZodErrors } from "@/lib/schemas";

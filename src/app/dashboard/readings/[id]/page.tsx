@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { readingsApi, roomsApi, settingsApi } from "@/lib/api-client";
 import { getData } from "@/lib/api/response-helpers";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import { useParams } from "@/lib/router";
 import type { MeterReadingGroup } from "@/lib/types";
 import { usePageTitle } from "@/lib/use-page-title";

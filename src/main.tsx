@@ -3,7 +3,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { Analytics } from "@vercel/analytics/react";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { AuthProvider } from "@/lib/auth-context";
+import { AuthProvider } from "@/lib/auth-provider";
 import { validateEnv } from "@/lib/env";
 import { router } from "./router";
 import "./app/globals.css";

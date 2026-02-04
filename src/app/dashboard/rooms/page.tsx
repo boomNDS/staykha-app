@@ -29,7 +29,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { roomsApi, tenantsApi } from "@/lib/api-client";
 import { getList, getPaginationMeta } from "@/lib/api/response-helpers";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-hooks";
 import { useRouter } from "@/lib/router";
 import { mapZodErrors, tenantDraftSchema } from "@/lib/schemas";
 import type { Room, Tenant, TenantDraft } from "@/lib/types";
